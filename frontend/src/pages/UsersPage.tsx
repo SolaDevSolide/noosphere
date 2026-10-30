@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../api/client';
-import { ROLES, type Language, type Role, type User, type UserCreateInput, type UserUpdateInput } from '../api/types';
+import {
+  ROLES,
+  type Language,
+  type Role,
+  type UserCreateInput,
+  type UserM2 as User,
+  type UserUpdateInput,
+} from '../api/types';
 import { useAuth } from '../auth/auth';
+import { useLandscape } from '../explorer/landscape';
 import { useI18n } from '../i18n';
 import { describe, Field, PageShell, serverErrors } from '../records/common';
 import { IconPlus, IconWarn } from '../ui/icons';
@@ -13,6 +21,7 @@ interface Draft {
   role: Role;
   language: Language;
   password: string;
+  teamIds: string[];
 }
 
 function UserDialog({
@@ -25,7 +34,10 @@ function UserDialog({
   onSaved: (u: User, created: boolean) => void;
 }) {
   const { t } = useI18n();
+  const { model: m } = useLandscape();
+  const teams = m ? [...m.teams.values()].sort((a, b) => a.name.localeCompare(b.name)) : [];
   const [d, setD] = useState<Draft>(() => ({
+    teamIds: user?.teamIds ?? [],
     username: user?.username ?? '',
     displayName: user?.displayName ?? '',
     role: user?.role ?? 'member',
@@ -96,11 +108,12 @@ function UserDialog({
       role: d.role,
       language: d.language,
       password: d.password || null,
+      teamIds: d.teamIds,
     };
     try {
       const saved = user
-        ? await api.updateUser(user.username, { ...common, version: user.version } satisfies UserUpdateInput)
-        : await api.createUser({ ...common, username: d.username.trim() } satisfies UserCreateInput);
+        ? await api.updateUser(user.username, { ...common, version: user.version } as UserUpdateInput)
+        : await api.createUser({ ...common, username: d.username.trim() } as UserCreateInput);
       onSaved(saved as User, !user);
     } catch (err) {
       if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
@@ -191,6 +204,29 @@ function UserDialog({
                 autoComplete="new-password"
               />
             </Field>
+            {d.role !== 'guest' && teams.length > 0 && (
+              <fieldset className="field full teampick">
+                <legend className="lbl">{t.users.teams}</legend>
+                <small id="u-teams-hint">{t.users.teamsHint}</small>
+                <div className="checks" aria-describedby="u-teams-hint">
+                  {teams.map((x) => {
+                    const on = d.teamIds.includes(x.id);
+                    return (
+                      <label key={x.id} className={'tpick' + (on ? ' on' : '')}>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() =>
+                            set('teamIds', on ? d.teamIds.filter((y) => y !== x.id) : [...d.teamIds, x.id])
+                          }
+                        />
+                        {x.name}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
           </div>
           <div className="form-actions">
             <button type="button" className="btn" onClick={onClose}>
@@ -209,6 +245,7 @@ function UserDialog({
 export function UsersPage() {
   const { t, lang } = useI18n();
   const { me, isAdmin } = useAuth();
+  const { model: m } = useLandscape();
   const toast = useToast();
   const [users, setUsers] = useState<User[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -218,7 +255,7 @@ export function UsersPage() {
     if (!isAdmin) return;
     api
       .users()
-      .then(setUsers)
+      .then((x) => setUsers(x as User[]))
       .catch((e: unknown) =>
         setError(e instanceof ApiError && e.status === 0 ? t.common.networkError : t.common.genericError),
       );
@@ -274,6 +311,12 @@ export function UsersPage() {
     </>
   );
   const role = (r: Role) => <span className={'rolebadge ' + r}>{t.top.role[r]}</span>;
+  const teamsOf = (u: User) =>
+    u.teamIds?.length ? (
+      u.teamIds.map((x) => m?.teams.get(x)?.name ?? x).join(', ')
+    ) : (
+      <span className="muted">{t.users.noTeam}</span>
+    );
 
   return (
     <PageShell>
@@ -311,6 +354,7 @@ export function UsersPage() {
                   <th scope="col">{t.users.username}</th>
                   <th scope="col">{t.users.displayName}</th>
                   <th scope="col">{t.users.role}</th>
+                  <th scope="col">{t.users.teams}</th>
                   <th scope="col">{t.users.language}</th>
                   <th scope="col">
                     <span className="sr">{t.users.actions}</span>
@@ -326,6 +370,7 @@ export function UsersPage() {
                     </td>
                     <td>{u.displayName}</td>
                     <td>{role(u.role)}</td>
+                    <td>{teamsOf(u)}</td>
                     <td>{u.language.toUpperCase()}</td>
                     <td className="acts">{actions(u)}</td>
                   </tr>
@@ -343,6 +388,9 @@ export function UsersPage() {
                 <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
                   <code>{u.username}</code> · {u.language.toUpperCase()}
                   {u.username === me?.username && <> · {t.users.you}</>}
+                </div>
+                <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
+                  {t.users.teams}: {teamsOf(u)}
                 </div>
                 <div className="page-actions" style={{ marginTop: 10 }}>
                   {actions(u)}

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/auth';
+import { useDocumentTitle } from '../app/settings';
 import { useI18n } from '../i18n';
 import { Brand, ThemeButton } from '../layout/TopBar';
 import { LanguageSwitch } from '../layout/UserMenu';
@@ -15,6 +16,7 @@ export function safeNext(next: string | null) {
 export function LoginPage() {
   const { t } = useI18n();
   const { status, login } = useAuth();
+  useDocumentTitle(t.login.title);
   const [q] = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

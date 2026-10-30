@@ -3,6 +3,7 @@ import { useGo } from '../ui/useGo';
 import { Link, useLocation } from 'react-router-dom';
 import { FLOW_TYPES } from '../api/types';
 import { anyFilter, fullApp, fullFlow, makeMatcher, visibleApps } from '../domain/model';
+import { useDocumentTitle } from '../app/settings';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
 import { TopBar } from '../layout/TopBar';
@@ -100,6 +101,7 @@ function Skeleton() {
 
 export function Explorer() {
   const { t } = useI18n();
+  useDocumentTitle();
   const loc = useLocation();
   const nav = useGo();
   const { model: m, error, loading, reload, filters, second, setSecond } = useLandscape();
