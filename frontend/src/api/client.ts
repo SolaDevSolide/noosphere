@@ -2,6 +2,14 @@ import type {
   Application,
   ApplicationInput,
   DataObject,
+  DataObjectDetail,
+  DomainDetail,
+  Page,
+  PageDetail,
+  PageInput,
+  PageListItem,
+  PageTreeNode,
+  RestrictedPage,
   Domain,
   ExchangeEnvelope,
   Compare,
@@ -106,6 +114,25 @@ export async function request<T>(method: string, path: string, body?: unknown, i
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+/** A GET answered as plain text (the raw Markdown of a page). */
+async function requestText(path: string): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch('/api' + path, {
+      credentials: 'same-origin',
+      headers: { Accept: 'text/markdown, text/plain', 'X-Requested-With': 'fetch' },
+    });
+  } catch {
+    throw new ApiError(0, 'network');
+  }
+  if (!res.ok) {
+    const p = await readProblem(res);
+    if (res.status === 401) onUnauthorized();
+    throw new ApiError(res.status, p.title ?? res.statusText, p.detail, {}, p);
+  }
+  return res.text();
+}
+
 const q = (params: Record<string, string | undefined>) => {
   const s = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v) s.set(k, v);
@@ -154,6 +181,19 @@ export const api = {
   createFlow: (body: FlowInput) => request<Flow>('POST', '/flows', body),
   updateFlow: (id: string, body: FlowInput) => request<Flow>('PUT', `/flows/${enc(id)}`, body),
   deleteFlow: (id: string) => request<void>('DELETE', `/flows/${enc(id)}`),
+
+  domain: (id: string) => request<DomainDetail>('GET', `/domains/${enc(id)}`),
+  dataObject: (id: string) => request<DataObjectDetail>('GET', `/data-objects/${enc(id)}`),
+
+  pages: () => request<PageListItem[]>('GET', '/pages'),
+  pageTree: () => request<PageTreeNode[]>('GET', '/pages/tree'),
+  page: (id: string) => request<PageDetail | RestrictedPage>('GET', `/pages/${enc(id)}`),
+  pageRaw: (id: string) => requestText(`/pages/${enc(id)}/raw`),
+  createPage: (body: PageInput) => request<Page>('POST', '/pages', body),
+  updatePage: (id: string, body: PageInput) => request<Page>('PUT', `/pages/${enc(id)}`, body),
+  deletePage: (id: string) => request<void>('DELETE', `/pages/${enc(id)}`),
+  movePage: (id: string, parentId: string | null, order: number, version?: number) =>
+    request<Page>('POST', `/pages/${enc(id)}/move`, { parentId, order, version: version ?? null }),
 
   users: () => request<User[]>('GET', '/users'),
   createUser: (body: UserCreateInput) => request<User>('POST', '/users', body),
