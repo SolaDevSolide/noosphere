@@ -172,6 +172,8 @@ public class OAuthTests : IDisposable
         })).Read(HttpStatusCode.Created);
         Assert.Equal("none", ok.Str("token_endpoint_auth_method"));
         Assert.False(ok.TryGetProperty("client_secret", out _));
+        // No null members: clients validate the response strictly.
+        Assert.DoesNotContain(ok.EnumerateObject(), p => p.Value.ValueKind == System.Text.Json.JsonValueKind.Null);
 
         var settings = await Settings(_api, new { dynamicRegistration = false });
         Assert.False(settings.GetProperty("dynamicRegistration").GetBoolean());

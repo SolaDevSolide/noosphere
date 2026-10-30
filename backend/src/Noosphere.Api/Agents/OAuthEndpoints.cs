@@ -343,18 +343,20 @@ public static class OAuthEndpoints
         db.OAuthClients.Add(client);
         await db.SaveChangesAsync();
         // Public clients only: whatever was asked, no secret is issued.
-        return NoStore(Results.Json(new Dictionary<string, object?>
+        var registered = new Dictionary<string, object>
         {
             ["client_id"] = client.ClientId,
             ["client_id_issued_at"] = now.ToUnixTimeSeconds(),
             ["client_name"] = client.ClientName,
-            ["client_uri"] = client.ClientUri,
             ["redirect_uris"] = client.RedirectUris,
             ["grant_types"] = GrantTypes,
             ["response_types"] = ResponseTypes,
             ["token_endpoint_auth_method"] = "none",
             ["scope"] = string.Join(' ', Scopes.All),
-        }, statusCode: 201));
+        };
+        // Absent rather than null: clients validate the response strictly.
+        if (client.ClientUri is not null) registered["client_uri"] = client.ClientUri;
+        return NoStore(Results.Json(registered, statusCode: 201));
     }
 
     // ---------- Consent page API (session cookie + X-Requested-With) ----------
