@@ -9,6 +9,16 @@ permissions:
   contents: read
 
 jobs:
+  # The frontend lands in its own pull request; until then its jobs are skipped.
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.check.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: check
+        run: echo "frontend=$([ -f frontend/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   backend:
     runs-on: ubuntu-latest
     services:
@@ -39,6 +49,8 @@ jobs:
         run: dotnet test --no-build
 
   frontend:
+    needs: detect
+    if: needs.detect.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
