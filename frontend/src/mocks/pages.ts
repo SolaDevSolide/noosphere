@@ -217,7 +217,7 @@ export function handlePages(ctx: GovCtx, u: UserM2, method: string, path: string
     });
   }
   if (!m[2] && method === 'DELETE') {
-    for (const p of db.pages) if (p.parentId === id) p.parentId = cur.parentId;
+    if (db.pages.some((p) => p.parentId === id)) return problem(409, 'Conflict', 'Move or delete the sub-pages first.');
     deleteRecord(ctx, u, 'page', id);
     return json(204);
   }
