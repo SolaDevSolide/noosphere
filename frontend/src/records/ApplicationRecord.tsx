@@ -2,7 +2,15 @@ import { useState, type FormEvent } from 'react';
 import { useGo } from '../ui/useGo';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import { APP_KINDS, LIFECYCLES, VISIBILITIES, type Application, type ApplicationInput } from '../api/types';
+import {
+  APP_KINDS,
+  LIFECYCLES,
+  VISIBILITIES,
+  type Application,
+  type ApplicationInput,
+  type Proposal,
+  type RecordExtras,
+} from '../api/types';
 import { useAuth } from '../auth/auth';
 import { pct, Sdot, teamName } from '../explorer/bits';
 import { useLandscape } from '../explorer/landscape';
@@ -10,7 +18,7 @@ import { FlowRow } from '../explorer/Panel';
 import { paths } from '../explorer/paths';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconLock } from '../ui/icons';
+import { IconHistory, IconLock } from '../ui/icons';
 import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import {
@@ -25,6 +33,17 @@ import {
   useRecord,
   useUnsavedGuard,
 } from './common';
+import { HistoryPanel } from './HistoryPanel';
+import { ownerTeamOf, permissionsFor } from './permissions';
+import {
+  ProposalSentBanner,
+  ProposeFields,
+  proposeUpdate,
+  useProposeDraft,
+  validatePropose,
+  type EditMode,
+} from './propose';
+import { RecordExtensions } from './RecordExtensions';
 
 type Draft = Pick<Application, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'visibility'> & {
   teamId: string;
@@ -55,12 +74,18 @@ export function validateApp(t: Dict, d: Draft): Record<string, string> {
 
 function AppForm({
   app,
+  mode,
+  ownerName,
   onSaved,
+  onProposed,
   onCancel,
   onReload,
 }: {
   app: Application;
+  mode: EditMode;
+  ownerName: string | null;
   onSaved: (a: Application) => void;
+  onProposed: (p: Proposal) => void;
   onCancel: () => void;
   onReload: () => void;
 }) {
@@ -71,13 +96,14 @@ function AppForm({
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [prop, setProp] = useProposeDraft(mode, app.name);
   const dirty = JSON.stringify(d) !== JSON.stringify(toDraft(app));
   useUnsavedGuard(dirty);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
 
   const submit = async (ev: FormEvent) => {
     ev.preventDefault();
-    const e = validateApp(t, d);
+    const e = { ...validateApp(t, d), ...validatePropose(t, prop) };
     setErrors(e);
     setFailure(null);
     if (Object.keys(e).length) {
@@ -98,7 +124,8 @@ function AppForm({
         lifecycle: d.lifecycle,
         visibility: d.visibility,
       };
-      onSaved(await api.updateApplication(app.id, body));
+      if (prop.proposing) onProposed(await proposeUpdate('application', app.id, app.version, body, prop));
+      else onSaved(await api.updateApplication(app.id, body));
     } catch (err) {
       if (err instanceof ApiError && err.isConflict) setConflict(true);
       else if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
@@ -123,7 +150,7 @@ function AppForm({
   return (
     <form className="form box" onSubmit={(e) => void submit(e)} noValidate aria-labelledby="edit-h">
       <h2 className="big" id="edit-h">
-        {t.record.editing}
+        {prop.proposing ? t.propose.suggesting : t.record.editing}
       </h2>
       {conflict && <ConflictBanner onReload={onReload} />}
       {failure && (
@@ -256,6 +283,7 @@ function AppForm({
           />
         </Field>
       </div>
+      <ProposeFields mode={mode} ownerName={ownerName} value={prop} onChange={setProp} errors={errors} />
       <div className="form-actions sticky">
         <span className="muted" aria-live="polite">
           {dirty ? t.record.unsaved : ''}
@@ -264,7 +292,7 @@ function AppForm({
           {t.common.cancel}
         </button>
         <button type="submit" className="btn primary" disabled={saving || conflict}>
-          {saving ? t.common.saving : t.common.save}
+          {prop.proposing ? (saving ? t.propose.sending : t.propose.send) : saving ? t.common.saving : t.common.save}
         </button>
       </div>
     </form>
@@ -274,12 +302,14 @@ function AppForm({
 export function ApplicationRecord() {
   const { id = '' } = useParams();
   const { t, date } = useI18n();
-  const { canEdit, isAdmin } = useAuth();
+  const { me, isAdmin, teamIds } = useAuth();
   const { model: m, reload: reloadLandscape } = useLandscape();
   const toast = useToast();
   const nav = useGo();
-  const { data: a, setData, error, reload } = useRecord(api.application, id);
+  const { data: a, setData, error, reload } = useRecord<Application & RecordExtras>(api.application, id);
   const [editing, setEditing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [sent, setSent] = useState<Proposal | null>(null);
 
   if (error)
     return (
@@ -325,8 +355,11 @@ export function ApplicationRecord() {
     }
   };
   const p = pct(a.completeness);
+  const owner = ownerTeamOf(m, 'application', a);
+  const perm = permissionsFor(me?.role, teamIds, owner, a.permissions);
+  const ownerName = owner ? teamName(m, owner) || owner : null;
   return (
-    <PageShell>
+    <PageShell title={a.name}>
       <div className="page-h">
         <div className="ph-t">
           <span className="kb app">{t.search.badge.app}</span> <span className="muted">{t.kindName[a.kind]}</span>
@@ -341,11 +374,27 @@ export function ApplicationRecord() {
             <Link className="btn" to={paths.appLens(a.id)}>
               {t.record.openLens}
             </Link>
-            {canEdit && (
+            {perm.publish ? (
               <button type="button" className="btn primary" onClick={() => setEditing(true)}>
                 {t.record.edit}
               </button>
+            ) : (
+              perm.propose && (
+                <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+                  {t.propose.suggest}
+                </button>
+              )
             )}
+            <button
+              type="button"
+              className="btn hist-btn"
+              aria-pressed={historyOpen}
+              aria-haspopup="dialog"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <IconHistory />
+              {t.history.button}
+            </button>
             {isAdmin && (
               <button type="button" className="btn danger" onClick={() => void remove()}>
                 {t.common.delete}
@@ -354,17 +403,39 @@ export function ApplicationRecord() {
           </div>
         )}
       </div>
-      {!canEdit && (
+      {!perm.propose && (
         <div className="banner" role="note">
           <span className="bt">
             <b>{t.record.readOnly}.</b> {t.record.readOnlyHint}
           </span>
         </div>
       )}
+      {sent && !editing && <ProposalSentBanner proposal={sent} onClose={() => setSent(null)} />}
+      {historyOpen && (
+        <HistoryPanel
+          kind="application"
+          id={a.id}
+          name={a.name}
+          canPublish={perm.publish}
+          canPropose={perm.propose}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={() => {
+            reload();
+            reloadLandscape();
+          }}
+        />
+      )}
       {editing ? (
         <AppForm
           key={a.version}
           app={a}
+          mode={perm.publish ? 'publish' : 'propose'}
+          ownerName={ownerName}
+          onProposed={(pr) => {
+            setSent(pr);
+            setEditing(false);
+            toast(t.propose.sent);
+          }}
           onReload={reload}
           onCancel={() => setEditing(false)}
           onSaved={(next) => {
@@ -381,6 +452,7 @@ export function ApplicationRecord() {
               <h2 id="desc-h">{t.record.fields.description}</h2>
               {a.description ? <Markdown text={a.description} /> : <p className="muted">{t.record.noDescription}</p>}
             </section>
+            <RecordExtensions record={a} />
             <section className="box" aria-labelledby="flows-h">
               <h2 id="flows-h">{t.record.flowsIn(ins.length)}</h2>
               <div className="rows">
@@ -410,7 +482,7 @@ export function ApplicationRecord() {
               <dt>{t.record.fields.domain}</dt>
               <dd>{domain?.name ?? a.domainId}</dd>
               <dt>{t.record.fields.team}</dt>
-              <dd>{a.teamId ? <Link to={paths.team(a.teamId)}>{teamName(m, a.teamId)}</Link> : '—'}</dd>
+              <dd>{a.teamId ? <Link to={paths.teamRecord(a.teamId)}>{teamName(m, a.teamId)}</Link> : '—'}</dd>
               <dt>{t.record.fields.kind}</dt>
               <dd>{t.kindName[a.kind]}</dd>
               <dt>{t.record.fields.tech}</dt>

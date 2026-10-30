@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useGo } from '../ui/useGo';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import { FLOW_STATUSES, FLOW_TYPES, type Flow, type FlowInput } from '../api/types';
+import { FLOW_STATUSES, FLOW_TYPES, type Flow, type FlowInput, type Proposal, type RecordExtras } from '../api/types';
 import { useAuth } from '../auth/auth';
 import { nameOf, pct, Sdot, StatusTag, teamName } from '../explorer/bits';
 import { useLandscape } from '../explorer/landscape';
@@ -10,7 +10,7 @@ import { paths } from '../explorer/paths';
 import { appOrder, fullApp } from '../domain/model';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconLock, IconWarn, TypeIcon } from '../ui/icons';
+import { IconHistory, IconLock, IconWarn, TypeIcon } from '../ui/icons';
 import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import {
@@ -25,6 +25,17 @@ import {
   useRecord,
   useUnsavedGuard,
 } from './common';
+import { HistoryPanel } from './HistoryPanel';
+import { ownerTeamOf, permissionsFor } from './permissions';
+import {
+  ProposalSentBanner,
+  ProposeFields,
+  proposeUpdate,
+  useProposeDraft,
+  validatePropose,
+  type EditMode,
+} from './propose';
+import { RecordExtensions } from './RecordExtensions';
 
 interface Draft {
   name: string;
@@ -71,12 +82,18 @@ export function validateFlow(t: Dict, d: Draft): Record<string, string> {
 
 function FlowForm({
   flow,
+  mode,
+  ownerName,
   onSaved,
+  onProposed,
   onCancel,
   onReload,
 }: {
   flow: Flow;
+  mode: EditMode;
+  ownerName: string | null;
   onSaved: (f: Flow) => void;
+  onProposed: (p: Proposal) => void;
   onCancel: () => void;
   onReload: () => void;
 }) {
@@ -87,6 +104,7 @@ function FlowForm({
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [prop, setProp] = useProposeDraft(mode, flow.name);
   const dirty = JSON.stringify(d) !== JSON.stringify(toDraft(flow));
   useUnsavedGuard(dirty);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
@@ -95,7 +113,7 @@ function FlowForm({
 
   const submit = async (ev: FormEvent) => {
     ev.preventDefault();
-    const e = validateFlow(t, d);
+    const e = { ...validateFlow(t, d), ...validatePropose(t, prop) };
     setErrors(e);
     setFailure(null);
     if (Object.keys(e).length) {
@@ -119,7 +137,8 @@ function FlowForm({
         description: d.description.trim() || null,
         plannedChange: d.changeSummary.trim() ? { summary: d.changeSummary.trim(), date: d.changeDate || null } : null,
       };
-      onSaved(await api.updateFlow(flow.id, body));
+      if (prop.proposing) onProposed(await proposeUpdate('flow', flow.id, flow.version, body, prop));
+      else onSaved(await api.updateFlow(flow.id, body));
     } catch (err) {
       if (err instanceof ApiError && err.isConflict) setConflict(true);
       else if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
@@ -160,7 +179,7 @@ function FlowForm({
   return (
     <form className="form box" onSubmit={(e) => void submit(e)} noValidate aria-labelledby="edit-h">
       <h2 className="big" id="edit-h">
-        {t.record.editing}
+        {prop.proposing ? t.propose.suggesting : t.record.editing}
       </h2>
       {conflict && <ConflictBanner onReload={onReload} />}
       {failure && (
@@ -306,6 +325,7 @@ function FlowForm({
           />
         </Field>
       </div>
+      <ProposeFields mode={mode} ownerName={ownerName} value={prop} onChange={setProp} errors={errors} />
       <div className="form-actions sticky">
         <span className="muted" aria-live="polite">
           {dirty ? t.record.unsaved : ''}
@@ -314,7 +334,7 @@ function FlowForm({
           {t.common.cancel}
         </button>
         <button type="submit" className="btn primary" disabled={saving || conflict}>
-          {saving ? t.common.saving : t.common.save}
+          {prop.proposing ? (saving ? t.propose.sending : t.propose.send) : saving ? t.common.saving : t.common.save}
         </button>
       </div>
     </form>
@@ -347,12 +367,14 @@ function EndCard({ id }: { id: string }) {
 export function FlowRecord() {
   const { id = '' } = useParams();
   const { t, date } = useI18n();
-  const { canEdit, isAdmin } = useAuth();
+  const { me, isAdmin, teamIds } = useAuth();
   const { model: m, reload: reloadLandscape } = useLandscape();
   const toast = useToast();
   const nav = useGo();
-  const { data: f, setData, error, reload } = useRecord(api.flow, id);
+  const { data: f, setData, error, reload } = useRecord<Flow & RecordExtras>(api.flow, id);
   const [editing, setEditing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [sent, setSent] = useState<Proposal | null>(null);
   if (error)
     return (
       <PageShell>
@@ -394,8 +416,11 @@ export function FlowRecord() {
     }
   };
   const p = pct(f.completeness ?? 0);
+  const owner = ownerTeamOf(m, 'flow', f);
+  const perm = permissionsFor(me?.role, teamIds, owner, f.permissions);
+  const ownerName = owner ? teamName(m, owner) || owner : null;
   return (
-    <PageShell>
+    <PageShell title={f.name}>
       <div className="page-h">
         <div className="ph-t">
           <span className="kb flow">{t.search.badge.flow}</span>{' '}
@@ -417,11 +442,27 @@ export function FlowRecord() {
             <Link className="btn" to={paths.flowLens(f.id)}>
               {t.record.openLens}
             </Link>
-            {canEdit && (
+            {perm.publish ? (
               <button type="button" className="btn primary" onClick={() => setEditing(true)}>
                 {t.record.edit}
               </button>
+            ) : (
+              perm.propose && (
+                <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+                  {t.propose.suggest}
+                </button>
+              )
             )}
+            <button
+              type="button"
+              className="btn hist-btn"
+              aria-pressed={historyOpen}
+              aria-haspopup="dialog"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <IconHistory />
+              {t.history.button}
+            </button>
             {isAdmin && (
               <button type="button" className="btn danger" onClick={() => void remove()}>
                 {t.common.delete}
@@ -430,17 +471,39 @@ export function FlowRecord() {
           </div>
         )}
       </div>
-      {!canEdit && (
+      {!perm.propose && (
         <div className="banner" role="note">
           <span className="bt">
             <b>{t.record.readOnly}.</b> {t.record.readOnlyHint}
           </span>
         </div>
       )}
+      {sent && !editing && <ProposalSentBanner proposal={sent} onClose={() => setSent(null)} />}
+      {historyOpen && (
+        <HistoryPanel
+          kind="flow"
+          id={f.id}
+          name={f.name}
+          canPublish={perm.publish}
+          canPropose={perm.propose}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={() => {
+            reload();
+            reloadLandscape();
+          }}
+        />
+      )}
       {editing ? (
         <FlowForm
           key={f.version}
           flow={f}
+          mode={perm.publish ? 'publish' : 'propose'}
+          ownerName={ownerName}
+          onProposed={(pr) => {
+            setSent(pr);
+            setEditing(false);
+            toast(t.propose.sent);
+          }}
           onReload={reload}
           onCancel={() => setEditing(false)}
           onSaved={(next) => {
@@ -469,10 +532,13 @@ export function FlowRecord() {
             </div>
           )}
           <div className="grid2">
-            <section className="box" aria-labelledby="desc-h">
-              <h2 id="desc-h">{t.record.fields.description}</h2>
-              {f.description ? <Markdown text={f.description} /> : <p className="muted">{t.record.noDescription}</p>}
-            </section>
+            <div>
+              <section className="box" aria-labelledby="desc-h">
+                <h2 id="desc-h">{t.record.fields.description}</h2>
+                {f.description ? <Markdown text={f.description} /> : <p className="muted">{t.record.noDescription}</p>}
+              </section>
+              <RecordExtensions record={f} />
+            </div>
             <section className="box" aria-labelledby="fields-h">
               <h2 id="fields-h">{t.panel.details}</h2>
               <dl className="fields">
@@ -504,7 +570,7 @@ export function FlowRecord() {
                 </dd>
                 <dt>{t.record.fields.owner}</dt>
                 <dd>
-                  {f.ownerTeamId ? <Link to={paths.team(f.ownerTeamId)}>{teamName(m, f.ownerTeamId)}</Link> : '—'}
+                  {f.ownerTeamId ? <Link to={paths.teamRecord(f.ownerTeamId)}>{teamName(m, f.ownerTeamId)}</Link> : '—'}
                 </dd>
                 <dt>{t.record.fields.status}</dt>
                 <dd>

@@ -2,6 +2,8 @@ const e = encodeURIComponent;
 export const paths = {
   explorer: (view?: 'cards' | 'connections' | 'graph') => (view && view !== 'cards' ? `/?view=${view}` : '/'),
   team: (id: string) => `/?team=${e(id)}`,
+  teamRecord: (id: string) => `/teams/${e(id)}`,
+  proposal: (id: string) => `/review/${e(id)}`,
   appLens: (id: string) => `/applications/${e(id)}/lens`,
   flowLens: (id: string) => `/flows/${e(id)}/lens`,
   lineage: (id: string) => `/data-objects/${e(id)}`,

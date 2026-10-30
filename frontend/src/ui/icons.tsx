@@ -210,3 +210,46 @@ export function TypeIcon({ type, size }: { type: FlowType; size?: number }) {
     <IconBatch size={size} />
   );
 }
+
+const stroke = (size: number, p: P) => ({
+  ...base(size, p),
+  viewBox: '0 0 16 16',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.6,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+});
+
+export const IconHistory = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.3 2.2v2.6h2.6M8 5v3.2l2.1 1.4" />
+  </svg>
+);
+export const IconReview = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M2.5 3.5h11v7.5H8l-3 2.5V11H2.5zM5.5 7.2l1.6 1.5 3.4-3.2" />
+  </svg>
+);
+export const IconCheck = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M3 8.5l3.2 3L13 4.5" />
+  </svg>
+);
+export const IconSettings = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="8" cy="8" r="2.2" />
+    <path d="M8 1.8v1.8M8 12.4v1.8M1.8 8h1.8M12.4 8h1.8M3.6 3.6l1.3 1.3M11.1 11.1l1.3 1.3M3.6 12.4l1.3-1.3M11.1 4.9l1.3-1.3" />
+  </svg>
+);
+export const IconTrash = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M2.8 4.2h10.4M6.3 4.2V2.6h3.4v1.6M4.2 4.2l.7 9.2h6.2l.7-9.2M6.7 6.8v4.2M9.3 6.8v4.2" />
+  </svg>
+);
+export const IconBot = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="2.5" y="5" width="11" height="8" rx="2" />
+    <path d="M8 2.2V5M5.8 8.6v.8M10.2 8.6v.8" />
+  </svg>
+);
