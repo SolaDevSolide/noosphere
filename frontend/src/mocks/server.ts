@@ -18,6 +18,7 @@ import type {
   UserM2,
   UserUpdateInput,
 } from '../api/types';
+import * as acc from './access';
 import * as seed from './alize';
 import {
   afterSave,
@@ -91,23 +92,21 @@ const json = (status: number, body?: unknown) =>
 const problem = (status: number, title: string, detail?: string, errors?: Record<string, string[]>) =>
   json(status, { type: 'about:blank', title, status, detail, errors });
 
-// The mock never authorises anyone for restricted applications, so the restricted shapes are always visible.
-const canSeeRestricted = (_u: UserM2) => false;
+// Claire, the demo guest, sees the customer portal in full.
+for (const a of db.applications) if (a.id === 'portal') a.access = { teamIds: [], usernames: ['claire'] };
+acc.seedNotes();
+const logAccess = acc.makeLogger(db, () => new Date().toISOString());
 
-function viewApp(a: Application, u: UserM2): LandscapeApplication {
-  return a.visibility === 'restricted' && !canSeeRestricted(u)
-    ? { id: a.id, domainId: a.domainId, restricted: true }
-    : a;
-}
-function viewFlow(f: Flow, u: UserM2): LandscapeFlow {
-  const hidden = (id: string) => {
-    const a = db.applications.find((x) => x.id === id);
-    return !!a && a.visibility === 'restricted' && !canSeeRestricted(u);
-  };
-  return hidden(f.fromId) || hidden(f.toId)
-    ? { id: f.id, fromId: f.fromId, toId: f.toId, type: f.type, restricted: true }
-    : f;
-}
+const viewApp = (a: Application, u: UserM2) => acc.viewApp(db, u, a) as LandscapeApplication | null;
+const viewFlow = (f: Flow, u: UserM2) => acc.viewFlow(db, u, f) as LandscapeFlow | null;
+const KINDS: Record<string, string> = {
+  applications: 'application',
+  flows: 'flow',
+  pages: 'page',
+  'data-objects': 'dataObject',
+  teams: 'team',
+  domains: 'domain',
+};
 
 function flowSensitivity(ids: string[]): Sensitivity {
   let s: Sensitivity = 'public';
@@ -185,10 +184,16 @@ function search(u: UserM2, text: string): SearchHit[] {
   if (!t) return [];
   const hits: SearchHit[] = [];
   for (const a of db.applications.map((x) => viewApp(x, u)))
-    if (!a.restricted && fold(a.name).includes(t))
-      hits.push({ kind: 'application', id: a.id, title: a.name, subtitle: a.domainId });
+    if (a && !a.restricted && fold(a.name).includes(t))
+      hits.push({
+        kind: 'application',
+        id: a.id,
+        title: a.name,
+        subtitle: a.domainId,
+        sensitivity: 'sensitivity' in a ? a.sensitivity : null,
+      });
   for (const f of db.flows.map((x) => viewFlow(x, u)))
-    if (!f.restricted && fold(f.name).includes(t))
+    if (f && !f.restricted && 'shared' in f === false && fold(f.name).includes(t))
       hits.push({ kind: 'flow', id: f.id, title: f.name, subtitle: `${f.fromId} → ${f.toId}` });
   for (const o of db.dataObjects)
     if (fold(o.name).includes(t)) hits.push({ kind: 'dataObject', id: o.id, title: o.name, subtitle: o.sensitivity });
@@ -284,14 +289,15 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     return json(204);
   }
   if (path === '/landscape') {
-    const apps = db.applications.map((a) => viewApp(a, u));
+    const apps = db.applications.map((a) => viewApp(a, u)).filter((a) => !!a);
+    const flows = db.flows.map((f) => viewFlow(f, u)).filter((f) => !!f);
     return json(200, {
       domains: db.domains,
       teams: db.teams,
       applications: apps,
       dataObjects: db.dataObjects,
-      flows: db.flows.map((f) => viewFlow(f, u)),
-      stats: { applications: apps.length, flows: db.flows.length, domains: db.domains.length },
+      flows,
+      stats: { applications: apps.length, flows: flows.length, domains: db.domains.length },
       generatedAt: now(),
     });
   }
@@ -302,6 +308,46 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const d = db.domains.find((x) => x.id === decodeURIComponent(dm![1]));
     if (!d) return problem(404, 'Domain not found.');
     return json(200, { ...d, ...recordExtras(gov, u, 'domain', d as unknown as Rec) });
+  }
+  const am = /^\/(applications|flows|pages|data-objects|teams|domains)\/([^/]+)\/access$/.exec(path);
+  if (am && method === 'GET') {
+    const kind = KINDS[am[1]];
+    const id = decodeURIComponent(am[2]);
+    const list: Rec[] =
+      kind === 'application'
+        ? (db.applications as unknown as Rec[])
+        : kind === 'flow'
+          ? (db.flows as unknown as Rec[])
+          : kind === 'page'
+            ? (db.pages as unknown as Rec[])
+            : kind === 'team'
+              ? (db.teams as unknown as Rec[])
+              : kind === 'domain'
+                ? (db.domains as unknown as Rec[])
+                : (db.dataObjects as unknown as Rec[]);
+    const rec = list.find((x) => x.id === id);
+    if (!rec) return problem(404, 'Not found.');
+    return json(200, acc.recordAccess(db, u, kind, rec));
+  }
+  if (path === '/people') {
+    if (u.role === 'guest') return problem(403, 'Guests do not list people.');
+    return json(
+      200,
+      db.users.map((x) => ({
+        username: x.username,
+        displayName: x.displayName,
+        role: x.role,
+        teamIds: x.teamIds ?? [],
+      })),
+    );
+  }
+  if (path === '/access/overview') {
+    if (!can(['admin'])) return problem(403, 'Administrators only.');
+    return json(200, acc.overview(db, db.pages));
+  }
+  if (path === '/access-log') {
+    if (!can(['admin'])) return problem(403, 'Administrators only.');
+    return json(200, acc.logPage(url.searchParams));
   }
   if (path === '/teams') return json(200, db.teams);
   if (path === '/data-objects') return json(200, db.dataObjects);
@@ -314,9 +360,15 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const cur = db.applications[i];
     if (method === 'GET') {
       const v = viewApp(cur, u);
-      return v.restricted
-        ? problem(403, 'Restricted application.')
-        : json(200, { ...v, ...recordExtras(gov, u, 'application', cur as unknown as Rec) });
+      if (!v) return problem(404, 'Application not found.');
+      if (v.restricted || 'shared' in v) return json(200, v);
+      if (cur.visibility === 'restricted' && !acc.isMember(u, cur.teamId))
+        logAccess(u, 'record', 'application', id, u.role === 'admin' ? 'admin' : 'listedUser');
+      return json(200, {
+        ...v,
+        ...recordExtras(gov, u, 'application', cur as unknown as Rec),
+        ...acc.notesFor(db, u, 'application', cur, logAccess),
+      });
     }
     if (method === 'PUT') {
       if (!can(['admin', 'member'])) return problem(403, 'Read-only account.');
@@ -326,9 +378,15 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       if (b.version !== cur.version) return problem(409, 'Conflict', 'The record was changed by someone else.');
       const errors = validateApp(b);
       if (Object.keys(errors).length) return problem(400, 'Validation failed.', undefined, errors);
+      const secrets = acc.secretErrors(b as unknown as Rec);
+      if (Object.keys(secrets).length)
+        return problem(422, 'Unprocessable content', 'Some fields look like secrets.', secrets);
+      acc.saveNotes('application', id, b);
+      const { protectedNotes: _n, ...rest } = b as ApplicationInput & { protectedNotes?: string | null };
       const next: Application = {
         ...cur,
-        ...(b as Partial<Application>),
+        ...(rest as Partial<Application>),
+        access: b.access ? { teamIds: b.access.teamIds ?? [], usernames: b.access.usernames ?? [] } : cur.access,
         id,
         restricted: false,
         sourceOf: cur.sourceOf,
@@ -338,7 +396,11 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       next.completeness = appCompleteness(next);
       db.applications[i] = next;
       afterSave(gov, u, 'application', next as unknown as Rec);
-      return json(200, { ...next, ...recordExtras(gov, u, 'application', next as unknown as Rec) });
+      return json(200, {
+        ...next,
+        ...recordExtras(gov, u, 'application', next as unknown as Rec),
+        ...acc.notesFor(db, u, 'application', next, logAccess),
+      });
     }
     if (method === 'DELETE') {
       if (!can(['admin'])) return problem(403, 'Only administrators can delete.');
@@ -360,13 +422,14 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const cur = db.flows[i];
     if (method === 'GET') {
       const v = viewFlow(cur, u);
-      return v.restricted
-        ? problem(403, 'Restricted flow.')
-        : json(200, {
-            ...v,
-            completeness: flowCompleteness(cur),
-            ...recordExtras(gov, u, 'flow', cur as unknown as Rec),
-          });
+      if (!v) return problem(404, 'Flow not found.');
+      if (v.restricted || 'shared' in v) return json(200, v);
+      return json(200, {
+        ...v,
+        completeness: flowCompleteness(cur),
+        ...recordExtras(gov, u, 'flow', cur as unknown as Rec),
+        ...acc.notesFor(db, u, 'flow', cur, logAccess),
+      });
     }
     if (method === 'PUT') {
       if (!can(['admin', 'member'])) return problem(403, 'Read-only account.');
@@ -376,9 +439,14 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       if (b.version !== cur.version) return problem(409, 'Conflict', 'The record was changed by someone else.');
       const errors = validateFlow(b);
       if (Object.keys(errors).length) return problem(400, 'Validation failed.', undefined, errors);
+      const secrets = acc.secretErrors(b as unknown as Rec);
+      if (Object.keys(secrets).length)
+        return problem(422, 'Unprocessable content', 'Some fields look like secrets.', secrets);
+      acc.saveNotes('flow', id, b);
+      const { protectedNotes: _fn, ...frest } = b as FlowInput & { protectedNotes?: string | null };
       const next: Flow = {
         ...cur,
-        ...(b as Partial<Flow>),
+        ...(frest as Partial<Flow>),
         id,
         restricted: false,
         version: cur.version + 1,
@@ -391,6 +459,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         ...next,
         completeness: flowCompleteness(next),
         ...recordExtras(gov, u, 'flow', next as unknown as Rec),
+        ...acc.notesFor(db, u, 'flow', next, logAccess),
       });
     }
     if (method === 'DELETE') {
@@ -451,6 +520,12 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     }
   }
   if (path === '/export') {
+    const full = url.searchParams.get('scope') === 'full';
+    if (full && !can(['admin'])) return problem(403, 'Only administrators export the full landscape.');
+    const reason = url.searchParams.get('reason')?.trim();
+    if (reason && reason.length > 200)
+      return problem(400, 'Validation failed.', undefined, { reason: ['At most 200 characters.'] });
+    if (full) logAccess(u, 'export', null, null, 'admin', reason || 'scope full, json');
     const env = exportEnvelope();
     if (url.searchParams.get('format') === 'yaml')
       return new Response(toYaml(env).trimStart() + '\n', {
