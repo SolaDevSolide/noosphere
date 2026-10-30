@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../api/client';
-import { ROLES, type Language, type Role, type User, type UserInput } from '../api/types';
+import { ROLES, type Language, type Role, type User, type UserCreateInput, type UserUpdateInput } from '../api/types';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import { describe, Field, PageShell, serverErrors } from '../records/common';
@@ -91,17 +91,17 @@ function UserDialog({
     setFailure(null);
     if (Object.keys(er).length) return;
     setBusy(true);
-    const body: UserInput = {
-      username: d.username.trim(),
+    const common = {
       displayName: d.displayName.trim(),
       role: d.role,
       language: d.language,
-      ...(d.password ? { password: d.password } : {}),
-      ...(user?.version != null ? { version: user.version } : {}),
+      password: d.password || null,
     };
     try {
-      const saved = user ? await api.updateUser(user.username, body) : await api.createUser(body);
-      onSaved(saved ?? ({ ...user, ...body } as User), !user);
+      const saved = user
+        ? await api.updateUser(user.username, { ...common, version: user.version } satisfies UserUpdateInput)
+        : await api.createUser({ ...common, username: d.username.trim() } satisfies UserCreateInput);
+      onSaved(saved as User, !user);
     } catch (err) {
       if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
         setErrors(serverErrors(err));

@@ -26,9 +26,11 @@ import {
   useUnsavedGuard,
 } from './common';
 
-type Draft = Required<
-  Pick<ApplicationInput, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'visibility' | 'sourceOf'>
-> & { teamId: string; tech: string; description: string };
+type Draft = Pick<Application, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'visibility'> & {
+  teamId: string;
+  tech: string;
+  description: string;
+};
 
 const toDraft = (a: Application): Draft => ({
   name: a.name,
@@ -39,7 +41,6 @@ const toDraft = (a: Application): Draft => ({
   description: a.description ?? '',
   lifecycle: a.lifecycle,
   visibility: a.visibility,
-  sourceOf: [...a.sourceOf],
 });
 
 export function validateApp(t: Dict, d: Draft): Record<string, string> {
@@ -96,7 +97,6 @@ function AppForm({
         description: d.description.trim() || null,
         lifecycle: d.lifecycle,
         visibility: d.visibility,
-        sourceOf: d.sourceOf,
       };
       onSaved(await api.updateApplication(app.id, body));
     } catch (err) {
@@ -227,27 +227,19 @@ function AppForm({
             ))}
           </select>
         </Field>
-        <div className="field full">
-          <span className="lbl" id="sourceOf-l">
-            {t.record.fields.sourceOf}
-          </span>
-          <div className="checks" role="group" aria-labelledby="sourceOf-l">
-            {m.objectIds.map((o) => (
-              <label key={o} className="chip">
-                <input
-                  type="checkbox"
-                  className="sr"
-                  checked={d.sourceOf.includes(o)}
-                  onChange={(e) =>
-                    set('sourceOf', e.target.checked ? [...d.sourceOf, o] : d.sourceOf.filter((x) => x !== o))
-                  }
-                />
-                <Sdot s={m.objects.get(o)!.sensitivity} />
-                {m.objects.get(o)!.name}
-              </label>
-            ))}
+        {app.sourceOf.length > 0 && (
+          <div className="field full">
+            <span className="lbl">{t.record.fields.sourceOf}</span>
+            <div className="checks">
+              {app.sourceOf.map((o) => (
+                <span key={o} className="chip">
+                  {m.objects.get(o) && <Sdot s={m.objects.get(o)!.sensitivity} />}
+                  {m.objects.get(o)?.name ?? o}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <Field
           id="description"
           label={t.record.fields.description}

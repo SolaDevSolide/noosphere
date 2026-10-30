@@ -7,6 +7,7 @@ import type {
   ExchangeEnvelope,
   Flow,
   FlowInput,
+  ImportResult,
   LandscapeApplication,
   LandscapeFlow,
   Me,
@@ -14,7 +15,8 @@ import type {
   SearchHit,
   Sensitivity,
   User,
-  UserInput,
+  UserCreateInput,
+  UserUpdateInput,
 } from '../api/types';
 import * as seed from './alize';
 
@@ -28,10 +30,15 @@ const db = {
   dataObjects: clone(seed.dataObjects),
   flows: clone(seed.flows),
   users: [
-    { username: 'alice', displayName: 'Alice Martin', role: 'admin', language: 'en', version: 1 },
-    { username: 'bob', displayName: 'Bob Durand', role: 'member', language: 'en', version: 1 },
-    { username: 'claire', displayName: 'Claire Petit', role: 'guest', language: 'fr', version: 1 },
-  ] as User[],
+    { username: 'alice', displayName: 'Alice Martin', role: 'admin', language: 'en' },
+    { username: 'bob', displayName: 'Bob Durand', role: 'member', language: 'en' },
+    { username: 'claire', displayName: 'Claire Petit', role: 'guest', language: 'fr' },
+  ].map((x): User => ({
+    ...(x as Pick<User, 'username' | 'displayName' | 'role' | 'language'>),
+    version: 1,
+    createdAt: '2026-09-01T08:00:00Z',
+    updatedAt: '2026-09-01T08:00:00Z',
+  })),
 };
 
 const SESSION_KEY = 'noos-mock-user';
@@ -145,7 +152,7 @@ function exportEnvelope(): ExchangeEnvelope {
     delete (rest as Record<string, unknown>).createdAt;
     delete (rest as Record<string, unknown>).updatedAt;
     delete (rest as Record<string, unknown>).version;
-    return { id, metadata: { name, description }, spec: rest as Record<string, unknown> };
+    return { id, metadata: { name, description: description ?? null }, spec: rest as Record<string, never> };
   };
   return {
     formatVersion: 'noosphere/v1',
@@ -235,7 +242,15 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       if (b.version !== cur.version) return problem(409, 'Conflict', 'The record was changed by someone else.');
       const errors = validateApp(b);
       if (Object.keys(errors).length) return problem(400, 'Validation failed.', undefined, errors);
-      const next: Application = { ...cur, ...b, id, version: cur.version + 1, updatedAt: now() };
+      const next: Application = {
+        ...cur,
+        ...(b as Partial<Application>),
+        id,
+        restricted: false,
+        sourceOf: cur.sourceOf,
+        version: cur.version + 1,
+        updatedAt: now(),
+      };
       next.completeness = appCompleteness(next);
       db.applications[i] = next;
       return json(200, next);
@@ -265,11 +280,12 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       if (Object.keys(errors).length) return problem(400, 'Validation failed.', undefined, errors);
       const next: Flow = {
         ...cur,
-        ...b,
+        ...(b as Partial<Flow>),
         id,
+        restricted: false,
         version: cur.version + 1,
         updatedAt: now(),
-        sensitivity: flowSensitivity(b.dataObjectIds),
+        sensitivity: flowSensitivity(b.dataObjectIds ?? []),
       };
       db.flows[i] = next;
       return json(200, { ...next, completeness: flowCompleteness(next) });
@@ -284,7 +300,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     if (!can(['admin'])) return problem(403, 'Administrators only.');
     if (method === 'GET') return json(200, db.users);
     if (method === 'POST') {
-      const b = parse<UserInput>();
+      const b = parse<UserCreateInput>();
       if (!SLUG.test(b.username ?? ''))
         return problem(400, 'Validation failed.', undefined, {
           username: ['Use lower-case letters, digits and dashes.'],
@@ -292,12 +308,13 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       if (db.users.some((x) => x.username === b.username))
         return problem(409, 'Conflict', 'This username already exists.');
       const nu: User = {
-        username: b.username,
-        displayName: b.displayName,
-        role: b.role,
-        language: b.language,
+        username: b.username ?? '',
+        displayName: b.displayName ?? '',
+        role: b.role ?? 'guest',
+        language: b.language === 'fr' ? 'fr' : 'en',
         version: 1,
         createdAt: now(),
+        updatedAt: now(),
       };
       db.users.push(nu);
       return json(201, nu);
@@ -309,15 +326,16 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const i = db.users.findIndex((x) => x.username === decodeURIComponent(m![1]));
     if (i < 0) return problem(404, 'User not found.');
     if (method === 'PUT') {
-      const b = parse<UserInput>();
+      const b = parse<UserUpdateInput>();
       const cur = db.users[i];
       if (b.version != null && b.version !== cur.version) return problem(409, 'Conflict');
       db.users[i] = {
         ...cur,
-        displayName: b.displayName,
-        role: b.role,
-        language: b.language,
-        version: (cur.version ?? 1) + 1,
+        displayName: b.displayName ?? cur.displayName,
+        role: b.role ?? cur.role,
+        language: b.language === 'fr' || b.language === 'en' ? b.language : cur.language,
+        version: cur.version + 1,
+        updatedAt: now(),
       };
       return json(200, db.users[i]);
     }
@@ -346,12 +364,10 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     }
     if (env.formatVersion !== 'noosphere/v1')
       return problem(400, 'Unsupported format version.', `Expected noosphere/v1, got ${String(env.formatVersion)}.`);
-    const res = {
-      created: 0,
-      updated: 0,
-      unchanged: 0,
-      errors: [] as { id?: string; kind?: string; message: string }[],
-    };
+    const dryRun = url.searchParams.get('dryRun') === 'true';
+    const res: ImportResult = { created: 0, updated: 0, unchanged: 0, errors: [], dryRun, applied: false };
+    const err = (index: number, it: { id?: string; kind?: string }, path: string, message: string) =>
+      res.errors.push({ index, kind: it.kind ?? null, id: it.id ?? null, path, message });
     const lists: Record<string, { id: string }[]> = {
       Domain: db.domains,
       Team: db.teams,
@@ -359,14 +375,14 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       DataObject: db.dataObjects as DataObject[],
       Flow: db.flows,
     };
-    for (const it of env.items ?? []) {
+    for (const [index, it] of (env.items ?? []).entries()) {
       const list = lists[it.kind];
       if (!list) {
-        res.errors.push({ id: it.id, kind: it.kind, message: `Unknown kind ${it.kind}.` });
+        err(index, it, `items[${index}].kind`, `Unknown kind ${it.kind}.`);
         continue;
       }
       if (!it.id || !SLUG.test(it.id)) {
-        res.errors.push({ id: it.id, kind: it.kind, message: 'The id must be a kebab-case slug.' });
+        err(index, it, `items[${index}].id`, 'The id must be a kebab-case slug.');
         continue;
       }
       const ex = list.find((x) => x.id === it.id);
@@ -374,6 +390,8 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       else if (JSON.stringify({ ...ex, ...it.spec, name: it.metadata.name }) === JSON.stringify(ex)) res.unchanged++;
       else res.updated++;
     }
+    if (res.errors.length) return json(422, res);
+    res.applied = !dryRun;
     return json(200, res);
   }
   return problem(404, 'Not found.');

@@ -13,7 +13,8 @@ import type {
   SearchHit,
   Team,
   User,
-  UserInput,
+  UserCreateInput,
+  UserUpdateInput,
 } from './types';
 
 /** An error answered by the API (problem+json), or a network failure (status 0). */
@@ -22,12 +23,21 @@ export class ApiError extends Error {
   detail?: string;
   /** Validation messages by field, from the problem's `errors` member. */
   fieldErrors: Record<string, string[]>;
-  constructor(status: number, message: string, detail?: string, fieldErrors: Record<string, string[]> = {}) {
+  /** The parsed response body, for errors that carry a result (an import refused with 422). */
+  body: unknown;
+  constructor(
+    status: number,
+    message: string,
+    detail?: string,
+    fieldErrors: Record<string, string[]> = {},
+    body?: unknown,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.detail = detail;
     this.fieldErrors = fieldErrors;
+    this.body = body;
   }
   get isConflict() {
     return this.status === 409;
@@ -43,7 +53,7 @@ export function setUnauthorizedHandler(fn: () => void) {
 interface Problem {
   title?: string;
   detail?: string;
-  errors?: Record<string, string[]>;
+  errors?: Record<string, string[]> | null | unknown[];
 }
 
 async function readProblem(res: Response): Promise<Problem> {
@@ -77,7 +87,8 @@ export async function request<T>(method: string, path: string, body?: unknown, i
   if (!res.ok) {
     const p = await readProblem(res);
     if (res.status === 401 && path !== '/auth/login' && path !== '/auth/me') onUnauthorized();
-    throw new ApiError(res.status, p.title ?? res.statusText, p.detail, p.errors ?? {});
+    const fieldErrors = p.errors && !Array.isArray(p.errors) ? p.errors : {};
+    throw new ApiError(res.status, p.title ?? res.statusText, p.detail, fieldErrors, p);
   }
   if (res.status === 204) return undefined as T;
   const text = await res.text();
@@ -117,13 +128,13 @@ export const api = {
   deleteFlow: (id: string) => request<void>('DELETE', `/flows/${enc(id)}`),
 
   users: () => request<User[]>('GET', '/users'),
-  createUser: (body: UserInput) => request<User>('POST', '/users', body),
-  updateUser: (username: string, body: UserInput) => request<User>('PUT', `/users/${enc(username)}`, body),
+  createUser: (body: UserCreateInput) => request<User>('POST', '/users', body),
+  updateUser: (username: string, body: UserUpdateInput) => request<User>('PUT', `/users/${enc(username)}`, body),
   deleteUser: (username: string) => request<void>('DELETE', `/users/${enc(username)}`),
 
   exportUrl: (format: 'json' | 'yaml') => `/api/export?format=${format}`,
   importEnvelope: (envelope: ExchangeEnvelope | string, dryRun: boolean, contentType = 'application/json') =>
-    request<ImportResult>('POST', '/import' + q({ dryRun: dryRun ? 'true' : undefined }), undefined, {
+    request<ImportResult>('POST', '/import' + q({ dryRun: String(dryRun) }), undefined, {
       headers: { 'Content-Type': contentType },
       body: typeof envelope === 'string' ? envelope : JSON.stringify(envelope),
     }),

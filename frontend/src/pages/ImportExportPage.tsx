@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react';
 import { api, ApiError } from '../api/client';
-import type { ImportResult } from '../api/types';
+import type { ImportError, ImportResult } from '../api/types';
 import { useAuth } from '../auth/auth';
 import { useLandscape } from '../explorer/landscape';
 import { useI18n } from '../i18n';
 import { PageShell } from '../records/common';
 import { IconDownload, IconUpload, IconWarn } from '../ui/icons';
 import { useToast } from '../ui/Toast';
+
+const isImportResult = (b: unknown): b is ImportResult =>
+  !!b && typeof b === 'object' && Array.isArray((b as ImportResult).errors) && 'created' in b;
 
 interface Picked {
   name: string;
@@ -58,16 +61,28 @@ export function ImportExportPage() {
         toast(t.io.resultDone);
       }
     } catch (e) {
-      if (e instanceof ApiError && e.status === 400) {
+      if (e instanceof ApiError && e.status === 422 && isImportResult(e.body)) {
+        setResult({ r: e.body, dry });
+      } else if (e instanceof ApiError && e.status === 400) {
         const errs = Object.entries(e.fieldErrors).flatMap(([path, msgs]) =>
-          (Array.isArray(msgs) ? msgs : [String(msgs)]).map((message) => ({ path, message })),
+          (Array.isArray(msgs) ? msgs : [String(msgs)]).map((message): ImportError => ({
+            index: null,
+            kind: null,
+            id: null,
+            path,
+            message,
+          })),
         );
         setResult({
           r: {
             created: 0,
             updated: 0,
             unchanged: 0,
-            errors: errs.length ? errs : [{ message: e.detail || e.message }],
+            errors: errs.length
+              ? errs
+              : [{ index: null, kind: null, id: null, path: '', message: e.detail || e.message }],
+            dryRun: dry,
+            applied: false,
           },
           dry,
         });
@@ -200,7 +215,7 @@ export function ImportExportPage() {
                     <ul className="errlist">
                       {result.r.errors.map((e, i) => (
                         <li key={i}>
-                          {(e.path || e.id) && <code>{e.path ?? `${e.kind ?? ''} ${e.id ?? ''}`.trim()}</code>}{' '}
+                          {(e.path || e.id) && <code>{e.path || `${e.kind ?? ''} ${e.id ?? ''}`.trim()}</code>}{' '}
                           {e.message}
                         </li>
                       ))}

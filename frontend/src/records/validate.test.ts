@@ -33,7 +33,6 @@ describe('record validation', () => {
       kind: 'app' as const,
       lifecycle: 'live' as const,
       visibility: 'everyone' as const,
-      sourceOf: [],
       teamId: '',
       tech: '',
       description: '',
