@@ -23,9 +23,11 @@ public static class OpenApiSetup
     private static readonly (string Path, bool List, string Full, string Restricted)[] UnionOperations =
     [
         ("/api/applications", true, nameof(ApplicationDto), nameof(RestrictedApplicationDto)),
-        ("/api/applications/{id}", false, nameof(ApplicationDto), nameof(RestrictedApplicationDto)),
+        ("/api/applications/{id}", false, nameof(ApplicationDetailDto), nameof(RestrictedApplicationDto)),
         ("/api/flows", true, nameof(FlowDto), nameof(RestrictedFlowDto)),
-        ("/api/flows/{id}", false, nameof(FlowDto), nameof(RestrictedFlowDto)),
+        ("/api/flows/{id}", false, nameof(FlowDetailDto), nameof(RestrictedFlowDto)),
+        ("/api/pages", true, nameof(PageSummaryDto), nameof(RestrictedPageDto)),
+        ("/api/pages/{id}", false, nameof(PageDetailDto), nameof(RestrictedPageDto)),
     ];
 
     public static IServiceCollection AddNoosphereOpenApi(this IServiceCollection services) =>
@@ -37,7 +39,7 @@ public static class OpenApiSetup
                 {
                     Title = "Noosphere",
                     Version = "v1",
-                    Description = "Application landscape API: applications, flows, data objects, teams and domains. Guide: docs/en/api.md.",
+                    Description = "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals and revision history. Guide: docs/en/api.md.",
                 };
                 document.Servers = [];
                 return Task.CompletedTask;
@@ -98,7 +100,12 @@ public static class OpenApiSetup
         IOpenApiSchema Union(string full, string restricted) =>
             new OpenApiSchema { OneOf = [new OpenApiSchemaReference(full, document), new OpenApiSchemaReference(restricted, document)] };
 
-        foreach (var (name, flag) in new[] { (nameof(ApplicationDto), false), (nameof(FlowDto), false), (nameof(RestrictedApplicationDto), true), (nameof(RestrictedFlowDto), true) })
+        foreach (var (name, flag) in new[]
+        {
+            (nameof(ApplicationDto), false), (nameof(ApplicationDetailDto), false), (nameof(FlowDto), false), (nameof(FlowDetailDto), false),
+            (nameof(PageDto), false), (nameof(PageDetailDto), false), (nameof(PageSummaryDto), false),
+            (nameof(RestrictedApplicationDto), true), (nameof(RestrictedFlowDto), true), (nameof(RestrictedPageDto), true),
+        })
             if (schemas.TryGetValue(name, out var s) && s is OpenApiSchema schema && schema.Properties?.TryGetValue("restricted", out var r) == true && r is OpenApiSchema restricted)
                 restricted.Enum = [JsonValue.Create(flag)];
 

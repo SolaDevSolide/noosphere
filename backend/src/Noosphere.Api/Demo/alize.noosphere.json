@@ -1206,6 +1206,139 @@
         "ownerTeamId": "team-finance",
         "status": "deprecated"
       }
+    },
+    {
+      "kind": "Page",
+      "id": "operations",
+      "metadata": {
+        "name": "Operations handbook"
+      },
+      "spec": {
+        "body": "Runbooks for the recurring operations of the Alizé landscape. Each runbook says when to use it, the steps, and how to check the result.\n\n## Runbooks\n\n- [[page:replay-nightly-import]]: when Billing did not receive the customers from the CRM.\n- [[page:month-end-closing]]: the checks before Accounting closes the month.\n\nKeep a runbook next to the record it is about: attach it to the flow or the application, so that it shows on that record.",
+        "order": 1,
+        "ownerTeamId": "team-platform",
+        "tags": [
+          "runbook"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "replay-nightly-import",
+      "metadata": {
+        "name": "Replay the nightly customer import"
+      },
+      "spec": {
+        "body": "Use this runbook when [[flow:crm-to-billing-customers]] did not run, or ran with an empty file, and Billing must invoice before the morning.\n\n## Symptoms\n\n- The invoice run of [[application:billing|Billing]] stops with *\"No customer delta for today\"*.\n- The file `customers-YYYYMMDD.csv` is missing from the inbound folder of [[application:sftp|the file exchange]].\n\n## Steps\n\n1. Check that the CRM export finished: in [[application:crm]], open *Jobs → Nightly customer extract* and look for today's run.\n2. If the export failed, start it again with *Run now*. It takes about ten minutes for 15,000 lines.\n3. Check that the new file is on the file exchange, under `/inbound/billing/`.\n4. In Billing, start *Import customers* by hand, then the invoice run.\n\n## Checks\n\n- The import log shows the number of lines read and rejected. More than 1% rejected: stop and call Team CRM.\n- Every [[dataObject:customer]] invoiced today has a billing account.\n\n## Why a file?\n\nSee [[page:adr-nightly-file]]. The move to the Billing 4.3 API is planned in [[page:billing-api-v4-cutover]].",
+        "parentId": "operations",
+        "order": 1,
+        "attachedTo": {
+          "kind": "flow",
+          "id": "crm-to-billing-customers"
+        },
+        "tags": [
+          "runbook",
+          "billing",
+          "crm"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "month-end-closing",
+      "metadata": {
+        "name": "Month-end closing checklist"
+      },
+      "spec": {
+        "body": "Checks to run with Team Finance before [[application:acct]] closes the month.\n\n1. [[flow:billing-acct]] delivered the ledger entries of the month (1st of the month, after the last invoice run).\n2. [[flow:payments-acct]] delivered the cash entries of the last day.\n3. The totals of invoices and ledger entries match. A gap usually means a credit note issued after the export.\n4. Team Payments confirmed the bank reconciliation.\n\nBackground on the domain: [[page:finance-overview]].",
+        "parentId": "operations",
+        "order": 2,
+        "attachedTo": {
+          "kind": "application",
+          "id": "acct"
+        },
+        "tags": [
+          "runbook",
+          "finance"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "architecture",
+      "metadata": {
+        "name": "Architecture decisions"
+      },
+      "spec": {
+        "body": "Architecture decision records (ADR) of the landscape: one page per decision, with its context, the options and the consequences. A decision is never deleted; a later ADR replaces it.\n\n- [[page:adr-nightly-file]]",
+        "order": 2,
+        "ownerTeamId": "team-platform",
+        "tags": [
+          "adr"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "adr-nightly-file",
+      "metadata": {
+        "name": "ADR 0007: Why a nightly file and not an API"
+      },
+      "spec": {
+        "body": "**Status:** accepted, to be revisited with Billing 4.3.\n\n## Context\n\n[[application:billing]] needs every new or changed customer of [[application:crm]] before its invoice run at 05:00. The CRM is a SaaS: its API is rate-limited and its webhooks are not guaranteed.\n\n## Options\n\n1. **Nightly file** through [[application:sftp|the file exchange]]: one extract of the day's changes.\n2. **Events** on [[application:bus|the message bus]]: one message per change.\n3. **Calls** from Billing to the CRM API during the invoice run.\n\n## Decision\n\nOption 1: [[flow:crm-to-billing-customers]]. Billing only needs the customers once a day, the file can be replayed (see [[page:replay-nightly-import]]) and the CRM extract is a standard feature.\n\n## Consequences\n\n- A customer changed during the day is invoiced with the old details until the next night.\n- Billing 4.3 offers a customer API (v4). When it is live, option 2 becomes cheaper: this ADR will be replaced.\n\nTerms used here: [[page:glossary]].",
+        "parentId": "architecture",
+        "order": 1,
+        "attachedTo": {
+          "kind": "application",
+          "id": "billing"
+        },
+        "tags": [
+          "adr",
+          "integration"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "finance-overview",
+      "metadata": {
+        "name": "Finance domain overview"
+      },
+      "spec": {
+        "body": "The Finance domain invoices premiums, collects payments and keeps the books.\n\n| Application | Team | Role |\n| --- | --- | --- |\n| [[application:billing]] | [[team:team-finance]] | Invoices premiums, sends them by email and post |\n| [[application:payments]] | [[team:team-payments]] | Direct debits, card payments, bank reconciliation |\n| [[application:acct]] | [[team:team-finance]] | General ledger |\n\n## Main flows\n\n- Customers come from the CRM every night: [[flow:crm-to-billing-customers]].\n- Invoices go to the ledger once a month: [[flow:billing-acct]].\n- Payments go to the ledger every evening: [[flow:payments-acct]].\n\n## Recurring work\n\n- [[page:month-end-closing]]\n- Words and data used in the domain: [[page:glossary]]",
+        "order": 3,
+        "attachedTo": {
+          "kind": "domain",
+          "id": "finance"
+        },
+        "ownerTeamId": "team-finance",
+        "tags": [
+          "domain",
+          "finance"
+        ],
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Page",
+      "id": "glossary",
+      "metadata": {
+        "name": "Glossary"
+      },
+      "spec": {
+        "body": "Business words used across the landscape, with the data object that carries each of them.\n\n**Customer**: a policyholder, with identity, contact details and preferences. Source: the CRM. See [[dataObject:customer]].\n\n**Policy**: an insurance contract and its cover. See [[dataObject:policy]].\n\n**Claim**: a declared loss, its assessment and settlement. Sensitive data. See [[dataObject:claim]].\n\n**Invoice**: a premium invoice issued by Billing. See [[dataObject:invoice]].\n\n**Payment**: money received or paid out. See [[dataObject:payment]].\n\n**Delta file**: an extract holding only the records created or changed since the previous one.",
+        "order": 4,
+        "ownerTeamId": "team-data",
+        "tags": [
+          "reference"
+        ],
+        "visibility": "everyone"
+      }
     }
   ]
 }

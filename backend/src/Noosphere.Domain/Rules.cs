@@ -64,6 +64,54 @@ public static partial class Rules
         return list.Count == 0 ? Sensitivity.Internal : list.Max();
     }
 
+    public const int MinReasonLength = 3;
+    public const int MaxTagLength = 50;
+    public const int MaxTags = 20;
+    public const int MaxBodyLength = 200_000;
+
+    /// <summary>Wiki link kinds, as written in <c>[[kind:id]]</c>.</summary>
+    public static readonly IReadOnlyDictionary<string, RecordKind> LinkKinds = new Dictionary<string, RecordKind>(StringComparer.Ordinal)
+    {
+        ["application"] = RecordKind.Application,
+        ["flow"] = RecordKind.Flow,
+        ["dataObject"] = RecordKind.DataObject,
+        ["page"] = RecordKind.Page,
+        ["domain"] = RecordKind.Domain,
+        ["team"] = RecordKind.Team,
+    };
+
+    [GeneratedRegex(@"\[\[(application|flow|dataObject|page|domain|team):([a-z0-9]+(?:-[a-z0-9]+)*)(?:\|([^\]\r\n]*))?\]\]", RegexOptions.CultureInvariant)]
+    private static partial Regex WikiLinkPattern();
+
+    /// <summary>A wiki link found in a page body: <c>[[application:billing|the billing app]]</c>.</summary>
+    public sealed record WikiLink(RecordKind Kind, string Id, string? Label)
+    {
+        /// <summary><c>kind:id</c>, as stored on the page.</summary>
+        public string Key => LinkKey(Kind, Id);
+    }
+
+    public static string KindName(RecordKind kind) => kind switch
+    {
+        RecordKind.DataObject => "dataObject",
+        _ => kind.ToString().ToLowerInvariant(),
+    };
+
+    public static string LinkKey(RecordKind kind, string id) => $"{KindName(kind)}:{id}";
+
+    /// <summary>Wiki links of a Markdown body, in order of first appearance, without duplicates (by target).</summary>
+    public static List<WikiLink> WikiLinks(string? body)
+    {
+        var links = new List<WikiLink>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Match m in WikiLinkPattern().Matches(body ?? ""))
+        {
+            var label = m.Groups[3].Success && m.Groups[3].Value.Trim().Length > 0 ? m.Groups[3].Value.Trim() : null;
+            var link = new WikiLink(LinkKinds[m.Groups[1].Value], m.Groups[2].Value, label);
+            if (seen.Add(link.Key)) links.Add(link);
+        }
+        return links;
+    }
+
     private static bool Filled(string? text) => !string.IsNullOrWhiteSpace(text);
 
     private static double Share(params bool[] fields) => Math.Round(fields.Count(f => f) / (double)fields.Length, 2);

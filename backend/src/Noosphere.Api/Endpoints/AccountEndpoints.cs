@@ -22,7 +22,7 @@ public static class AccountEndpoints
             await Accounts.SignOut(ctx);
             return Results.NoContent();
         }).AllowAnonymous();
-        auth.MapGet("/me", async (ClaimsPrincipal user, NoosphereDbContext db) => Accounts.Me(await Current(db, user)))
+        auth.MapGet("/me", async (ClaimsPrincipal user, NoosphereDbContext db) => await Accounts.Me(db, await Current(db, user)))
             .Produces<ProblemDto>(StatusCodes.Status401Unauthorized);
         auth.MapPut("/me/language", async (LanguageInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
         {
@@ -32,7 +32,7 @@ public static class AccountEndpoints
             me.UpdatedAt = clock.GetUtcNow();
             me.Version++;
             await db.SaveChangesAsync();
-            return Accounts.Me(me);
+            return await Accounts.Me(db, me);
         });
         auth.MapPut("/me/password", async (PasswordChangeInput input, HttpContext ctx, NoosphereDbContext db, IPasswordHasher<User> hasher, TimeProvider clock) =>
         {
@@ -53,8 +53,8 @@ public static class AccountEndpoints
 
         var users = api.MapGroup("/users").WithTags("Users").RequireAdmin();
         users.MapGet("", async (NoosphereDbContext db) =>
-            (await db.Users.AsNoTracking().OrderBy(u => u.Username).ToListAsync()).Select(Accounts.Dto).ToList());
-        users.MapGet("/{username}", async (string username, NoosphereDbContext db) => Accounts.Dto(await Find(db, username)));
+            await Accounts.Dtos(db, await db.Users.AsNoTracking().OrderBy(u => u.Username).ToListAsync()));
+        users.MapGet("/{username}", async (string username, NoosphereDbContext db) => await Accounts.Dto(db, await Find(db, username)));
         users.MapPost("", CreateUser).Produces<UserDto>(StatusCodes.Status201Created);
         users.MapPut("/{username}", UpdateUser);
         users.MapDelete("/{username}", DeleteUser);
@@ -65,10 +65,10 @@ public static class AccountEndpoints
         var user = await Accounts.Verify(db, hasher, input.Username, input.Password);
         if (user is null) return Problems.Result(401, "Wrong username or password.");
         await Accounts.SignIn(ctx, user);
-        return Results.Ok(Accounts.Me(user));
+        return Results.Ok(await Accounts.Me(db, user));
     }
 
-    private static async Task<IResult> CreateUser(UserCreateInput input, NoosphereDbContext db, IPasswordHasher<User> hasher, TimeProvider clock)
+    private static async Task<IResult> CreateUser(UserCreateInput input, NoosphereDbContext db, IPasswordHasher<User> hasher, TimeProvider clock, Settings settings)
     {
         var errors = new FieldErrors();
         var username = Accounts.NormalizeUsername(input.Username);
@@ -78,7 +78,7 @@ public static class AccountEndpoints
             Username = username,
             DisplayName = errors.Required("displayName", string.IsNullOrWhiteSpace(input.DisplayName) ? input.Username : input.DisplayName),
             Role = input.Role ?? Role.Member,
-            Language = CheckLanguage(input.Language, errors) ?? "en",
+            Language = CheckLanguage(input.Language, errors) ?? (await InstanceSettingsStore.Get(db, settings)).DefaultLanguage,
         };
         if (Accounts.PasswordProblem(input.Password) is { } pw) errors.Add("password", pw);
         errors.ThrowIfAny();
@@ -87,8 +87,9 @@ public static class AccountEndpoints
         user.CreatedAt = user.UpdatedAt = clock.GetUtcNow();
         user.Version = 1;
         db.Users.Add(user);
+        if (input.TeamIds is not null) await Memberships.Set(db, user.Id, input.TeamIds);
         await db.SaveChangesAsync();
-        return Results.Created($"/api/users/{user.Username}", Accounts.Dto(user));
+        return Results.Created($"/api/users/{user.Username}", await Accounts.Dto(db, user));
     }
 
     private static async Task<UserDto> UpdateUser(string username, UserUpdateInput input, NoosphereDbContext db, IPasswordHasher<User> hasher, TimeProvider clock)
@@ -110,8 +111,9 @@ public static class AccountEndpoints
         if (!string.IsNullOrEmpty(input.Password)) Accounts.SetPassword(user, input.Password, hasher);
         user.UpdatedAt = clock.GetUtcNow();
         user.Version++;
+        if (input.TeamIds is not null) await Memberships.Set(db, user.Id, input.TeamIds);
         await db.SaveChangesAsync();
-        return Accounts.Dto(user);
+        return await Accounts.Dto(db, user);
     }
 
     private static async Task<IResult> DeleteUser(string username, ClaimsPrincipal caller, NoosphereDbContext db)

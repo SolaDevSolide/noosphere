@@ -5,14 +5,39 @@ using Noosphere.Domain;
 
 namespace Noosphere.Api.Services;
 
-/// <summary>Ids that a record may refer to. The API uses those in the database; an import adds those of the file.</summary>
-public sealed record References(ISet<string> Domains, ISet<string> Teams, ISet<string> Applications, ISet<string> DataObjects)
+/// <summary>
+/// Ids that a record may refer to. The API uses those in the database; an import adds those of the file.
+/// <see cref="PageParents"/> maps each page to its parent, to refuse cycles in the page tree.
+/// </summary>
+public sealed record References(
+    ISet<string> Domains, ISet<string> Teams, ISet<string> Applications, ISet<string> DataObjects, ISet<string> Flows,
+    ISet<string> Pages, IDictionary<string, string?> PageParents)
 {
-    public static async Task<References> Load(NoosphereDbContext db, CancellationToken cancel = default) => new(
-        (await db.Domains.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
-        (await db.Teams.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
-        (await db.Applications.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
-        (await db.DataObjects.Select(x => x.Id).ToListAsync(cancel)).ToHashSet());
+    public static async Task<References> Load(NoosphereDbContext db, CancellationToken cancel = default)
+    {
+        var pages = await db.Pages.Select(p => new { p.Id, p.ParentId }).ToListAsync(cancel);
+        return new(
+            (await db.Domains.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
+            (await db.Teams.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
+            (await db.Applications.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
+            (await db.DataObjects.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
+            (await db.Flows.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
+            pages.Select(p => p.Id).ToHashSet(),
+            pages.ToDictionary(p => p.Id, p => p.ParentId));
+    }
+
+    public ISet<string> Of(RecordKind kind) => kind switch
+    {
+        RecordKind.Application => Applications,
+        RecordKind.Flow => Flows,
+        RecordKind.DataObject => DataObjects,
+        RecordKind.Page => Pages,
+        RecordKind.Domain => Domains,
+        _ => Teams,
+    };
+
+    /// <summary>Records the id of a record created in the same batch (proposal, import).</summary>
+    public void Add(RecordKind kind, string id) => Of(kind).Add(id);
 }
 
 /// <summary>
@@ -84,6 +109,43 @@ public static class Catalog
             e.PlannedChangeSummary = null;
             e.PlannedChangeDate = null;
         }
+    }
+
+    public static void Apply(Page e, PageInput i, FieldErrors errors, References refs)
+    {
+        e.Title = errors.Required("title", i.Title);
+        var body = i.Body ?? "";
+        if (body.Length > Rules.MaxBodyLength) errors.Add("body", $"At most {Rules.MaxBodyLength} characters.");
+        e.Body = body;
+        e.Order = i.Order ?? 0;
+        e.ParentId = Reference(errors, "parentId", i.ParentId, refs.Pages, "page");
+        if (e.ParentId is not null && e.Id.Length > 0)
+        {
+            // Walk up from the new parent: reaching the page itself would make a cycle.
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (var at = e.ParentId; at is not null && seen.Add(at); at = refs.PageParents.TryGetValue(at, out var up) ? up : null)
+                if (at == e.Id)
+                {
+                    errors.Add("parentId", "A page cannot be placed under itself or one of its own sub-pages.");
+                    break;
+                }
+        }
+        if (i.AttachedTo is { } attached)
+        {
+            var id = attached.Id?.Trim() ?? "";
+            if (attached.Kind == RecordKind.Page) errors.Add("attachedTo.kind", "A page is attached to an application, flow, data object, domain or team.");
+            else if (id.Length == 0) errors.Add("attachedTo.id", "This field is required.");
+            else if (!refs.Of(attached.Kind).Contains(id)) errors.Add("attachedTo.id", $"Unknown {Rules.KindName(attached.Kind)} '{id}'.");
+            (e.AttachedKind, e.AttachedId) = (attached.Kind, id);
+        }
+        else (e.AttachedKind, e.AttachedId) = (null, null);
+        e.OwnerTeamId = Reference(errors, "ownerTeamId", i.OwnerTeamId, refs.Teams, "team");
+        var tags = (i.Tags ?? []).Select(t => t?.Trim() ?? "").Where(t => t.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (tags.Count > Rules.MaxTags) errors.Add("tags", $"At most {Rules.MaxTags} tags.");
+        if (tags.Any(t => t.Length > Rules.MaxTagLength)) errors.Add("tags", $"A tag has at most {Rules.MaxTagLength} characters.");
+        e.Tags = tags;
+        e.Visibility = i.Visibility ?? Visibility.Everyone;
+        e.Links = [.. Rules.WikiLinks(e.Body).Select(l => l.Key)];
     }
 
     private static string? Reference(FieldErrors errors, string field, string? value, ISet<string> known, string what)

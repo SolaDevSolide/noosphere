@@ -21,7 +21,7 @@ public static class ExplorerEndpoints
             .WithTags("Explorer");
 
         api.MapGet("/search", async ([FromQuery] string? q, ClaimsPrincipal user, NoosphereDbContext db) =>
-            LandscapeQueries.Search(await Snapshot.Load(db), Viewer.From(user), q))
+            LandscapeQueries.Search(await Snapshot.Load(db), Viewer.From(user), q, await db.Pages.AsNoTracking().ToListAsync()))
             .WithTags("Explorer");
 
         api.MapGet("/export", async ([FromQuery] string? format, HttpContext ctx, NoosphereDbContext db, TimeProvider clock) =>
@@ -34,7 +34,9 @@ public static class ExplorerEndpoints
             };
             var now = clock.GetUtcNow();
             var url = settings.PublicUrl ?? $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}";
-            var envelope = ExchangeFormat.Export(await Snapshot.Load(db), Viewer.From(ctx.User), new ExchangeSourceDto(settings.InstanceName, url, now));
+            var name = (await InstanceSettingsStore.Get(db, settings)).InstanceName;
+            var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), Viewer.From(ctx.User),
+                new ExchangeSourceDto(name, url, now));
             var file = $"noosphere-{now:yyyyMMdd-HHmmss}.{(yaml ? "yaml" : "json")}";
             ctx.Response.Headers.ContentDisposition = $"attachment; filename=\"{file}\"";
             return yaml
@@ -61,7 +63,7 @@ public static class ExplorerEndpoints
             };
             var root = ExchangeFormat.Parse(text, kind);
             await using var transaction = await db.Database.BeginTransactionAsync();
-            var result = await ExchangeFormat.Import(db, root, dryRun ?? false, clock.GetUtcNow());
+            var result = await ExchangeFormat.Import(db, root, dryRun ?? false, clock.GetUtcNow(), Author.Of(Viewer.From(request.HttpContext.User)));
             await transaction.CommitAsync();
             return result.Errors.Count > 0 && !result.DryRun
                 ? Results.Json(result, statusCode: StatusCodes.Status422UnprocessableEntity)

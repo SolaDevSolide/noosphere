@@ -20,10 +20,16 @@ public static class ExchangeFormat
 {
     public const string FormatVersion = "noosphere/v1";
     public const string FullMode = "full";
-    public const string Domain = "Domain", Team = "Team", Application = "Application", DataObject = "DataObject", Flow = "Flow";
+    public const string Domain = "Domain", Team = "Team", Application = "Application", DataObject = "DataObject", Flow = "Flow", Page = "Page";
 
-    /// <summary>Kinds in dependency order: an item only refers to kinds listed before it.</summary>
-    public static readonly IReadOnlyList<string> Kinds = [Domain, Team, Application, DataObject, Flow];
+    /// <summary>Kinds in dependency order: an item only refers to kinds listed before it (and pages to other pages).</summary>
+    public static readonly IReadOnlyList<string> Kinds = [Domain, Team, Application, DataObject, Flow, Page];
+
+    private static readonly Dictionary<string, RecordKind> RecordKinds = new()
+    {
+        [Domain] = RecordKind.Domain, [Team] = RecordKind.Team, [Application] = RecordKind.Application,
+        [DataObject] = RecordKind.DataObject, [Flow] = RecordKind.Flow, [Page] = RecordKind.Page,
+    };
 
     private static readonly Dictionary<string, string[]> SpecFields = new()
     {
@@ -32,6 +38,7 @@ public static class ExchangeFormat
         [Application] = ["domainId", "teamId", "kind", "tech", "lifecycle", "visibility"],
         [DataObject] = ["sensitivity", "sourceApplicationId"],
         [Flow] = ["fromId", "toId", "type", "schedule", "dataObjectIds", "ownerTeamId", "status", "volume", "plannedChange"],
+        [Page] = ["body", "parentId", "order", "attachedTo", "ownerTeamId", "tags", "visibility"],
     };
 
     public static readonly JsonSerializerOptions Json = new()
@@ -45,10 +52,10 @@ public static class ExchangeFormat
     // ---------- Export ----------
 
     /// <summary>
-    /// The landscape as the viewer sees it: restricted applications, and flows touching them, are left out for those who
-    /// may not see them (and so is a hidden data object source).
+    /// The landscape as the viewer sees it: restricted applications and pages, and flows touching restricted
+    /// applications, are left out for those who may not see them (and so is a hidden data object source).
     /// </summary>
-    public static ExchangeEnvelopeDto Export(Snapshot s, Viewer viewer, ExchangeSourceDto source)
+    public static ExchangeEnvelopeDto Export(Snapshot s, IReadOnlyList<Domain.Page> pages, Viewer viewer, ExchangeSourceDto source)
     {
         var items = new List<ExchangeItemDto>();
         items.AddRange(s.Domains.Select(d => Item(Domain, d, new JsonObject { ["order"] = d.Order })));
@@ -71,7 +78,31 @@ public static class ExchangeFormat
                     ("date", f.PlannedChangeDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
             return Item(Flow, f, spec);
         }));
+        var visible = pages.Where(p => !PageQueries.Hidden(p, viewer)).ToList();
+        var visibleIds = visible.Select(p => p.Id).ToHashSet();
+        // Parents first, so that a file reads top-down; a parent hidden from the viewer is left out.
+        items.AddRange(PageOrder(visible).Select(p =>
+        {
+            var spec = new JsonObject { ["body"] = p.Body };
+            if (p.ParentId is { } parent && visibleIds.Contains(parent)) spec["parentId"] = parent;
+            spec["order"] = p.Order;
+            if (p.AttachedKind is { } k && p.AttachedId is { } id) spec["attachedTo"] = new JsonObject { ["kind"] = Rules.KindName(k), ["id"] = id };
+            if (p.OwnerTeamId is not null) spec["ownerTeamId"] = p.OwnerTeamId;
+            if (p.Tags.Count > 0) spec["tags"] = new JsonArray([.. p.Tags.Select(t => (JsonNode)JsonValue.Create(t))]);
+            spec["visibility"] = Name(p.Visibility);
+            return new ExchangeItemDto(Page, p.Id, new ExchangeMetadataDto(p.Title, null), spec);
+        }));
         return new ExchangeEnvelopeDto(FormatVersion, source, FullMode, items);
+    }
+
+    private static List<Domain.Page> PageOrder(List<Domain.Page> pages)
+    {
+        var ids = pages.Select(p => p.Id).ToHashSet();
+        var children = pages.ToLookup(p => p.ParentId is { } parent && ids.Contains(parent) ? parent : null);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        IEnumerable<Domain.Page> Walk(string? parent) =>
+            children[parent].OrderBy(p => p.Order).ThenBy(p => p.Id, StringComparer.Ordinal).Where(p => seen.Add(p.Id)).SelectMany(p => Walk(p.Id).Prepend(p));
+        return Walk(null).ToList();
     }
 
     private static ExchangeItemDto Item(string kind, LandscapeEntity e, JsonObject spec) =>
@@ -115,19 +146,26 @@ public static class ExchangeFormat
 
     // ---------- Import ----------
 
-    private sealed record Parsed(int Index, string Kind, string Id, LandscapeEntity Entity, Action<LandscapeEntity, FieldErrors, References> Apply);
+    private sealed record Parsed(int Index, string Kind, string Id, VersionedEntity Entity, Action<VersionedEntity, FieldErrors, References> Apply, string? Parent = null);
 
-    /// <summary>Validates the whole document, then (unless <paramref name="dryRun"/> or on error) creates or updates every item.</summary>
-    public static async Task<ImportResultDto> Import(NoosphereDbContext db, JsonNode? root, bool dryRun, DateTimeOffset now, CancellationToken cancel = default)
+    /// <summary>
+    /// Validates the whole document, then (unless <paramref name="dryRun"/> or on error) creates or updates every item,
+    /// with a revision for each one written (author: <paramref name="author"/>, the system by default).
+    /// </summary>
+    public static async Task<ImportResultDto> Import(NoosphereDbContext db, JsonNode? root, bool dryRun, DateTimeOffset now,
+        Author? author = null, CancellationToken cancel = default)
     {
         var errors = new List<ImportErrorDto>();
         var parsed = ReadEnvelope(root, errors);
         if (errors.Count > 0) return new(0, 0, 0, errors, dryRun, false);
 
         var known = await References.Load(db, cancel);
+        var parents = new Dictionary<string, string?>(known.PageParents);
+        foreach (var p in parsed.Where(p => p.Kind == Page)) parents[p.Id] = p.Parent;
         var refs = new References(
             Union(known.Domains, parsed, Domain), Union(known.Teams, parsed, Team),
-            Union(known.Applications, parsed, Application), Union(known.DataObjects, parsed, DataObject));
+            Union(known.Applications, parsed, Application), Union(known.DataObjects, parsed, DataObject),
+            Union(known.Flows, parsed, Flow), Union(known.Pages, parsed, Page), parents);
         var seen = new HashSet<(string, string)>();
         foreach (var p in parsed)
         {
@@ -140,6 +178,8 @@ public static class ExchangeFormat
         if (errors.Count > 0) return new(0, 0, 0, errors, dryRun, false);
 
         int created = 0, updated = 0, unchanged = 0;
+        var publisher = new Publisher(db, now);
+        var written = new List<(VersionedEntity Entity, RevisionOperation Operation)>();
         foreach (var kind in Kinds)
         {
             var batch = parsed.Where(p => p.Kind == kind).ToList();
@@ -154,21 +194,36 @@ public static class ExchangeFormat
                     Copy(p.Entity, current);
                     current.UpdatedAt = now;
                     current.Version++;
+                    written.Add((current, RevisionOperation.Update));
                     updated++;
                 }
                 else
                 {
+                    var last = await db.Revisions.Where(r => r.Kind == RecordKinds[kind] && r.EntityId == p.Id).MaxAsync(r => (int?)r.Version, cancel) ?? 0;
                     p.Entity.CreatedAt = p.Entity.UpdatedAt = now;
-                    p.Entity.Version = 1;
+                    p.Entity.Version = last + 1;
                     db.Add(p.Entity);
+                    written.Add((p.Entity, last == 0 ? RevisionOperation.Create : RevisionOperation.Restore));
                     created++;
                 }
             }
         }
+        foreach (var (entity, operation) in written)
+            publisher.AddRevision(Records.Of(RecordKinds[KindOf(entity)]), entity, operation, author ?? Author.System, null, "Imported");
         if (!dryRun) await db.SaveChangesAsync(cancel);
         else db.ChangeTracker.Clear();
         return new(created, updated, unchanged, [], dryRun, !dryRun);
     }
+
+    private static string KindOf(VersionedEntity e) => e switch
+    {
+        BusinessDomain => Domain,
+        Domain.Team _ => Team,
+        Domain.Application _ => Application,
+        Domain.DataObject _ => DataObject,
+        Domain.Flow _ => Flow,
+        _ => Page,
+    };
 
     private static HashSet<string> Union(ISet<string> known, List<Parsed> parsed, string kind) =>
         [.. known, .. parsed.Where(p => p.Kind == kind).Select(p => p.Id)];
@@ -217,7 +272,7 @@ public static class ExchangeFormat
                 Error($"{at}.id", $"Expected a kebab-case id (lower-case letters, digits, single hyphens, at most {Rules.MaxIdLength} characters).");
             var metadata = item["metadata"] as JsonObject;
             if (metadata is null) Error($"{at}.metadata", "Expected an object with a name.");
-            else Unknown(metadata, ["name", "description"], $"{at}.metadata.", Error);
+            else Unknown(metadata, kind == Page ? ["name"] : ["name", "description"], $"{at}.metadata.", Error);
             var spec = item["spec"] ?? new JsonObject();
             if (spec is not JsonObject specObject)
             {
@@ -231,13 +286,13 @@ public static class ExchangeFormat
             var description = Text(metadata["description"]);
             var entry = Read(kind!, id!, name, description, specObject, (field, message) => Error($"{at}.spec.{field}", message));
             if (entry is not null && errors.Count == before)
-                parsed.Add(new Parsed(i, kind!, id!, entry.Value.Entity, entry.Value.Apply));
+                parsed.Add(new Parsed(i, kind!, id!, entry.Value.Entity, entry.Value.Apply, kind == Page ? Text(specObject["parentId"]) : null));
         }
         return parsed;
     }
 
     /// <summary>Spec of one item turned into the API input of its kind, validated later with the API rules.</summary>
-    private static (LandscapeEntity Entity, Action<LandscapeEntity, FieldErrors, References> Apply)? Read(
+    private static (VersionedEntity Entity, Action<VersionedEntity, FieldErrors, References> Apply)? Read(
         string kind, string id, string? name, string? description, JsonObject spec, Action<string, string> error)
     {
         switch (kind)
@@ -265,6 +320,28 @@ public static class ExchangeFormat
                 var input = new DataObjectInput(id, name, Enum<Sensitivity>(spec["sensitivity"], "sensitivity", error),
                     Text(spec["sourceApplicationId"]), description, null);
                 return (new DataObject { Id = id }, (e, err, r) => Catalog.Apply((DataObject)e, input, err, r));
+            }
+            case Page:
+            {
+                AttachedToDto? attached = null;
+                if (spec["attachedTo"] is JsonObject target)
+                {
+                    Unknown(target, ["kind", "id"], "attachedTo.", error);
+                    if (Enum<RecordKind>(target["kind"], "attachedTo.kind", error) is { } k) attached = new AttachedToDto(k, Text(target["id"]) ?? "");
+                }
+                else if (spec["attachedTo"] is not null) error("attachedTo", "Expected an object with kind and id.");
+                List<string>? tags = null;
+                if (spec["tags"] is JsonArray list)
+                {
+                    tags = [];
+                    foreach (var value in list)
+                        if (Text(value) is { } text) tags.Add(text);
+                        else error("tags", "Expected an array of texts.");
+                }
+                else if (spec["tags"] is not null) error("tags", "Expected an array of texts.");
+                var input = new PageInput(id, name, Text(spec["body"]), Text(spec["parentId"]), Integer(spec["order"], "order", error), attached,
+                    Text(spec["ownerTeamId"]), tags, Enum<Visibility>(spec["visibility"], "visibility", error), null);
+                return (new Domain.Page { Id = id }, (e, err, r) => Catalog.Apply((Domain.Page)e, input, err, r));
             }
             default:
             {
@@ -329,18 +406,22 @@ public static class ExchangeFormat
         return null;
     }
 
-    private static async Task<List<LandscapeEntity>> Existing(NoosphereDbContext db, string kind, List<string> ids, CancellationToken cancel) => kind switch
+    private static async Task<List<VersionedEntity>> Existing(NoosphereDbContext db, string kind, List<string> ids, CancellationToken cancel) => kind switch
     {
         Domain => [.. await db.Domains.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
         Team => [.. await db.Teams.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
         Application => [.. await db.Applications.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
         DataObject => [.. await db.DataObjects.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
-        _ => [.. await db.Flows.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
+        Flow => [.. await db.Flows.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
+        _ => [.. await db.Pages.Where(e => ids.Contains(e.Id)).ToListAsync(cancel)],
     };
 
-    private static bool Same(LandscapeEntity a, LandscapeEntity b) =>
-        a.Name == b.Name && a.Description == b.Description && (a, b) switch
+    private static bool Same(VersionedEntity a, VersionedEntity b) =>
+        (a is not LandscapeEntity la || b is not LandscapeEntity lb || (la.Name == lb.Name && la.Description == lb.Description)) && (a, b) switch
         {
+            (Domain.Page x, Domain.Page y) => x.Title == y.Title && x.Body == y.Body && x.ParentId == y.ParentId && x.Order == y.Order
+                && x.AttachedKind == y.AttachedKind && x.AttachedId == y.AttachedId && x.OwnerTeamId == y.OwnerTeamId
+                && x.Tags.SequenceEqual(y.Tags) && x.Visibility == y.Visibility,
             (BusinessDomain x, BusinessDomain y) => x.Order == y.Order,
             (Team x, Team y) => x.Contact == y.Contact,
             (Application x, Application y) => x.DomainId == y.DomainId && x.TeamId == y.TeamId && x.Kind == y.Kind && x.Tech == y.Tech
@@ -352,12 +433,15 @@ public static class ExchangeFormat
             _ => false,
         };
 
-    private static void Copy(LandscapeEntity from, LandscapeEntity to)
+    private static void Copy(VersionedEntity from, VersionedEntity to)
     {
-        to.Name = from.Name;
-        to.Description = from.Description;
+        if (from is LandscapeEntity lf && to is LandscapeEntity lt) (lt.Name, lt.Description) = (lf.Name, lf.Description);
         switch (from, to)
         {
+            case (Domain.Page x, Domain.Page y):
+                (y.Title, y.Body, y.ParentId, y.Order, y.AttachedKind, y.AttachedId, y.OwnerTeamId, y.Tags, y.Visibility, y.Links) =
+                    (x.Title, x.Body, x.ParentId, x.Order, x.AttachedKind, x.AttachedId, x.OwnerTeamId, x.Tags, x.Visibility, x.Links);
+                break;
             case (BusinessDomain x, BusinessDomain y):
                 y.Order = x.Order;
                 break;

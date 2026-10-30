@@ -8,10 +8,12 @@ namespace Noosphere.Api.Services;
 /// An error returned to the client as <c>application/problem+json</c> (RFC 9457). Status codes: 400 invalid input,
 /// 401 not signed in, 403 not allowed, 404 not found, 409 conflict (stale version, record in use), 422 rule violated.
 /// </summary>
-public sealed class ApiProblem(int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null) : Exception(detail)
+public sealed class ApiProblem(int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null, bool outdated = false) : Exception(detail)
 {
     public int Status { get; } = status;
     public IReadOnlyDictionary<string, string[]>? Errors { get; } = errors;
+    /// <summary>A proposal was written against an older version of a record (409 on accept).</summary>
+    public bool Outdated { get; } = outdated;
 
     public static ApiProblem BadRequest(string detail) => new(400, detail);
     public static ApiProblem Invalid(IReadOnlyDictionary<string, string[]> errors) =>
@@ -25,8 +27,10 @@ public sealed class ApiProblem(int status, string detail, IReadOnlyDictionary<st
 
 /// <summary>Body of every error response.</summary>
 /// <param name="Errors">Field errors (field name in camelCase, then messages), on 400 only.</param>
+/// <param name="Outdated">true on the 409 answered when accepting a proposal whose records changed since it was written.</param>
 public sealed record ProblemDto(string Type, string Title, int Status, string Detail,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, string[]>? Errors = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, string[]>? Errors = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? Outdated = null);
 
 public static class Problems
 {
@@ -47,16 +51,16 @@ public static class Problems
         _ => "Error",
     };
 
-    public static ProblemDto Body(int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null) =>
-        new("about:blank", Title(status), status, detail, errors);
+    public static ProblemDto Body(int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null, bool outdated = false) =>
+        new("about:blank", Title(status), status, detail, errors, outdated ? true : null);
 
     public static IResult Result(int status, string detail) =>
         Results.Json(Body(status, detail), contentType: ContentType, statusCode: status);
 
-    public static Task Write(HttpContext ctx, int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null, CancellationToken cancel = default)
+    public static Task Write(HttpContext ctx, int status, string detail, IReadOnlyDictionary<string, string[]>? errors = null, bool outdated = false, CancellationToken cancel = default)
     {
         ctx.Response.StatusCode = status;
-        return ctx.Response.WriteAsJsonAsync(Body(status, detail, errors), (System.Text.Json.JsonSerializerOptions?)null, ContentType, cancel);
+        return ctx.Response.WriteAsJsonAsync(Body(status, detail, errors, outdated), (System.Text.Json.JsonSerializerOptions?)null, ContentType, cancel);
     }
 
     /// <summary>Turns exceptions into problem responses.</summary>
@@ -78,7 +82,7 @@ public static class Problems
                 var (status, detail, errors) = Translate(ex, ctx);
                 if (ctx.Response.HasStarted) return;
                 ctx.Response.Clear();
-                await Write(ctx, status, detail, errors);
+                await Write(ctx, status, detail, errors, outdated: ex is ApiProblem { Outdated: true });
             }
         });
 

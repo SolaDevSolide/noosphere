@@ -5,18 +5,18 @@ namespace Noosphere.Api.Contracts;
 // Inputs: PUT replaces the whole record (a missing optional field is cleared) and must carry the version that was read;
 // a stale version returns 409. On POST, a missing id is derived from the name ("Customer portal" -> "customer-portal").
 
-public sealed record DomainDto(string Id, string Name, string? Description, int Order, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+public record DomainDto(string Id, string Name, string? Description, int Order, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 
 public sealed record DomainInput(string? Id, string? Name, string? Description, int? Order, int? Version);
 
-public sealed record TeamDto(string Id, string Name, string? Description, string? Contact, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+public record TeamDto(string Id, string Name, string? Description, string? Contact, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 
 public sealed record TeamInput(string? Id, string? Name, string? Description, string? Contact, int? Version);
 
 /// <summary>An application the reader may see in full. <c>restricted</c> is always false (true on <see cref="RestrictedApplicationDto"/>).</summary>
 /// <param name="SourceOf">Ids of the data objects whose source is this application (derived from <c>DataObject.sourceApplicationId</c>).</param>
 /// <param name="Completeness">Share of the recommended fields that are filled, 0 to 1.</param>
-public sealed record ApplicationDto(
+public record ApplicationDto(
     string Id, bool Restricted, string Name, string DomainId, string? TeamId, ApplicationKind Kind, string? Tech, string? Description,
     Lifecycle Lifecycle, Visibility Visibility, IReadOnlyList<string> SourceOf, double Completeness,
     int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
@@ -28,7 +28,7 @@ public sealed record ApplicationInput(
     string? Id, string? Name, string? DomainId, string? TeamId, ApplicationKind? Kind, string? Tech, string? Description,
     Lifecycle? Lifecycle, Visibility? Visibility, int? Version);
 
-public sealed record DataObjectDto(
+public record DataObjectDto(
     string Id, string Name, Sensitivity Sensitivity, string? SourceApplicationId, string? Description,
     int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 
@@ -39,7 +39,7 @@ public sealed record PlannedChangeDto(string Summary, DateOnly? Date);
 
 /// <summary>A flow the reader may see in full. <c>restricted</c> is always false (true on <see cref="RestrictedFlowDto"/>).</summary>
 /// <param name="Sensitivity">Most sensitive of the carried data objects (internal when there is none).</param>
-public sealed record FlowDto(
+public record FlowDto(
     string Id, bool Restricted, string Name, string FromId, string ToId, FlowType Type, string? Schedule, IReadOnlyList<string> DataObjectIds,
     Sensitivity Sensitivity, string? OwnerTeamId, FlowStatus Status, string? Volume, string? Description, PlannedChangeDto? PlannedChange,
     double Completeness, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
@@ -63,6 +63,7 @@ public sealed record LandscapeDto(
     IReadOnlyList<DomainDto> Domains, IReadOnlyList<TeamDto> Teams, IReadOnlyList<object> Applications,
     IReadOnlyList<DataObjectDto> DataObjects, IReadOnlyList<object> Flows, LandscapeStatsDto Stats, DateTimeOffset GeneratedAt);
 
-public enum SearchKind { Application, Flow, DataObject, Team, Domain }
+public enum SearchKind { Application, Flow, DataObject, Team, Domain, Page }
 
+/// <param name="Subtitle">For a page: an excerpt of the body around the match.</param>
 public sealed record SearchResultDto(SearchKind Kind, string Id, string Title, string? Subtitle);

@@ -42,7 +42,7 @@ public static class LandscapeQueries
     /// Top <see cref="SearchLimit"/> matches, accent- and case-insensitive: names starting with the text first, then names
     /// containing it, then other fields (id, tech, description). Restricted records are never matched for those who cannot see them.
     /// </summary>
-    public static List<SearchResultDto> Search(Snapshot s, Viewer viewer, string? text)
+    public static List<SearchResultDto> Search(Snapshot s, Viewer viewer, string? text, IReadOnlyList<Page>? pages = null)
     {
         var q = Rules.Fold(text?.Trim());
         if (q.Length == 0) return [];
@@ -74,6 +74,9 @@ public static class LandscapeQueries
             Consider(SearchKind.Team, t.Id, t.Name, t.Contact, t.Description);
         foreach (var d in s.Domains)
             Consider(SearchKind.Domain, d.Id, d.Name, d.Description, d.Description);
+        // Pages: the title, then the body; the subtitle is an excerpt of the body around the match.
+        foreach (var p in (pages ?? []).Where(p => !PageQueries.Hidden(p, viewer)))
+            Consider(SearchKind.Page, p.Id, p.Title, PageQueries.Excerpt(p.Body, q), p.Body);
 
         return [.. hits.OrderBy(h => h.Score).ThenBy(h => h.KindOrder).ThenBy(h => h.Result.Title, StringComparer.OrdinalIgnoreCase)
             .Take(SearchLimit).Select(h => h.Result)];
