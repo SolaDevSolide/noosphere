@@ -9,7 +9,7 @@ import { paths } from '../explorer/paths';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
 import { describe, Field, PageShell, RecordError, RecordSkeleton, useRecord } from '../records/common';
-import { IconCheck, IconWarn } from '../ui/icons';
+import { IconBotFull, IconCheck, IconWarn } from '../ui/icons';
 import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import { AuthorChip, StatusChip } from './bits';
@@ -178,6 +178,10 @@ export function ProposalPage() {
   const open = p.status === 'submitted' || p.status === 'draft';
   const outdated = open && (p.outdated || staleOnAccept);
   const when = p.submittedAt ?? p.createdAt;
+  const reasonHint =
+    p.authorKind === 'agent'
+      ? t.agents.review.reasonHint(p.onBehalfOf?.displayName ?? p.author.displayName)
+      : t.review.reasonHint;
 
   return (
     <PageShell>
@@ -199,6 +203,26 @@ export function ProposalPage() {
         </div>
       </div>
 
+      {p.authorKind === 'agent' && (
+        <div className="banner agentb" role="note">
+          <IconBotFull />
+          <span className="bt">
+            <b>{t.agents.review.bannerLead}</b>
+            {p.status === 'draft'
+              ? t.agents.review.bannerDraft(p.agentName ?? t.review.agent)
+              : p.status === 'submitted'
+                ? t.agents.review.bannerSubmitted(
+                    p.agentName ?? t.review.agent,
+                    p.onBehalfOf?.displayName ?? p.author.displayName,
+                    date(p.submittedAt),
+                  )
+                : t.agents.review.bannerDecided(
+                    p.agentName ?? t.review.agent,
+                    p.onBehalfOf?.displayName ?? p.author.displayName,
+                  )}
+          </span>
+        </div>
+      )}
       {failure && (
         <div className="banner danger" role="alert">
           <IconWarn />
@@ -283,15 +307,10 @@ export function ProposalPage() {
       {p.canDecide && p.status === 'submitted' && (
         <form className="box decide" onSubmit={refuse} noValidate aria-labelledby="decide-h">
           <h2 id="decide-h">{t.review.decide}</h2>
-          <Field
-            id="refuse-reason"
-            label={t.review.reasonLabel}
-            hint={t.review.reasonHint}
-            error={reasonErr ?? undefined}
-          >
+          <Field id="refuse-reason" label={t.review.reasonLabel} hint={reasonHint} error={reasonErr ?? undefined}>
             <textarea
               className="textarea"
-              {...describe('refuse-reason', t.review.reasonHint, reasonErr ?? undefined)}
+              {...describe('refuse-reason', reasonHint, reasonErr ?? undefined)}
               rows={2}
               maxLength={REASON_MAX + 20}
               value={reason}

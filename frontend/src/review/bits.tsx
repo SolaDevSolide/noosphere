@@ -15,16 +15,19 @@ export function StatusChip({ status }: { status: ProposalStatus }) {
   return <span className={'pchip st ' + STATUS_CLASS[status]}>{t.review.status[status]}</span>;
 }
 
-/** Who wrote a proposal; agents get their own chip, with the person they act for. */
+/** Who wrote a proposal; an agent's proposal shows the person it acts for, then the agent's name. */
 export function AuthorChip({ p }: { p: Pick<Proposal, 'author' | 'authorKind' | 'onBehalfOf' | 'agentName'> }) {
   const { t } = useI18n();
   const name = p.author?.displayName ?? t.history.system;
   if (p.authorKind === 'agent')
     return (
-      <span className="pchip agent">
-        <IconBot size={12} />
-        {p.onBehalfOf ? t.review.agentFor(p.agentName ?? name, p.onBehalfOf.displayName) : name}
-      </span>
+      <>
+        <span className="pchip agent">
+          <IconBot size={12} />
+          {t.agents.review.agentFor(p.onBehalfOf?.displayName ?? name)}
+        </span>
+        {p.agentName && <span className="pchip">{p.agentName}</span>}
+      </>
     );
   return <span className="pchip">{t.review.by(name)}</span>;
 }
