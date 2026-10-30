@@ -17,7 +17,7 @@ Outside Docker: `dotnet Noosphere.dll <command>`.
 | `noosphere users list` | Lists the accounts. |
 | `noosphere users create <username> [--role admin\|member\|guest] [--display-name <name>] [--language en\|fr] [--password <p>]` | Creates an account (`member` by default). Without `--password`, a random password is generated and printed once. |
 | `noosphere users reset-password <username> [--password <p>]` | Sets a new password (generated when none is given) and closes the user's sessions. |
-| `noosphere export [--format json\|yaml] [--output <file>]` | Writes the whole landscape and its pages, restricted records included, to standard output or to a file. |
+| `noosphere export [--format json\|yaml] [--output <file>]` | Writes the whole landscape and its pages, restricted records and protected notes included (`scope: full`), to standard output or to a file. |
 | `noosphere import <file\|-> [--dry-run] [--format json\|yaml]` | Validates a file, then creates or updates its items. `-` reads standard input. The format comes from the extension, or is guessed. |
 | `noosphere demo reset --yes` | Replaces the whole landscape, its pages, history and proposals with the "Alizé" demo and resets the demo accounts. Demo mode only. |
 | `noosphere health [--url <url>]` | Exits 0 when the running server is ready. Used by the image's `HEALTHCHECK`. |

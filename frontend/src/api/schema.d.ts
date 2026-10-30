@@ -439,6 +439,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -585,6 +586,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -793,6 +795,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -806,7 +809,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": (components["schemas"]["ApplicationDto"] | components["schemas"]["RestrictedApplicationDto"])[];
+                        "application/json": (components["schemas"]["ApplicationDto"] | components["schemas"]["RestrictedApplicationDto"] | components["schemas"]["GuestApplicationDto"])[];
                     };
                 };
             };
@@ -866,7 +869,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ApplicationDetailDto"] | components["schemas"]["RestrictedApplicationDto"];
+                        "application/json": components["schemas"]["ApplicationDetailDto"] | components["schemas"]["RestrictedApplicationDto"] | components["schemas"]["GuestApplicationDto"];
                     };
                 };
                 /** @description Not Found */
@@ -948,6 +951,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1094,6 +1098,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1107,7 +1112,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": (components["schemas"]["FlowDto"] | components["schemas"]["RestrictedFlowDto"])[];
+                        "application/json": (components["schemas"]["FlowDto"] | components["schemas"]["RestrictedFlowDto"] | components["schemas"]["GuestFlowDto"])[];
                     };
                 };
             };
@@ -1167,7 +1172,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["FlowDetailDto"] | components["schemas"]["RestrictedFlowDto"];
+                        "application/json": components["schemas"]["FlowDetailDto"] | components["schemas"]["RestrictedFlowDto"] | components["schemas"]["GuestFlowDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1260,7 +1265,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": (components["schemas"]["PageSummaryDto"] | components["schemas"]["RestrictedPageDto"])[];
+                        "application/json": (components["schemas"]["PageSummaryDto"] | components["schemas"]["RestrictedPageDto"] | components["schemas"]["GuestPageDto"])[];
                     };
                 };
             };
@@ -1355,7 +1360,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PageDetailDto"] | components["schemas"]["RestrictedPageDto"];
+                        "application/json": components["schemas"]["PageDetailDto"] | components["schemas"]["RestrictedPageDto"] | components["schemas"]["GuestPageDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1874,6 +1879,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/applications/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data-objects/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessDataObject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/domains/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessDomain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AccessTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    username?: string;
+                    kind?: string;
+                    entityId?: string;
+                    what?: string;
+                    from?: string;
+                    to?: string;
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccessLogPageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/landscape": {
         parameters: {
             query?: never;
@@ -1890,6 +2035,7 @@ export interface paths {
                     Status?: string;
                     DataObjectId?: string;
                     Q?: string;
+                    Sensitivity?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1964,6 +2110,8 @@ export interface paths {
             parameters: {
                 query?: {
                     format?: string;
+                    scope?: string;
+                    reason?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1979,6 +2127,15 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["ExchangeEnvelopeDto"];
                         "application/yaml": components["schemas"]["ExchangeEnvelopeDto"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
                     };
                 };
             };
@@ -2572,6 +2729,73 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description Access list of an application or page. On a restricted record, its teams and users see it; on any application, they
+         *     read its protected notes; guests named here see the record in full.
+         */
+        AccessListDto: {
+            teamIds: string[];
+            usernames: string[];
+        };
+        /** @description Access list to save. Leaving `access` out of a body keeps the current list; send empty arrays to clear it. */
+        AccessListInput: {
+            teamIds: null | string[];
+            usernames: null | string[];
+        };
+        /** @description One read of a restricted record, of protected notes, or an export. */
+        AccessLogEntryDto: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            at: string;
+            user: components["schemas"]["UserRefDto"];
+            kind: null | components["schemas"]["RecordKind"];
+            entityId: null | string;
+            /** @description Name of the record now (null when deleted, or for an export). */
+            title: null | string;
+            /** @description `record`, `protectedNotes` or `export`. */
+            what: components["schemas"]["AccessLogWhat"];
+            /** @description More about the read: `history v3`, `scope full`... */
+            detail: null | string;
+            /** @description The reader was an administrator. */
+            admin: boolean;
+            why: null | components["schemas"]["AccessLogWhy"];
+            whyTeam: null | components["schemas"]["TeamRefDto"];
+            owningTeam: null | components["schemas"]["TeamRefDto"];
+        };
+        AccessLogPageDto: {
+            items: components["schemas"]["AccessLogEntryDto"][];
+            /** @description Pass it as `cursor` for the next (older) page; null on the last page. */
+            nextCursor: null | string;
+        };
+        /**
+         * @description What an access log line records.
+         * @enum {unknown}
+         */
+        AccessLogWhat: "record" | "protectedNotes" | "export";
+        /** @enum {unknown} */
+        AccessLogWhy: "admin" | "owningTeam" | "listedTeam" | "listedUser" | null;
+        AccessPublishersDto: {
+            /** @description The owning team (empty when only administrators publish). */
+            teams: components["schemas"]["AccessTeamDto"][];
+            /** @description Administrators always publish. */
+            admins: boolean;
+        };
+        AccessReadersDto: {
+            /** @description Every member and administrator reads the record (it is not restricted). */
+            everyoneExceptGuests: boolean;
+            /** @description Teams whose members read it: the owning team (when restricted) and the teams of the access list. */
+            teams: components["schemas"]["AccessTeamDto"][];
+            /** @description People who read it by name, outside those teams (administrators always read). */
+            users: components["schemas"]["UserRefDto"][];
+        };
+        /** @description A team as shown in the "Who can see and edit?" window. */
+        AccessTeamDto: {
+            id: string;
+            name: string;
+            /** Format: int32 */
+            memberCount: number;
+        };
         /** @description An application with its owner, the reader's permissions and its pages. */
         ApplicationDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */
@@ -2581,6 +2805,10 @@ export interface components {
             pages?: components["schemas"]["PageRefDto"][];
             /** @description Pages whose body links to the record. */
             mentionedIn?: components["schemas"]["PageRefDto"][];
+            /** @description Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none). */
+            protectedNotes?: null | string;
+            /** @description The record has protected notes the reader may not read. */
+            protectedNotesHidden?: boolean;
             id?: string;
             /** @enum {boolean} */
             restricted?: false;
@@ -2592,6 +2820,7 @@ export interface components {
             description?: null | string;
             lifecycle?: components["schemas"]["Lifecycle"];
             visibility?: components["schemas"]["Visibility"];
+            access?: components["schemas"]["AccessListDto"];
             /** @description Ids of the data objects whose source is this application (derived from `DataObject.sourceApplicationId`). */
             sourceOf?: string[];
             /**
@@ -2599,6 +2828,10 @@ export interface components {
              * @description Share of the recommended fields that are filled, 0 to 1.
              */
             completeness?: number;
+            /** @description Most sensitive of the data objects it is the source of and of the flows it sends or receives (internal when none). */
+            sensitivity?: components["schemas"]["Sensitivity"];
+            /** @description The five most sensitive of those data objects and flows, highest first. */
+            sensitivityReasons?: components["schemas"]["SensitivityReasonDto"][];
             /** Format: int32 */
             version?: number;
             /** Format: date-time */
@@ -2619,6 +2852,7 @@ export interface components {
             description: null | string;
             lifecycle: components["schemas"]["Lifecycle"];
             visibility: components["schemas"]["Visibility"];
+            access: components["schemas"]["AccessListDto"];
             /** @description Ids of the data objects whose source is this application (derived from `DataObject.sourceApplicationId`). */
             sourceOf: string[];
             /**
@@ -2626,6 +2860,10 @@ export interface components {
              * @description Share of the recommended fields that are filled, 0 to 1.
              */
             completeness: number;
+            /** @description Most sensitive of the data objects it is the source of and of the flows it sends or receives (internal when none). */
+            sensitivity: components["schemas"]["Sensitivity"];
+            /** @description The five most sensitive of those data objects and flows, highest first. */
+            sensitivityReasons: components["schemas"]["SensitivityReasonDto"][];
             /** Format: int32 */
             version: number;
             /** Format: date-time */
@@ -2645,6 +2883,9 @@ export interface components {
             visibility: null | components["schemas"]["Visibility"];
             /** Format: int32 */
             version: null | number;
+            access?: null | components["schemas"]["AccessListInput"];
+            /** @description Markdown, at most 20,000 characters. Optional: left out (or sent masked), the current notes are kept; an empty text clears them. */
+            protectedNotes?: null | string;
         };
         /**
          * @description What an application is: an application proper, a message bus, a SaaS, a data store, a file exchange or a third party.
@@ -2773,6 +3014,8 @@ export interface components {
             source: components["schemas"]["ExchangeSourceDto"];
             /** @description Always `full`: the file describes the whole landscape it was exported from. */
             mode: string;
+            /** @description `visible`: what the exporting user may see (restricted records left out, protected notes only where readable); `full`: everything (administrators). */
+            scope: string;
             items: components["schemas"]["ExchangeItemDto"][];
         };
         ExchangeItemDto: {
@@ -2802,6 +3045,10 @@ export interface components {
             pages?: components["schemas"]["PageRefDto"][];
             /** @description Pages whose body links to the record. */
             mentionedIn?: components["schemas"]["PageRefDto"][];
+            /** @description Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none). */
+            protectedNotes?: null | string;
+            /** @description The record has protected notes the reader may not read. */
+            protectedNotesHidden?: boolean;
             id?: string;
             /** @enum {boolean} */
             restricted?: false;
@@ -2869,11 +3116,53 @@ export interface components {
             plannedChange: null | components["schemas"]["PlannedChangeDto"];
             /** Format: int32 */
             version: null | number;
+            /** @description Markdown, at most 20,000 characters. Optional: left out (or sent masked), the current notes are kept; an empty text clears them. */
+            protectedNotes?: null | string;
         };
         /** @enum {unknown} */
         FlowStatus: "planned" | "live" | "deprecated";
         /** @enum {unknown} */
         FlowType: "api" | "event" | "batch";
+        /** @description An application not shared with a guest: its name and place in the landscape only. `shared` is always false. */
+        GuestApplicationDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: false;
+            /** @enum {boolean} */
+            shared: false;
+            name: string;
+            domainId: string;
+            /**
+             * @description What an application is: an application proper, a message bus, a SaaS, a data store, a file exchange or a third party.
+             * @enum {unknown}
+             */
+            kind: "app" | "bus" | "saas" | "data" | "file" | "external";
+        };
+        /** @description A flow none of whose ends is shared with a guest: its name and ends only. `shared` is always false. */
+        GuestFlowDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: false;
+            /** @enum {boolean} */
+            shared: false;
+            name: string;
+            fromId: string;
+            toId: string;
+            /** @enum {unknown} */
+            type: "api" | "event" | "batch";
+        };
+        /** @description A page not shared with a guest: its title and place in the tree only. `shared` is always false. */
+        GuestPageDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: false;
+            /** @enum {boolean} */
+            shared: false;
+            title: string;
+            parentId: null | string;
+            /** Format: int32 */
+            order: number;
+        };
         HealthDto: {
             /** @description `live` or `ready` when healthy, `unavailable` otherwise. */
             status: string;
@@ -2934,16 +3223,17 @@ export interface components {
         JsonNode: unknown;
         JsonObject: Record<string, never>;
         /**
-         * @description Everything the explorer needs, in one call. `applications` holds ApplicationDto or
-         *     RestrictedApplicationDto items, `flows` holds FlowDto or RestrictedFlowDto items
-         *     (discriminated by `restricted`).
+         * @description Everything the explorer needs, in one call. `applications` holds ApplicationDto,
+         *     RestrictedApplicationDto or (for guests) GuestApplicationDto items, `flows` holds
+         *     FlowDto, RestrictedFlowDto or GuestFlowDto items (discriminated by
+         *     `restricted`, then `shared`).
          */
         LandscapeDto: {
             domains: components["schemas"]["DomainDto"][];
             teams: components["schemas"]["TeamDto"][];
-            applications: (components["schemas"]["ApplicationDto"] | components["schemas"]["RestrictedApplicationDto"])[];
+            applications: (components["schemas"]["ApplicationDto"] | components["schemas"]["RestrictedApplicationDto"] | components["schemas"]["GuestApplicationDto"])[];
             dataObjects: components["schemas"]["DataObjectDto"][];
-            flows: (components["schemas"]["FlowDto"] | components["schemas"]["RestrictedFlowDto"])[];
+            flows: (components["schemas"]["FlowDto"] | components["schemas"]["RestrictedFlowDto"] | components["schemas"]["GuestFlowDto"])[];
             stats: components["schemas"]["LandscapeStatsDto"];
             /** Format: date-time */
             generatedAt: string;
@@ -2987,6 +3277,8 @@ export interface components {
             children: components["schemas"]["PageRefDto"][];
             /** @description Name of the attached record (null when missing or hidden). */
             attachedTitle: null | string;
+            /** @description The attached record is restricted: a page visible to everyone may tell more than the record (pages inherit nothing). */
+            attachedRestricted: boolean;
             /** @description Team whose members publish changes; null when only administrators do. */
             owningTeamId: null | string;
             permissions: components["schemas"]["PermissionsDto"];
@@ -3008,6 +3300,8 @@ export interface components {
             ownerTeamId?: null | string;
             tags?: string[];
             visibility?: components["schemas"]["Visibility"];
+            /** @description Access list: on a restricted page, these teams and users see it; guests named here see the page in full. */
+            access?: components["schemas"]["AccessListDto"];
             /** Format: int32 */
             version?: number;
             /** Format: date-time */
@@ -3035,6 +3329,8 @@ export interface components {
             ownerTeamId: null | string;
             tags: string[];
             visibility: components["schemas"]["Visibility"];
+            /** @description Access list: on a restricted page, these teams and users see it; guests named here see the page in full. */
+            access: components["schemas"]["AccessListDto"];
             /** Format: int32 */
             version: number;
             /** Format: date-time */
@@ -3057,6 +3353,7 @@ export interface components {
             visibility: null | components["schemas"]["Visibility"];
             /** Format: int32 */
             version: null | number;
+            access?: null | components["schemas"]["AccessListInput"];
         };
         /** @description A link found in a page body. */
         PageLinkDto: {
@@ -3146,7 +3443,7 @@ export interface components {
             /** Format: int32 */
             status: number;
             detail: string;
-            /** @description Field errors (field name in camelCase, then messages), on 400 only. */
+            /** @description Field errors (field name in camelCase, then messages), on 400, and on 422 when a field looks like a secret. */
             errors?: null | {
                 [key: string]: string[];
             };
@@ -3242,6 +3539,27 @@ export interface components {
         };
         /** @enum {unknown} */
         ProposalStatus: "draft" | "submitted" | "accepted" | "refused" | "withdrawn";
+        /**
+         * @description `members`: members who see the record send proposals; `none`: domains and teams, changed by administrators only.
+         * @enum {unknown}
+         */
+        Proposers: "members" | "none";
+        ProtectedNotesAccessDto: {
+            exists: boolean;
+            readable: boolean;
+        };
+        /** @description Who can see and edit a record: the explanation shown by the "Who can see and edit?" window. */
+        RecordAccessDto: {
+            /** @description For a flow: restricted when one of its ends is. */
+            visibility: components["schemas"]["Visibility"];
+            owningTeam: null | components["schemas"]["AccessTeamDto"];
+            readers: components["schemas"]["AccessReadersDto"];
+            publishers: components["schemas"]["AccessPublishersDto"];
+            proposers: components["schemas"]["Proposers"];
+            protectedNotes: components["schemas"]["ProtectedNotesAccessDto"];
+            /** @description The reader may change the access list (applications and pages they may publish). */
+            canManage: boolean;
+        };
         /** @description Owner, permissions and pages of a record. */
         RecordContextDto: {
             owningTeamId: null | string;
@@ -3278,14 +3596,14 @@ export interface components {
             /** Format: uuid */
             proposalId: null | string;
         };
-        /** @description A restricted application, as seen by a reader who is not an administrator. */
+        /** @description A restricted application, as seen by a reader who may not see it. */
         RestrictedApplicationDto: {
             id: string;
             /** @enum {boolean} */
             restricted: true;
             domainId: string;
         };
-        /** @description A flow from or to a restricted application, as seen by a reader who is not an administrator. */
+        /** @description A flow from or to a restricted application the reader may not see. */
         RestrictedFlowDto: {
             id: string;
             /** @enum {boolean} */
@@ -3295,7 +3613,7 @@ export interface components {
             /** @enum {unknown} */
             type: "api" | "event" | "batch";
         };
-        /** @description A restricted page, as seen by a reader who is not an administrator. */
+        /** @description A restricted page, as seen by a reader who may not see it. */
         RestrictedPageDto: {
             id: string;
             /** @enum {boolean} */
@@ -3330,14 +3648,24 @@ export interface components {
             kind: components["schemas"]["SearchKind"];
             id: string;
             title: string;
-            /** @description For a page: an excerpt of the body around the match. */
+            /** @description For a page: an excerpt of the body around the match. For an application: domain, team and sensitivity. */
             subtitle: null | string;
+            sensitivity?: null | components["schemas"]["Sensitivity"];
         };
         /**
          * @description Ordered from the least to the most sensitive: the sensitivity of a flow is the maximum of what it carries.
          * @enum {unknown}
          */
         Sensitivity: "public" | "internal" | "personal" | "sensitive";
+        /** @description Why an application has its sensitivity: a data object it is the source of, or a flow it sends or receives. */
+        SensitivityReasonDto: {
+            kind: components["schemas"]["SensitivityReasonKind"];
+            id: string;
+            name: string;
+            sensitivity: components["schemas"]["Sensitivity"];
+        };
+        /** @enum {unknown} */
+        SensitivityReasonKind: "dataObject" | "flow";
         SettingsDto: {
             /** @description Shown in the header and the browser tab (default "Noosphere"). */
             instanceName: string;
@@ -3470,7 +3798,8 @@ export interface components {
             teamIds?: null | string[];
         };
         /**
-         * @description `Restricted` applications are only shown in full to administrators; others see their id and domain.
+         * @description `Restricted` applications and pages are shown in full to administrators, members of the owning team and the
+         *             people on their access list; others see their id and domain only.
          * @enum {unknown}
          */
         Visibility: "everyone" | "restricted";
@@ -3483,6 +3812,246 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AccessApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AccessFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AccessDataObject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AccessPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AccessDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    AccessTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     HistoryApplication: {
         parameters: {
             query?: never;

@@ -14,7 +14,8 @@ public sealed record Settings(
     string? BackupsDirectory,
     string InstanceName,
     string? PublicUrl,
-    string TrustedProxies)
+    string TrustedProxies,
+    int AccessLogDays = 365)
 {
     public const string EnvironmentPrefix = "NOOSPHERE_";
 
@@ -28,7 +29,8 @@ public sealed record Settings(
         BackupsDirectory: Blank(config["BACKUPS_DIR"]),
         InstanceName: Blank(config["INSTANCE_NAME"]) ?? "Noosphere",
         PublicUrl: Blank(config["PUBLIC_URL"])?.TrimEnd('/'),
-        TrustedProxies: config["TRUSTED_PROXIES"] ?? "");
+        TrustedProxies: config["TRUSTED_PROXIES"] ?? "",
+        AccessLogDays: Math.Max(1, config.GetValue("ACCESS_LOG_DAYS", 365)));
 
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 

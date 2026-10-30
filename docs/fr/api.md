@@ -19,14 +19,14 @@ JSON sur HTTP, sous `/api`. Les clés sont en camelCase et les énumérations so
   un `id` absent est déduit du nom et rendu unique (`customer-portal`, `customer-portal-2`). Un identifiant ne change
   jamais.
 - **Versions** : chaque enregistrement porte `version`, `createdAt` et `updatedAt`. `PUT` remplace tout
-  l'enregistrement (un champ facultatif absent est vidé) et doit fournir la `version` lue. Une version périmée
+  l'enregistrement (un champ facultatif absent est vidé, sauf `access` et `protectedNotes`, gardés quand ils sont absents) et doit fournir la `version` lue. Une version périmée
   renvoie **409** : « Someone changed this record. Reload it and try again. »
 
 | Statut | Sens |
 | ------ | ---- |
 | 400 | Saisie invalide (`errors` par champ) |
 | 401 | Pas de session, ou identifiants faux |
-| 403 | Rôle insuffisant, hors de l'équipe responsable (envoyer une proposition), enregistrement restreint, `X-Requested-With` absent |
+| 403 | Rôle insuffisant, hors de l'équipe responsable (envoyer une proposition), enregistrement restreint ou non partagé avec un invité, `X-Requested-With` absent |
 | 404 | Enregistrement introuvable |
 | 409 | Version périmée, identifiant déjà pris, enregistrement encore utilisé (suppression), proposition dépassée (`outdated: true`) |
 | 422 | Fichier d'import en erreur (corps : le résultat de l'import) |
@@ -66,24 +66,33 @@ l'enregistrement). Une équipe renvoie aussi ses `members`.
 | ---- | --------------- | ------------------ |
 | Domaine | `name`, `description?`, `order` | |
 | Équipe | `name`, `description?`, `contact?` | |
-| Application | `name`, `domainId`, `teamId?`, `kind` (`app`, `bus`, `saas`, `data`, `file`, `external`), `tech?`, `description?` (markdown), `lifecycle` (`planned`, `live`, `retiring`, `retired`), `visibility` (`everyone`, `restricted`) | `sourceOf` (objets de données dont elle est la source), `completeness` (0 à 1), `restricted: false` |
+| Application | `name`, `domainId`, `teamId?`, `kind` (`app`, `bus`, `saas`, `data`, `file`, `external`), `tech?`, `description?` (markdown), `lifecycle` (`planned`, `live`, `retiring`, `retired`), `visibility` (`everyone`, `restricted`), `access?` (`{teamIds, usernames}`), `protectedNotes?` | `sourceOf` (objets de données dont elle est la source), `completeness` (0 à 1), `sensitivity` et `sensitivityReasons`, `restricted: false` |
 | Objet de données | `name`, `sensitivity` (`public`, `internal`, `personal`, `sensitive`), `sourceApplicationId?`, `description?` | |
-| Flux | `name`, `fromId`, `toId`, `type` (`api`, `event`, `batch`), `schedule?`, `dataObjectIds[]`, `ownerTeamId?`, `status` (`planned`, `live`, `deprecated`), `volume?`, `description?`, `plannedChange?` (`{summary, date?}`) | `sensitivity` (l'objet transporté le plus sensible, `internal` s'il n'y en a aucun), `completeness`, `restricted: false` |
+| Flux | `name`, `fromId`, `toId`, `type` (`api`, `event`, `batch`), `schedule?`, `dataObjectIds[]`, `ownerTeamId?`, `status` (`planned`, `live`, `deprecated`), `volume?`, `description?`, `plannedChange?` (`{summary, date?}`), `protectedNotes?` | `sensitivity` (l'objet transporté le plus sensible, `internal` s'il n'y en a aucun), `completeness`, `restricted: false` |
 
 Complétude : la part des champs recommandés qui sont remplis. Pour une application : équipe, technologie,
 description, au moins un flux, cycle de vie. Pour un flux : planification, objets de données, équipe responsable,
 description.
 
-Filtres des listes, tous facultatifs : `?domainId=&teamId=&type=&status=&dataObjectId=&q=`. `q` ignore les accents
+Filtres des listes, tous facultatifs : `?domainId=&teamId=&type=&status=&dataObjectId=&sensitivity=&q=`. `q` ignore les accents
 et la casse.
 
-### Applications restreintes
+### Enregistrements restreints, invités et notes protégées
 
-Seuls les admins voient une application restreinte en entier. Les autres reçoivent `{id, restricted: true, domainId}`,
-et les flux qui en partent ou y arrivent sous la forme `{id, restricted: true, fromId, toId, type}`. Ils ne peuvent
-pas les modifier (403), et ni les filtres ni la recherche ne portent sur leurs champs cachés. Dans le document
-OpenAPI, les listes contiennent `ApplicationDto | RestrictedApplicationDto` (et `FlowDto | RestrictedFlowDto`),
-distingués par `restricted`.
+Voir [accès](acces.md). Qui ne peut pas voir une application restreinte reçoit `{id, restricted: true, domainId}`,
+et les flux qu'il ne peut pas voir sous la forme `{id, restricted: true, fromId, toId, type}`. Un invité reçoit un
+aperçu de ce qui n'est pas partagé avec lui (`restricted: false, shared: false`, le nom et la place seulement). Ni
+les filtres ni la recherche ne portent sur les champs cachés. Dans le document OpenAPI, les listes contiennent
+`ApplicationDto | RestrictedApplicationDto | GuestApplicationDto` (de même pour les flux et les pages), distingués
+par `restricted` et `shared`.
+
+Le détail d'une application ou d'un flux porte `protectedNotes` (null si le lecteur ne peut pas les lire) et
+`protectedNotesHidden`.
+
+| Méthode et chemin | Qui | Réponse |
+| ----------------- | --- | ------- |
+| `GET /api/{kind}/{id}/access` | qui voit l'enregistrement en entier | `{visibility, owningTeam, readers, publishers, proposers, protectedNotes, canManage}` |
+| `GET /api/access-log?username=&kind=&entityId=&what=&from=&to=&cursor=&limit=` | admin | `{items, nextCursor}`, du plus récent au plus ancien |
 
 ## Explorateur
 
@@ -136,8 +145,10 @@ cookie) ne change jamais.
 
 ## Échange
 
-- `GET /api/export?format=json|yaml`, pour tout compte connecté, télécharge le paysage au
-  [format d'échange](exchange-format.md). Les applications et pages restreintes sont omises pour les non-admins.
+- `GET /api/export?format=json|yaml&scope=visible|full&reason=`, pour tout compte connecté, télécharge le paysage
+  au [format d'échange](exchange-format.md) : ce que le lecteur voit en entier (`visible`, par défaut), ou tout
+  (`full`, administrateurs seulement, inscrit au [journal des accès](acces.md#journal-des-accès) avec le `reason`
+  facultatif).
 - `POST /api/import?dryRun=true|false`, pour les admins, prend le fichier comme corps de la requête (JSON ou YAML,
   selon `Content-Type` ou `?format=`) et renvoie `{created, updated, unchanged, errors[], dryRun, applied}`.
 

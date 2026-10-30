@@ -37,6 +37,7 @@ builder.Services.AddHttpProtection(settings);
 var protection = builder.Services.AddDataProtection().SetApplicationName("noosphere");
 if (settings.KeysDirectory is { } keys) protection.PersistKeysToFileSystem(new DirectoryInfo(keys));
 builder.Services.AddNoosphereOpenApi();
+builder.Services.AddHostedService<AccessLogPurge>();
 
 var app = builder.Build();
 
@@ -68,6 +69,7 @@ api.MapCatalog();
 api.MapPages();
 api.MapProposals();
 api.MapHistory();
+api.MapAccess();
 api.MapExplorer(settings);
 // An unknown /api route never falls back to index.html.
 api.Map("{**rest}", () => Problems.Result(404, "Unknown API route.")).AllowAnonymous().ExcludeFromDescription();

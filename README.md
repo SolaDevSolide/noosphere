@@ -14,7 +14,10 @@ before changing this API?".
 - A revision history on every record and page, with compare and restore, and a trash for deleted records.
 - Markdown documentation pages in a tree, attached to records, with wiki links (`[[application:billing]]`),
   backlinks and broken link detection, an editor with live preview, link suggestions and three page templates.
-- Restricted applications and pages, shown in full to administrators only.
+- Restricted applications and pages with access lists of teams and people, records shared with guests, protected
+  notes for operational details, and an access log for administrators.
+- Secrets pasted by mistake (tokens, keys, passwords) are refused: Noosphere documents where secrets live.
+- A computed sensitivity for every application, from the data it holds and the flows touching it.
 - A documented exchange format (JSON or YAML) to import and export the whole landscape.
 - English and French interface. Runs as one container next to PostgreSQL.
 
@@ -36,14 +39,14 @@ Then open <http://localhost:8080>.
 ### Demo accounts
 
 With `NOOSPHERE_DEMO=true`, Noosphere loads "Alizé", a fictional insurer (20 applications, 36 flows, 6 domains,
-5 data objects, 7 documentation pages, a history on Billing and a few proposals) and four accounts, all with the
+5 data objects, 7 documentation pages, a history on Billing, a few proposals, a restricted Fraud scoring application, protected notes on Billing and a customer portal shared with `claire`) and four accounts, all with the
 password `demo`:
 
 | Username | Role   | Teams                       | Can                                                        |
 | -------- | ------ | --------------------------- | ---------------------------------------------------------- |
 | `alice`  | admin  |                             | everything, including domains, teams, users and settings   |
 | `bob`    | member | Team Finance, Team Payments | publish changes to their teams' records, validate proposals |
-| `claire` | guest  |                             | read only                                                  |
+| `claire` | guest  |                             | read names, and the customer portal shared with her        |
 | `david`  | member | Team CRM                    | publish for Team CRM, propose changes elsewhere            |
 
 Sign in as `bob` to validate the two proposals that `david` sent to Team Finance.
@@ -70,6 +73,7 @@ All settings are environment variables (see [.env.example](.env.example) and
 | `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`         | Instance name until an administrator sets it in the settings   |
 | `NOOSPHERE_PUBLIC_URL`       | (request address)   | Public address written in exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (none)              | Reverse proxy networks allowed to send `X-Forwarded-*` headers |
+| `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`               | Days the access log is kept                                    |
 
 ## Command line
 
@@ -91,6 +95,7 @@ docker compose exec noosphere noosphere demo reset --yes
 - [Proposals and validation](docs/en/proposals.md)
 - [History](docs/en/history.md)
 - [Pages](docs/en/pages.md)
+- [Access, protected notes and the access log](docs/en/access.md)
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)

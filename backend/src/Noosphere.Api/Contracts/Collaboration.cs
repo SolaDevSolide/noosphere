@@ -38,6 +38,10 @@ public sealed record ApplicationDetailDto : ApplicationDto
     public IReadOnlyList<PageRefDto> Pages { get; init; }
     /// <summary>Pages whose body links to the record.</summary>
     public IReadOnlyList<PageRefDto> MentionedIn { get; init; }
+    /// <summary>Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none).</summary>
+    public string? ProtectedNotes { get; init; }
+    /// <summary>The record has protected notes the reader may not read.</summary>
+    public bool ProtectedNotesHidden { get; init; }
 }
 
 /// <summary>A flow with its owner (its owner team, or else the team of its source application), permissions and pages.</summary>
@@ -53,6 +57,10 @@ public sealed record FlowDetailDto : FlowDto
     public IReadOnlyList<PageRefDto> Pages { get; init; }
     /// <summary>Pages whose body links to the record.</summary>
     public IReadOnlyList<PageRefDto> MentionedIn { get; init; }
+    /// <summary>Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none).</summary>
+    public string? ProtectedNotes { get; init; }
+    /// <summary>The record has protected notes the reader may not read.</summary>
+    public bool ProtectedNotesHidden { get; init; }
 }
 
 /// <summary>A data object with its owner (the team of its source application), permissions and pages.</summary>
@@ -114,9 +122,10 @@ public sealed record AttachedToDto(RecordKind Kind, string Id);
 /// <param name="ParentId">Parent page in the tree; null for a top-level page.</param>
 /// <param name="Order">Position among its siblings (ascending, then by title).</param>
 /// <param name="OwnerTeamId">Owning team as set on the page; when null, the owner of the attached record owns it.</param>
+/// <param name="Access">Access list: on a restricted page, these teams and users see it; guests named here see the page in full.</param>
 public record PageDto(
     string Id, bool Restricted, string Title, string Body, string? ParentId, int Order, AttachedToDto? AttachedTo,
-    string? OwnerTeamId, IReadOnlyList<string> Tags, Visibility Visibility, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+    string? OwnerTeamId, IReadOnlyList<string> Tags, Visibility Visibility, AccessListDto Access, int Version, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 
 /// <summary>A link found in a page body.</summary>
 /// <param name="Title">Name of the target; null when it does not exist or is hidden from the reader.</param>
@@ -129,8 +138,9 @@ public sealed record PageLinkDto(RecordKind Kind, string Id, string? Title, bool
 public sealed record PageDetailDto : PageDto
 {
     public PageDetailDto(PageDto page, IReadOnlyList<PageLinkDto> links, IReadOnlyList<PageRefDto> backlinks, IReadOnlyList<PageRefDto> ancestors,
-        IReadOnlyList<PageRefDto> children, string? attachedTitle, string? owningTeamId, PermissionsDto permissions) : base(page) =>
-        (Links, Backlinks, Ancestors, Children, AttachedTitle, OwningTeamId, Permissions) = (links, backlinks, ancestors, children, attachedTitle, owningTeamId, permissions);
+        IReadOnlyList<PageRefDto> children, string? attachedTitle, bool attachedRestricted, string? owningTeamId, PermissionsDto permissions) : base(page) =>
+        (Links, Backlinks, Ancestors, Children, AttachedTitle, AttachedRestricted, OwningTeamId, Permissions) =
+        (links, backlinks, ancestors, children, attachedTitle, attachedRestricted, owningTeamId, permissions);
 
     /// <summary>Wiki links of the body, resolved; <c>exists: false</c> marks a broken link.</summary>
     public IReadOnlyList<PageLinkDto> Links { get; init; }
@@ -141,13 +151,18 @@ public sealed record PageDetailDto : PageDto
     public IReadOnlyList<PageRefDto> Children { get; init; }
     /// <summary>Name of the attached record (null when missing or hidden).</summary>
     public string? AttachedTitle { get; init; }
+    /// <summary>The attached record is restricted: a page visible to everyone may tell more than the record (pages inherit nothing).</summary>
+    public bool AttachedRestricted { get; init; }
     /// <summary>Team whose members publish changes; null when only administrators do.</summary>
     public string? OwningTeamId { get; init; }
     public PermissionsDto Permissions { get; init; }
 }
 
-/// <summary>A restricted page, as seen by a reader who is not an administrator.</summary>
+/// <summary>A restricted page, as seen by a reader who may not see it.</summary>
 public sealed record RestrictedPageDto(string Id, bool Restricted, string? ParentId, int Order);
+
+/// <summary>A page not shared with a guest: its title and place in the tree only. <c>shared</c> is always false.</summary>
+public sealed record GuestPageDto(string Id, bool Restricted, bool Shared, string Title, string? ParentId, int Order);
 
 /// <summary>A page in the list (no body).</summary>
 /// <param name="BrokenLinks">Number of wiki links whose target does not exist.</param>
@@ -160,9 +175,10 @@ public sealed record PageTreeNodeDto(string Id, bool Restricted, string? Title, 
 
 /// <param name="Body">Markdown; may be empty.</param>
 /// <param name="OwnerTeamId">Optional: when empty, the owner of the attached record owns the page (administrators when none).</param>
+/// <param name="Access">Optional: left out, the current access list is kept.</param>
 public sealed record PageInput(
     string? Id, string? Title, string? Body, string? ParentId, int? Order, AttachedToDto? AttachedTo, string? OwnerTeamId,
-    List<string>? Tags, Visibility? Visibility, int? Version);
+    List<string>? Tags, Visibility? Visibility, int? Version, AccessListInput? Access = null);
 
 /// <param name="ParentId">New parent; null moves the page to the top level.</param>
 /// <param name="Version">Optional: when given, a stale version returns 409.</param>
@@ -254,3 +270,44 @@ public sealed record TrashRestoreResultDto(RecordKind Kind, string Id, int Versi
 public sealed record SettingsDto(string InstanceName, string OrganisationName, string DefaultLanguage, int Version, DateTimeOffset? UpdatedAt);
 
 public sealed record SettingsInput(string? InstanceName, string? OrganisationName, string? DefaultLanguage, int? Version);
+
+// ---------- Access ----------
+
+/// <summary>A team as shown in the "Who can see and edit?" window.</summary>
+public sealed record AccessTeamDto(string Id, string Name, int MemberCount);
+
+/// <param name="EveryoneExceptGuests">Every member and administrator reads the record (it is not restricted).</param>
+/// <param name="Teams">Teams whose members read it: the owning team (when restricted) and the teams of the access list.</param>
+/// <param name="Users">People who read it by name, outside those teams (administrators always read).</param>
+public sealed record AccessReadersDto(bool EveryoneExceptGuests, IReadOnlyList<AccessTeamDto> Teams, IReadOnlyList<UserRefDto> Users);
+
+/// <param name="Teams">The owning team (empty when only administrators publish).</param>
+/// <param name="Admins">Administrators always publish.</param>
+public sealed record AccessPublishersDto(IReadOnlyList<AccessTeamDto> Teams, bool Admins);
+
+public sealed record ProtectedNotesAccessDto(bool Exists, bool Readable);
+
+/// <summary><c>members</c>: members who see the record send proposals; <c>none</c>: domains and teams, changed by administrators only.</summary>
+public enum Proposers { Members, None }
+
+/// <summary>Who can see and edit a record: the explanation shown by the "Who can see and edit?" window.</summary>
+/// <param name="Visibility">For a flow: restricted when one of its ends is.</param>
+/// <param name="CanManage">The reader may change the access list (applications and pages they may publish).</param>
+public sealed record RecordAccessDto(
+    Visibility Visibility, AccessTeamDto? OwningTeam, AccessReadersDto Readers, AccessPublishersDto Publishers, Proposers Proposers,
+    ProtectedNotesAccessDto ProtectedNotes, bool CanManage);
+
+/// <summary>One read of a restricted record, of protected notes, or an export.</summary>
+/// <param name="Kind">Null for an export.</param>
+/// <param name="Title">Name of the record now (null when deleted, or for an export).</param>
+/// <param name="What"><c>record</c>, <c>protectedNotes</c> or <c>export</c>.</param>
+/// <param name="Detail">More about the read: <c>history v3</c>, <c>scope full</c>...</param>
+/// <param name="Admin">The reader was an administrator.</param>
+/// <param name="Why"><c>admin</c>, <c>owningTeam</c>, <c>listedTeam</c> (see <c>whyTeam</c>) or <c>listedUser</c>; null for an export by a non-administrator.</param>
+/// <param name="WhyTeam">For <c>listedTeam</c>: the team of the access list the reader belongs to.</param>
+/// <param name="OwningTeam">Owning team of the record now (null when only administrators own it, or for an export).</param>
+public sealed record AccessLogEntryDto(long Id, DateTimeOffset At, UserRefDto User, RecordKind? Kind, string? EntityId, string? Title,
+    AccessLogWhat What, string? Detail, bool Admin, AccessLogWhy? Why, TeamRefDto? WhyTeam, TeamRefDto? OwningTeam);
+
+/// <param name="NextCursor">Pass it as <c>cursor</c> for the next (older) page; null on the last page.</param>
+public sealed record AccessLogPageDto(IReadOnlyList<AccessLogEntryDto> Items, string? NextCursor);

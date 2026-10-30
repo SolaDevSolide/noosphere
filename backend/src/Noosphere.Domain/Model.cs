@@ -5,7 +5,10 @@ public enum ApplicationKind { App, Bus, Saas, Data, File, External }
 
 public enum Lifecycle { Planned, Live, Retiring, Retired }
 
-/// <summary><c>Restricted</c> applications are only shown in full to administrators; others see their id and domain.</summary>
+/// <summary>
+/// <c>Restricted</c> applications and pages are shown in full to administrators, members of the owning team and the
+/// people on their access list; others see their id and domain only.
+/// </summary>
 public enum Visibility { Everyone, Restricted }
 
 /// <summary>Ordered from the least to the most sensitive: the sensitivity of a flow is the maximum of what it carries.</summary>
@@ -56,6 +59,12 @@ public sealed class Application : LandscapeEntity
     public string? Tech { get; set; }
     public Lifecycle Lifecycle { get; set; } = Lifecycle.Live;
     public Visibility Visibility { get; set; } = Visibility.Everyone;
+    /// <summary>Access list: teams whose members see the application when restricted, and read its protected notes.</summary>
+    public List<string> AccessTeamIds { get; set; } = [];
+    /// <summary>Access list: users who see the application when restricted, read its protected notes, and (guests) see it in full.</summary>
+    public List<string> AccessUsernames { get; set; } = [];
+    /// <summary>Markdown read only by the owning team, the access list and administrators.</summary>
+    public string? ProtectedNotes { get; set; }
 }
 
 public sealed class DataObject : LandscapeEntity
@@ -78,6 +87,8 @@ public sealed class Flow : LandscapeEntity
     public string? Volume { get; set; }
     public string? PlannedChangeSummary { get; set; }
     public DateOnly? PlannedChangeDate { get; set; }
+    /// <summary>Markdown read only by the owning team, the access lists of the two ends and administrators.</summary>
+    public string? ProtectedNotes { get; set; }
 }
 
 /// <summary>A local account. Passwords are stored as ASP.NET Core Identity hashes.</summary>
@@ -117,6 +128,10 @@ public sealed class Page : VersionedEntity
     public string? OwnerTeamId { get; set; }
     public List<string> Tags { get; set; } = [];
     public Visibility Visibility { get; set; } = Visibility.Everyone;
+    /// <summary>Access list: teams whose members see the page when restricted.</summary>
+    public List<string> AccessTeamIds { get; set; } = [];
+    /// <summary>Access list: users who see the page when restricted, and (guests) see it in full.</summary>
+    public List<string> AccessUsernames { get; set; } = [];
     /// <summary>Wiki link targets found in the body, as <c>kind:id</c> (<c>application:billing</c>). Derived from the body on every save.</summary>
     public List<string> Links { get; set; } = [];
 }
@@ -213,4 +228,34 @@ public sealed class InstanceSettings
     public string DefaultLanguage { get; set; } = "en";
     public DateTimeOffset UpdatedAt { get; set; }
     public int Version { get; set; }
+}
+
+/// <summary>What an access log line records.</summary>
+public enum AccessLogWhat { Record, ProtectedNotes, Export }
+
+/// <summary>Why the reader was allowed to read: administrator, owning team, a team of the access list, or named on it.</summary>
+public enum AccessLogWhy { Admin, OwningTeam, ListedTeam, ListedUser }
+
+/// <summary>
+/// One read of a restricted record, of protected notes or of a full export, by someone outside the owning team (or an
+/// administrator). Kept <c>ACCESS_LOG_DAYS</c> days (365 by default).
+/// </summary>
+public sealed class AccessLog
+{
+    public long Id { get; set; }
+    public DateTimeOffset At { get; set; }
+    public Guid? UserId { get; set; }
+    /// <summary>Username at the time of the read (kept when the account is deleted).</summary>
+    public string Username { get; set; } = "";
+    /// <summary>Null for an export.</summary>
+    public RecordKind? Kind { get; set; }
+    public string? EntityId { get; set; }
+    public AccessLogWhat What { get; set; }
+    public string? Detail { get; set; }
+    /// <summary>The reader was an administrator.</summary>
+    public bool Admin { get; set; }
+    /// <summary>Why the read was allowed; null when no single reason applies (an export of several records).</summary>
+    public AccessLogWhy? Why { get; set; }
+    /// <summary>For <see cref="AccessLogWhy.ListedTeam"/>: the team of the access list the reader belongs to.</summary>
+    public string? WhyTeamId { get; set; }
 }

@@ -49,7 +49,7 @@ public class PageTests : IDisposable
     [Fact]
     public async Task A_page_resolves_its_links_and_backlinks_and_flags_broken_ones()
     {
-        var claire = await _api.SignedIn("claire");
+        var claire = await _api.SignedIn("david");
         var page = await claire.GetJson("/api/pages/replay-nightly-import");
         Assert.Equal(("Replay the nightly customer import", "flow", "crm-to-billing-customers", "Customers"),
             (page.Str("title"), page.GetProperty("attachedTo").Str("kind"), page.GetProperty("attachedTo").Str("id"), page.Str("attachedTitle")));
@@ -133,7 +133,9 @@ public class PageTests : IDisposable
     [Fact]
     public async Task Raw_markdown_has_a_front_matter()
     {
-        var claire = await _api.SignedIn("claire");
+        var guest = await _api.SignedIn("claire");
+        Assert.Equal(HttpStatusCode.Forbidden, (await guest.GetAsync("/api/pages/replay-nightly-import/raw")).StatusCode);
+        var claire = await _api.SignedIn("david");
         var response = await claire.GetAsync("/api/pages/replay-nightly-import/raw");
         Assert.Equal("text/markdown", response.Content.Headers.ContentType?.MediaType);
         var raw = await response.Content.ReadAsStringAsync();
@@ -150,7 +152,7 @@ public class PageTests : IDisposable
         await alice.PostJson("/api/pages", new { id = "incident-2026-10", title = "Incident review", body = "Fraud scores leaked: [[application:fraud]].", parentId = "operations",
             visibility = "restricted" }, HttpStatusCode.Created);
         await alice.PostJson("/api/pages", new { title = "Fraud overview", body = "Uses [[application:fraud]].", ownerTeamId = "team-data" }, HttpStatusCode.Created);
-        var bob = await _api.SignedIn("bob");
+        var bob = await _api.SignedIn("david");
 
         var stub = await bob.GetJson("/api/pages/incident-2026-10");
         Assert.Equal(["id", "restricted", "parentId", "order"], stub.EnumerateObject().Select(p => p.Name));
@@ -171,7 +173,7 @@ public class PageTests : IDisposable
     [Fact]
     public async Task Search_finds_pages_by_title_then_body_with_an_excerpt()
     {
-        var claire = await _api.SignedIn("claire");
+        var claire = await _api.SignedIn("david");
         var byTitle = await claire.GetJson("/api/search?q=replay");
         Assert.Equal(("page", "replay-nightly-import"), (byTitle[0].Str("kind"), byTitle[0].Str("id")));
         var byBody = (await claire.GetJson("/api/search?q=rate-limited")).EnumerateArray().Single();

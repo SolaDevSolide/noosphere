@@ -18,7 +18,8 @@ données, un domaine ou une équipe, et les pages forment une **arborescence**.
 | `attachedTo` | `{kind, id}`, où `kind` vaut `application`, `flow`, `dataObject`, `domain` ou `team` |
 | `ownerTeamId` | équipe responsable ; vide, c'est le responsable de l'enregistrement rattaché (les administrateurs s'il n'y en a pas) |
 | `tags` | jusqu'à 20 textes courts |
-| `visibility` | `everyone` ou `restricted` (administrateurs seulement ; les autres reçoivent `{id, restricted: true, parentId, order}`) |
+| `visibility` | `everyone` ou `restricted` (administrateurs, équipe propriétaire et liste d'accès ; les autres reçoivent `{id, restricted: true, parentId, order}`) |
+| `access` | `{teamIds, usernames}` : qui voit une page restreinte, et les invités avec qui elle est partagée (voir [accès](acces.md)) |
 
 Enregistrer une page suit les règles de [propositions et validation](proposals.md) et crée une
 [révision](history.md).
@@ -76,8 +77,8 @@ Markdown brut pour les assistants.
   liens vers la page restent valides.
 - **Propriétaire.** Tout membre peut créer une page : rattachez-la à une fiche (son propriétaire possède alors la
   page) ou choisissez une équipe propriétaire. Les membres de l'équipe propriétaire publient ; les autres
-  **Proposent une modification**, qui devient une [proposition](proposals.md). Seuls les administrateurs restreignent
-  une page.
+  **Proposent une modification**, qui devient une [proposition](proposals.md). Les propriétaires peuvent restreindre
+  une page et choisir qui la voit.
 - **Modèles.** **Nouvelle page** propose une page vide et trois modèles : **Procédure** (symptômes, vérifications,
   correction, escalade), **Décision d’architecture (ADR)** (contexte, décision, conséquences) et **Vue d’ensemble
   d’application** (rôle, flux, contacts, liens). Un

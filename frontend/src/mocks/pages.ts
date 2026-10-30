@@ -143,6 +143,7 @@ export function handlePages(ctx: GovCtx, u: UserM2, method: string, path: string
       order: b.order ?? 0,
       attachedTo: b.attachedTo ?? null,
       ownerTeamId: b.ownerTeamId ?? null,
+      access: { teamIds: b.access?.teamIds ?? [], usernames: b.access?.usernames ?? [] },
       tags: b.tags ?? [],
       visibility: b.visibility ?? 'everyone',
       version: 1,

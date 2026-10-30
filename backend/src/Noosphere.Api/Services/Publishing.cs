@@ -109,9 +109,8 @@ public sealed class Publisher(NoosphereDbContext db, DateTimeOffset now)
     private static void Throw(FieldErrors errors, string prefix)
     {
         if (!errors.Any) return;
-        if (prefix.Length == 0) errors.ThrowIfAny();
         var prefixed = new FieldErrors();
-        foreach (var (field, message) in errors.All) prefixed.Add(prefix + field, message);
+        errors.CopyTo(prefixed, prefix);
         prefixed.ThrowIfAny();
     }
 }
@@ -142,6 +141,8 @@ public static class Diffs
         {
             JsonValue v when v.TryGetValue<string>(out var s) && s.Length == 0 => null,
             JsonArray { Count: 0 } => null,
+            // An empty access list is no access list.
+            JsonObject o when field == "access" && o.All(p => p.Value is null or JsonArray { Count: 0 }) => null,
             _ => node,
         };
     }
@@ -153,6 +154,9 @@ public static class Diffs
     {
         ("plannedChange", JsonObject o) => JsonValue.Create(o["date"] is { } date ? $"{o["summary"]} ({date})" : $"{o["summary"]}"),
         ("attachedTo", JsonObject o) => JsonValue.Create($"{o["kind"]}:{o["id"]}"),
+        // Access lists are shown as one list: team:team-finance, user:bob.
+        ("access", JsonObject o) => new JsonArray([.. AccessList.Of(o).TeamIds.Select(t => (JsonNode)JsonValue.Create("team:" + t)),
+            .. AccessList.Of(o).Usernames.Select(u => (JsonNode)JsonValue.Create("user:" + u))]),
         _ => value,
     };
 

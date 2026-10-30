@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { FLOW_STATUSES, FLOW_TYPES, type Sensitivity } from '../api/types';
+import { FLOW_STATUSES, FLOW_TYPES, isRestrictedFlow, type Sensitivity } from '../api/types';
 import { anyFilter, EMPTY_FILTERS, filterCount, makeMatcher, matches, type Filters } from '../domain/model';
 import { useI18n } from '../i18n';
 import { IconFilter, IconWarn, TypeIcon } from '../ui/icons';
@@ -50,7 +50,7 @@ export function FilterControl({ appsShown }: { appsShown?: number }) {
   const total = model.flows.length;
   const nMatch = model.flows.filter(makeMatcher(model, filters)).length;
   const sensVals = [...SENS_BASE];
-  if (model.flows.some((f) => !f.restricted && f.sensitivity === 'public')) sensVals.unshift('public');
+  if (model.flows.some((f) => !isRestrictedFlow(f) && f.sensitivity === 'public')) sensVals.unshift('public');
   const presetCount = (p: PresetId) => model.flows.filter((f) => matches(f, togglePreset(EMPTY_FILTERS, p))).length;
   const set = (f: Filters) => setFilters(f);
   const close = () => {

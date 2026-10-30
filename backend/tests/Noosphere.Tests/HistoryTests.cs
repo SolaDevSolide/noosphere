@@ -13,7 +13,11 @@ public class HistoryTests : IDisposable
     [Fact]
     public async Task History_lists_revisions_newest_first_with_snapshots_and_compare()
     {
-        var claire = await _api.SignedIn("claire");
+        // A guest reads the history of what is shared with her only.
+        var guest = await _api.SignedIn("claire");
+        await guest.GetJson("/api/applications/billing/history", HttpStatusCode.Forbidden);
+        Assert.NotEqual(0, (await guest.GetJson("/api/applications/portal/history")).GetArrayLength());
+        var claire = await _api.SignedIn("david");
         var history = await claire.GetJson("/api/applications/billing/history");
         Assert.Equal([4, 3, 2, 1], history.EnumerateArray().Select(h => h.GetProperty("version").GetInt32()));
         Assert.Equal(("create", "Imported"), (history[3].Str("operation"), history[3].Str("summary")));

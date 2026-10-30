@@ -3,7 +3,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
-using Noosphere.Api.Auth;
 using Noosphere.Api.Contracts;
 using Noosphere.Api.Data;
 using Noosphere.Api.Services;
@@ -20,6 +19,7 @@ public static class ExchangeFormat
 {
     public const string FormatVersion = "noosphere/v1";
     public const string FullMode = "full";
+    public const string VisibleScope = "visible", FullScope = "full";
     public const string Domain = "Domain", Team = "Team", Application = "Application", DataObject = "DataObject", Flow = "Flow", Page = "Page";
 
     /// <summary>Kinds in dependency order: an item only refers to kinds listed before it (and pages to other pages).</summary>
@@ -35,11 +35,13 @@ public static class ExchangeFormat
     {
         [Domain] = ["order"],
         [Team] = ["contact"],
-        [Application] = ["domainId", "teamId", "kind", "tech", "lifecycle", "visibility"],
+        [Application] = ["domainId", "teamId", "kind", "tech", "lifecycle", "visibility", "access", "protectedNotes"],
         [DataObject] = ["sensitivity", "sourceApplicationId"],
-        [Flow] = ["fromId", "toId", "type", "schedule", "dataObjectIds", "ownerTeamId", "status", "volume", "plannedChange"],
-        [Page] = ["body", "parentId", "order", "attachedTo", "ownerTeamId", "tags", "visibility"],
+        [Flow] = ["fromId", "toId", "type", "schedule", "dataObjectIds", "ownerTeamId", "status", "volume", "plannedChange", "protectedNotes"],
+        [Page] = ["body", "parentId", "order", "attachedTo", "ownerTeamId", "tags", "visibility", "access"],
     };
+
+    private static readonly string[] KeptWhenAbsent = ["access", "protectedNotes"];
 
     public static readonly JsonSerializerOptions Json = new()
     {
@@ -52,21 +54,39 @@ public static class ExchangeFormat
     // ---------- Export ----------
 
     /// <summary>
-    /// The landscape as the viewer sees it: restricted applications and pages, and flows touching restricted
-    /// applications, are left out for those who may not see them (and so is a hidden data object source).
+    /// The landscape as the reader sees it in full: restricted records they may not see are left out (not stubbed), and so
+    /// are, for a guest, the records not shared with them; a data object's source, a page's parent or attachment left out
+    /// are dropped. Protected notes are written only where the reader may read them. <paramref name="reads"/> collects the
+    /// restricted records and protected notes written that the reader's teams do not own (for the access log).
     /// </summary>
-    public static ExchangeEnvelopeDto Export(Snapshot s, IReadOnlyList<Domain.Page> pages, Viewer viewer, ExchangeSourceDto source)
+    public static ExchangeEnvelopeDto Export(Snapshot s, IReadOnlyList<Domain.Page> pages, Access access, ExchangeSourceDto source,
+        string scope = VisibleScope, List<(RecordKind Kind, string Id)>? reads = null)
     {
+        void Read(RecordKind kind, VersionedEntity e, bool notes)
+        {
+            if (reads is not null && !access.InTeam(access.Facts.Owner(kind, e)) && (notes || access.Facts.Restricted(kind, e))) reads.Add((kind, e.Id));
+        }
         var items = new List<ExchangeItemDto>();
         items.AddRange(s.Domains.Select(d => Item(Domain, d, new JsonObject { ["order"] = d.Order })));
         items.AddRange(s.Teams.Select(t => Item(Team, t, Spec(("contact", t.Contact)))));
-        items.AddRange(s.Applications.Where(a => !s.Hidden(a, viewer)).Select(a => Item(Application, a, Spec(
-            ("domainId", a.DomainId), ("teamId", a.TeamId), ("kind", Name(a.Kind)), ("tech", a.Tech),
-            ("lifecycle", Name(a.Lifecycle)), ("visibility", Name(a.Visibility))))));
+        var apps = s.Applications.Where(a => access.Sight(RecordKind.Application, a) == Sight.Full).ToList();
+        var appIds = apps.Select(a => a.Id).ToHashSet();
+        items.AddRange(apps.Select(a =>
+        {
+            var spec = Spec(("domainId", a.DomainId), ("teamId", a.TeamId), ("kind", Name(a.Kind)), ("tech", a.Tech),
+                ("lifecycle", Name(a.Lifecycle)), ("visibility", Name(a.Visibility)));
+            if (AccessSpec(a.AccessTeamIds, a.AccessUsernames) is { } list) spec["access"] = list;
+            var notes = a.ProtectedNotes is not null && access.ReadsProtected(RecordKind.Application, a);
+            if (notes) spec["protectedNotes"] = a.ProtectedNotes;
+            Read(RecordKind.Application, a, notes);
+            return Item(Application, a, spec);
+        }));
         items.AddRange(s.DataObjects.Select(o => Item(DataObject, o, Spec(
             ("sensitivity", Name(o.Sensitivity)),
-            ("sourceApplicationId", o.SourceApplicationId is { } src && s.AppsById.TryGetValue(src, out var app) && !s.Hidden(app, viewer) ? src : null)))));
-        items.AddRange(s.Flows.Where(f => !s.Hidden(f, viewer)).Select(f =>
+            ("sourceApplicationId", o.SourceApplicationId is { } src && appIds.Contains(src) ? src : null)))));
+        var flows = s.Flows.Where(f => access.Sight(RecordKind.Flow, f) == Sight.Full && appIds.Contains(f.FromId) && appIds.Contains(f.ToId)).ToList();
+        var flowIds = flows.Select(f => f.Id).ToHashSet();
+        items.AddRange(flows.Select(f =>
         {
             var spec = Spec(("fromId", f.FromId), ("toId", f.ToId), ("type", Name(f.Type)), ("schedule", f.Schedule));
             spec["dataObjectIds"] = new JsonArray([.. f.DataObjectIds.Select(id => (JsonNode)JsonValue.Create(id))]);
@@ -76,24 +96,42 @@ public static class ExchangeFormat
             if (f.PlannedChangeSummary is not null)
                 spec["plannedChange"] = Spec(("summary", f.PlannedChangeSummary),
                     ("date", f.PlannedChangeDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+            var notes = f.ProtectedNotes is not null && access.ReadsProtected(RecordKind.Flow, f);
+            if (notes) spec["protectedNotes"] = f.ProtectedNotes;
+            Read(RecordKind.Flow, f, notes);
             return Item(Flow, f, spec);
         }));
-        var visible = pages.Where(p => !PageQueries.Hidden(p, viewer)).ToList();
+        var visible = pages.Where(p => access.Sight(RecordKind.Page, p) == Sight.Full).ToList();
         var visibleIds = visible.Select(p => p.Id).ToHashSet();
-        // Parents first, so that a file reads top-down; a parent hidden from the viewer is left out.
+        bool Exported(RecordKind kind, string id) => kind switch
+        {
+            RecordKind.Application => appIds.Contains(id),
+            RecordKind.Flow => flowIds.Contains(id),
+            RecordKind.Page => visibleIds.Contains(id),
+            _ => true,
+        };
+        // Parents first, so that a file reads top-down; a parent hidden from the reader is left out.
         items.AddRange(PageOrder(visible).Select(p =>
         {
             var spec = new JsonObject { ["body"] = p.Body };
             if (p.ParentId is { } parent && visibleIds.Contains(parent)) spec["parentId"] = parent;
             spec["order"] = p.Order;
-            if (p.AttachedKind is { } k && p.AttachedId is { } id) spec["attachedTo"] = new JsonObject { ["kind"] = Rules.KindName(k), ["id"] = id };
+            if (p.AttachedKind is { } k && p.AttachedId is { } id && Exported(k, id)) spec["attachedTo"] = new JsonObject { ["kind"] = Rules.KindName(k), ["id"] = id };
             if (p.OwnerTeamId is not null) spec["ownerTeamId"] = p.OwnerTeamId;
             if (p.Tags.Count > 0) spec["tags"] = new JsonArray([.. p.Tags.Select(t => (JsonNode)JsonValue.Create(t))]);
             spec["visibility"] = Name(p.Visibility);
+            if (AccessSpec(p.AccessTeamIds, p.AccessUsernames) is { } list) spec["access"] = list;
+            Read(RecordKind.Page, p, false);
             return new ExchangeItemDto(Page, p.Id, new ExchangeMetadataDto(p.Title, null), spec);
         }));
-        return new ExchangeEnvelopeDto(FormatVersion, source, FullMode, items);
+        return new ExchangeEnvelopeDto(FormatVersion, source, FullMode, scope, items);
     }
+
+    private static JsonObject? AccessSpec(List<string> teams, List<string> users) => teams.Count + users.Count == 0 ? null : new JsonObject
+    {
+        ["teamIds"] = new JsonArray([.. teams.Select(t => (JsonNode)JsonValue.Create(t))]),
+        ["usernames"] = new JsonArray([.. users.Select(u => (JsonNode)JsonValue.Create(u))]),
+    };
 
     private static List<Domain.Page> PageOrder(List<Domain.Page> pages)
     {
@@ -146,7 +184,9 @@ public static class ExchangeFormat
 
     // ---------- Import ----------
 
-    private sealed record Parsed(int Index, string Kind, string Id, VersionedEntity Entity, Action<VersionedEntity, FieldErrors, References> Apply, string? Parent = null);
+    /// <param name="Keeps">Fields absent from the file, which keep their current value on an update: <c>access</c>, <c>protectedNotes</c>.</param>
+    private sealed record Parsed(int Index, string Kind, string Id, VersionedEntity Entity, Action<VersionedEntity, FieldErrors, References> Apply,
+        string? Parent, IReadOnlySet<string> Keeps);
 
     /// <summary>
     /// Validates the whole document, then (unless <paramref name="dryRun"/> or on error) creates or updates every item,
@@ -165,7 +205,7 @@ public static class ExchangeFormat
         var refs = new References(
             Union(known.Domains, parsed, Domain), Union(known.Teams, parsed, Team),
             Union(known.Applications, parsed, Application), Union(known.DataObjects, parsed, DataObject),
-            Union(known.Flows, parsed, Flow), Union(known.Pages, parsed, Page), parents);
+            Union(known.Flows, parsed, Flow), Union(known.Pages, parsed, Page), parents, known.Users);
         var seen = new HashSet<(string, string)>();
         foreach (var p in parsed)
         {
@@ -190,6 +230,7 @@ public static class ExchangeFormat
             {
                 if (existing.TryGetValue(p.Id, out var current))
                 {
+                    Keep(p.Keeps, current, p.Entity);
                     if (Same(current, p.Entity)) { unchanged++; continue; }
                     Copy(p.Entity, current);
                     current.UpdatedAt = now;
@@ -239,11 +280,13 @@ public static class ExchangeFormat
             Envelope("$", "The document must be an object with formatVersion, source, mode and items.");
             return [];
         }
-        Unknown(envelope, ["formatVersion", "source", "mode", "items"], "", (path, msg) => Envelope(path, msg));
+        Unknown(envelope, ["formatVersion", "source", "mode", "scope", "items"], "", (path, msg) => Envelope(path, msg));
         if (Text(envelope["formatVersion"]) != FormatVersion)
             Envelope("formatVersion", $"Expected \"{FormatVersion}\" (got {Show(envelope["formatVersion"])}).");
         if (Text(envelope["mode"]) != FullMode)
             Envelope("mode", $"Expected \"{FullMode}\" (got {Show(envelope["mode"])}).");
+        if (envelope["scope"] is { } scope && Text(scope) is not (VisibleScope or FullScope))
+            Envelope("scope", $"Expected \"{VisibleScope}\" or \"{FullScope}\" (got {Show(scope)}).");
         if (envelope["source"] is not null and not JsonObject) Envelope("source", "Expected an object.");
         if (envelope["items"] is not JsonArray items)
         {
@@ -286,7 +329,8 @@ public static class ExchangeFormat
             var description = Text(metadata["description"]);
             var entry = Read(kind!, id!, name, description, specObject, (field, message) => Error($"{at}.spec.{field}", message));
             if (entry is not null && errors.Count == before)
-                parsed.Add(new Parsed(i, kind!, id!, entry.Value.Entity, entry.Value.Apply, kind == Page ? Text(specObject["parentId"]) : null));
+                parsed.Add(new Parsed(i, kind!, id!, entry.Value.Entity, entry.Value.Apply, kind == Page ? Text(specObject["parentId"]) : null,
+                    KeptWhenAbsent.Where(k => SpecFields[kind!].Contains(k) && !specObject.ContainsKey(k)).ToHashSet()));
         }
         return parsed;
     }
@@ -312,7 +356,8 @@ public static class ExchangeFormat
             {
                 var input = new ApplicationInput(id, name, Text(spec["domainId"]), Text(spec["teamId"]),
                     Enum<ApplicationKind>(spec["kind"], "kind", error), Text(spec["tech"]), description,
-                    Enum<Lifecycle>(spec["lifecycle"], "lifecycle", error), Enum<Visibility>(spec["visibility"], "visibility", error), null);
+                    Enum<Lifecycle>(spec["lifecycle"], "lifecycle", error), Enum<Visibility>(spec["visibility"], "visibility", error), null,
+                    AccessInput(spec["access"], error), Text(spec["protectedNotes"]));
                 return (new Application { Id = id }, (e, err, r) => Catalog.Apply((Application)e, input, err, r));
             }
             case DataObject:
@@ -340,7 +385,7 @@ public static class ExchangeFormat
                 }
                 else if (spec["tags"] is not null) error("tags", "Expected an array of texts.");
                 var input = new PageInput(id, name, Text(spec["body"]), Text(spec["parentId"]), Integer(spec["order"], "order", error), attached,
-                    Text(spec["ownerTeamId"]), tags, Enum<Visibility>(spec["visibility"], "visibility", error), null);
+                    Text(spec["ownerTeamId"]), tags, Enum<Visibility>(spec["visibility"], "visibility", error), null, AccessInput(spec["access"], error));
                 return (new Domain.Page { Id = id }, (e, err, r) => Catalog.Apply((Domain.Page)e, input, err, r));
             }
             default:
@@ -369,9 +414,54 @@ public static class ExchangeFormat
                 else if (spec["plannedChange"] is not null) error("plannedChange", "Expected an object with a summary.");
                 var input = new FlowInput(id, name, Text(spec["fromId"]), Text(spec["toId"]), Enum<FlowType>(spec["type"], "type", error),
                     Text(spec["schedule"]), objects, Text(spec["ownerTeamId"]), Enum<FlowStatus>(spec["status"], "status", error),
-                    Text(spec["volume"]), description, change, null);
+                    Text(spec["volume"]), description, change, null, Text(spec["protectedNotes"]));
                 return (new Flow { Id = id }, (e, err, r) => Catalog.Apply((Flow)e, input, err, r));
             }
+        }
+    }
+
+    /// <summary><c>access: {teamIds: [...], usernames: [...]}</c>; null when absent.</summary>
+    private static AccessListInput? AccessInput(JsonNode? node, Action<string, string> error)
+    {
+        if (node is null) return null;
+        if (node is not JsonObject list)
+        {
+            error("access", "Expected an object with teamIds and usernames.");
+            return null;
+        }
+        Unknown(list, ["teamIds", "usernames"], "access.", error);
+        List<string>? Strings(string field)
+        {
+            if (list[field] is null) return [];
+            if (list[field] is not JsonArray array)
+            {
+                error($"access.{field}", "Expected an array of texts.");
+                return [];
+            }
+            var values = new List<string>();
+            foreach (var value in array)
+                if (Text(value) is { } text) values.Add(text);
+                else error($"access.{field}", "Expected an array of texts.");
+            return values;
+        }
+        return new AccessListInput(Strings("teamIds"), Strings("usernames"));
+    }
+
+    /// <summary>Fields absent from the file keep the value of the record being updated.</summary>
+    private static void Keep(IReadOnlySet<string> keeps, VersionedEntity current, VersionedEntity imported)
+    {
+        switch (current, imported)
+        {
+            case (Domain.Application c, Domain.Application i):
+                if (keeps.Contains("access")) (i.AccessTeamIds, i.AccessUsernames) = (c.AccessTeamIds, c.AccessUsernames);
+                if (keeps.Contains("protectedNotes")) i.ProtectedNotes = c.ProtectedNotes;
+                break;
+            case (Domain.Flow c, Domain.Flow i):
+                if (keeps.Contains("protectedNotes")) i.ProtectedNotes = c.ProtectedNotes;
+                break;
+            case (Domain.Page c, Domain.Page i):
+                if (keeps.Contains("access")) (i.AccessTeamIds, i.AccessUsernames) = (c.AccessTeamIds, c.AccessUsernames);
+                break;
         }
     }
 
@@ -421,15 +511,18 @@ public static class ExchangeFormat
         {
             (Domain.Page x, Domain.Page y) => x.Title == y.Title && x.Body == y.Body && x.ParentId == y.ParentId && x.Order == y.Order
                 && x.AttachedKind == y.AttachedKind && x.AttachedId == y.AttachedId && x.OwnerTeamId == y.OwnerTeamId
-                && x.Tags.SequenceEqual(y.Tags) && x.Visibility == y.Visibility,
+                && x.Tags.SequenceEqual(y.Tags) && x.Visibility == y.Visibility
+                && x.AccessTeamIds.SequenceEqual(y.AccessTeamIds) && x.AccessUsernames.SequenceEqual(y.AccessUsernames),
             (BusinessDomain x, BusinessDomain y) => x.Order == y.Order,
             (Team x, Team y) => x.Contact == y.Contact,
             (Application x, Application y) => x.DomainId == y.DomainId && x.TeamId == y.TeamId && x.Kind == y.Kind && x.Tech == y.Tech
-                && x.Lifecycle == y.Lifecycle && x.Visibility == y.Visibility,
+                && x.Lifecycle == y.Lifecycle && x.Visibility == y.Visibility && x.ProtectedNotes == y.ProtectedNotes
+                && x.AccessTeamIds.SequenceEqual(y.AccessTeamIds) && x.AccessUsernames.SequenceEqual(y.AccessUsernames),
             (DataObject x, DataObject y) => x.Sensitivity == y.Sensitivity && x.SourceApplicationId == y.SourceApplicationId,
             (Flow x, Flow y) => x.FromId == y.FromId && x.ToId == y.ToId && x.Type == y.Type && x.Schedule == y.Schedule
                 && x.DataObjectIds.SequenceEqual(y.DataObjectIds) && x.OwnerTeamId == y.OwnerTeamId && x.Status == y.Status
-                && x.Volume == y.Volume && x.PlannedChangeSummary == y.PlannedChangeSummary && x.PlannedChangeDate == y.PlannedChangeDate,
+                && x.Volume == y.Volume && x.PlannedChangeSummary == y.PlannedChangeSummary && x.PlannedChangeDate == y.PlannedChangeDate
+                && x.ProtectedNotes == y.ProtectedNotes,
             _ => false,
         };
 
@@ -441,6 +534,7 @@ public static class ExchangeFormat
             case (Domain.Page x, Domain.Page y):
                 (y.Title, y.Body, y.ParentId, y.Order, y.AttachedKind, y.AttachedId, y.OwnerTeamId, y.Tags, y.Visibility, y.Links) =
                     (x.Title, x.Body, x.ParentId, x.Order, x.AttachedKind, x.AttachedId, x.OwnerTeamId, x.Tags, x.Visibility, x.Links);
+                (y.AccessTeamIds, y.AccessUsernames) = (x.AccessTeamIds, x.AccessUsernames);
                 break;
             case (BusinessDomain x, BusinessDomain y):
                 y.Order = x.Order;
@@ -450,6 +544,7 @@ public static class ExchangeFormat
                 break;
             case (Application x, Application y):
                 (y.DomainId, y.TeamId, y.Kind, y.Tech, y.Lifecycle, y.Visibility) = (x.DomainId, x.TeamId, x.Kind, x.Tech, x.Lifecycle, x.Visibility);
+                (y.AccessTeamIds, y.AccessUsernames, y.ProtectedNotes) = (x.AccessTeamIds, x.AccessUsernames, x.ProtectedNotes);
                 break;
             case (DataObject x, DataObject y):
                 (y.Sensitivity, y.SourceApplicationId) = (x.Sensitivity, x.SourceApplicationId);
@@ -457,6 +552,7 @@ public static class ExchangeFormat
             case (Flow x, Flow y):
                 (y.FromId, y.ToId, y.Type, y.Schedule, y.DataObjectIds, y.OwnerTeamId, y.Status, y.Volume, y.PlannedChangeSummary, y.PlannedChangeDate) =
                     (x.FromId, x.ToId, x.Type, x.Schedule, x.DataObjectIds, x.OwnerTeamId, x.Status, x.Volume, x.PlannedChangeSummary, x.PlannedChangeDate);
+                y.ProtectedNotes = x.ProtectedNotes;
                 break;
         }
     }

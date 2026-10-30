@@ -122,7 +122,12 @@ public static class AccountEndpoints
         if (user.Id == Viewer.From(caller).Id) throw ApiProblem.Conflict("You cannot delete your own account.");
         if (user.Role == Role.Admin) await KeepOneAdmin(db, user);
         db.Users.Remove(user);
+        await using var transaction = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
+        // The account leaves every access list (a username could be given to someone else later).
+        await db.Database.ExecuteSqlAsync($"update \"Applications\" set \"AccessUsernames\" = array_remove(\"AccessUsernames\", {user.Username}) where {user.Username} = any(\"AccessUsernames\")");
+        await db.Database.ExecuteSqlAsync($"update \"Pages\" set \"AccessUsernames\" = array_remove(\"AccessUsernames\", {user.Username}) where {user.Username} = any(\"AccessUsernames\")");
+        await transaction.CommitAsync();
         return Results.NoContent();
     }
 

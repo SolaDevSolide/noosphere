@@ -27,7 +27,9 @@ récente à la plus ancienne, en compare deux au choix et en restaure une.
 
 Restaurer suit les mêmes règles que modifier : un responsable (ou un administrateur) publie l'ancienne version comme
 une nouvelle révision ; tout autre membre obtient à la place une proposition à valider. L'historique d'un
-enregistrement restreint n'est montré qu'aux administrateurs.
+enregistrement restreint est montré à ceux qui le voient ; les notes protégées apparaissent sous la forme
+`"••• protected"` dans les instantanés et les comparaisons pour ceux qui ne peuvent pas les lire (voir
+[accès](acces.md)).
 
 ## Enregistrements supprimés
 

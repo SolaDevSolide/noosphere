@@ -69,6 +69,12 @@ public static partial class Rules
     public const int MaxTags = 20;
     public const int MaxBodyLength = 200_000;
 
+    /// <summary>Most entries of an access list (teams plus users).</summary>
+    public const int MaxAccessEntries = 200;
+
+    /// <summary>Shown instead of protected notes to those who may not read them (history, compare, proposals).</summary>
+    public const string ProtectedMask = "••• protected";
+
     /// <summary>Wiki link kinds, as written in <c>[[kind:id]]</c>.</summary>
     public static readonly IReadOnlyDictionary<string, RecordKind> LinkKinds = new Dictionary<string, RecordKind>(StringComparer.Ordinal)
     {

@@ -28,8 +28,9 @@ Un enregistrement sans équipe responsable relève des administrateurs.
 - Les **autres membres** envoient une proposition de modification au lieu d'enregistrer. Les responsables peuvent
   aussi cocher « Proposer plutôt » pour faire relire leur modification.
 - Les **invités** (`guest`) lisent seulement : ils ne proposent pas.
-- Les applications et pages restreintes, et les flux qui touchent une application restreinte, ne sont modifiés que
-  par les administrateurs.
+- Les enregistrements restreints sont proposés par ceux qui les voient, et publiés par les administrateurs et
+  l'équipe propriétaire. Les notes protégées absentes d'une proposition sont gardées (voir
+  [accès](acces.md#notes-protégées)).
 
 Les fiches renvoient `owningTeamId` et `permissions: {publish, propose}` pour le lecteur : l'interface affiche
 « Modifier » ou « Proposer une modification ». Un `PUT`, `POST` ou `DELETE` direct par quelqu'un qui ne peut pas

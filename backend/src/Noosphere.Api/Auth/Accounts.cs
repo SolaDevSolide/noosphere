@@ -16,8 +16,6 @@ public sealed record Viewer(Guid Id, string Username, Role Role)
 {
     public bool IsAdmin => Role == Role.Admin;
     public bool CanEdit => Role is Role.Admin or Role.Member;
-    /// <summary>Restricted applications are shown in full to administrators only.</summary>
-    public bool SeesRestricted => IsAdmin;
 
     /// <summary>Used by the command line, which works on the database directly.</summary>
     public static readonly Viewer System = new(Guid.Empty, "system", Role.Admin);

@@ -18,6 +18,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<ProposalChange> ProposalChanges => Set<ProposalChange>();
     public DbSet<ProposalApproval> ProposalApprovals => Set<ProposalApproval>();
     public DbSet<InstanceSettings> InstanceSettings => Set<InstanceSettings>();
+    public DbSet<AccessLog> AccessLogs => Set<AccessLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,6 +39,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.Lifecycle).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Visibility).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Tech).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.ProtectedNotes).HasMaxLength(Rules.MaxTextLength);
             e.HasOne<BusinessDomain>().WithMany().HasForeignKey(x => x.DomainId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -55,6 +57,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.Schedule).HasMaxLength(Rules.MaxShortTextLength);
             e.Property(x => x.Volume).HasMaxLength(Rules.MaxShortTextLength);
             e.Property(x => x.PlannedChangeSummary).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.ProtectedNotes).HasMaxLength(Rules.MaxTextLength);
             e.HasOne<Application>().WithMany().HasForeignKey(x => x.FromId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Application>().WithMany().HasForeignKey(x => x.ToId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Team>().WithMany().HasForeignKey(x => x.OwnerTeamId).OnDelete(DeleteBehavior.Restrict);
@@ -146,6 +149,20 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.OrganisationName).HasMaxLength(Rules.MaxNameLength);
             e.Property(x => x.DefaultLanguage).HasMaxLength(5);
             e.Property(x => x.Version).IsConcurrencyToken();
+        });
+        modelBuilder.Entity<AccessLog>(e =>
+        {
+            e.ToTable("AccessLog");
+            e.Property(x => x.Username).HasMaxLength(100);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.EntityId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.What).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Detail).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.Why).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.WhyTeamId).HasMaxLength(Rules.MaxIdLength);
+            e.HasIndex(x => x.At);
+            e.HasIndex(x => x.Username);
+            e.HasIndex(x => new { x.Kind, x.EntityId });
         });
     }
 

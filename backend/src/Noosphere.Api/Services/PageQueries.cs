@@ -15,29 +15,37 @@ public static class RecordContext
         var kind = type.Kind;
         var key = Rules.LinkKey(kind, e.Id);
         var attached = await db.Pages.AsNoTracking().Where(p => p.AttachedKind == kind && p.AttachedId == e.Id)
-            .Select(p => new { p.Id, p.Title, p.Visibility }).ToListAsync(cancel);
+            .Select(p => new { p.Id, p.Title }).ToListAsync(cancel);
         var mentions = await db.Pages.AsNoTracking().Where(p => p.Links.Contains(key))
-            .Select(p => new { p.Id, p.Title, p.Visibility }).ToListAsync(cancel);
-        var seesAll = access.Viewer.SeesRestricted;
+            .Select(p => new { p.Id, p.Title }).ToListAsync(cancel);
+        // Pages inherit nothing from the record: each one is listed when the reader may see it.
         return new RecordContextDto(
             access.Facts.Owner(kind, e),
             access.Permissions(type, e),
-            [.. attached.Where(p => seesAll || p.Visibility != Visibility.Restricted).OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase).Select(p => new PageRefDto(p.Id, p.Title))],
-            [.. mentions.Where(p => seesAll || p.Visibility != Visibility.Restricted).OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase).Select(p => new PageRefDto(p.Id, p.Title))]);
+            [.. attached.Where(p => !access.Hidden(RecordKind.Page, p.Id)).OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase).Select(p => new PageRefDto(p.Id, p.Title))],
+            [.. mentions.Where(p => !access.Hidden(RecordKind.Page, p.Id)).OrderBy(p => p.Title, StringComparer.OrdinalIgnoreCase).Select(p => new PageRefDto(p.Id, p.Title))]);
     }
 }
 
 /// <summary>Read models of documentation pages.</summary>
 public static partial class PageQueries
 {
-    public static bool Hidden(Page p, Auth.Viewer viewer) => p.Visibility == Visibility.Restricted && !viewer.SeesRestricted;
-
     public static AttachedToDto? Attached(Page p) => p.AttachedKind is { } k && p.AttachedId is { } id ? new AttachedToDto(k, id) : null;
 
     public static PageDto Dto(Page p) => new(p.Id, false, p.Title, p.Body, p.ParentId, p.Order, Attached(p), p.OwnerTeamId, p.Tags,
-        p.Visibility, p.Version, p.CreatedAt, p.UpdatedAt);
+        p.Visibility, Snapshot.AccessDto(p), p.Version, p.CreatedAt, p.UpdatedAt);
 
     public static RestrictedPageDto Stub(Page p) => new(p.Id, true, p.ParentId, p.Order);
+
+    public static GuestPageDto GuestStub(Page p) => new(p.Id, false, false, p.Title, p.ParentId, p.Order);
+
+    /// <summary>The stub the reader gets instead of the page, or null when they see it in full.</summary>
+    public static object? StubFor(Page p, Access access) => access.Sight(RecordKind.Page, p) switch
+    {
+        Sight.Hidden => Stub(p),
+        Sight.Outline => GuestStub(p),
+        _ => null,
+    };
 
     /// <summary>Links of a body resolved against the records, as the reader may see them.</summary>
     public static List<PageLinkDto> Links(string body, Access access) =>
@@ -50,20 +58,21 @@ public static partial class PageQueries
 
     public static async Task<PageDetailDto> Detail(NoosphereDbContext db, Page p, Access access, CancellationToken cancel = default)
     {
-        var all = await db.Pages.AsNoTracking().Select(x => new { x.Id, x.Title, x.ParentId, x.Order, x.Visibility, x.Links }).ToListAsync(cancel);
+        var all = await db.Pages.AsNoTracking().Select(x => new { x.Id, x.Title, x.ParentId, x.Order, x.Links }).ToListAsync(cancel);
         var byId = all.ToDictionary(x => x.Id);
-        bool Visible(Visibility visibility) => access.Viewer.SeesRestricted || visibility != Visibility.Restricted;
+        bool Visible(string id) => !access.Hidden(RecordKind.Page, id);
         var key = Rules.LinkKey(RecordKind.Page, p.Id);
-        var backlinks = all.Where(x => x.Id != p.Id && x.Links.Contains(key) && Visible(x.Visibility))
+        var backlinks = all.Where(x => x.Id != p.Id && x.Links.Contains(key) && Visible(x.Id))
             .OrderBy(x => x.Title, StringComparer.OrdinalIgnoreCase).Select(x => new PageRefDto(x.Id, x.Title)).ToList();
         var ancestors = new List<PageRefDto>();
         var seen = new HashSet<string>(StringComparer.Ordinal) { p.Id };
         for (var at = p.ParentId; at is not null && seen.Add(at) && byId.TryGetValue(at, out var parent); at = parent.ParentId)
-            ancestors.Insert(0, new PageRefDto(parent.Id, Visible(parent.Visibility) ? parent.Title : ""));
-        var children = all.Where(x => x.ParentId == p.Id && Visible(x.Visibility))
+            ancestors.Insert(0, new PageRefDto(parent.Id, Visible(parent.Id) ? parent.Title : ""));
+        var children = all.Where(x => x.ParentId == p.Id && Visible(x.Id))
             .OrderBy(x => x.Order).ThenBy(x => x.Title, StringComparer.OrdinalIgnoreCase).Select(x => new PageRefDto(x.Id, x.Title)).ToList();
         var attachedTitle = p.AttachedKind is { } k && p.AttachedId is { } id && !access.Hidden(k, id) ? access.Facts.Title(k, id) : null;
-        return new PageDetailDto(Dto(p), Links(p.Body, access), backlinks, ancestors, children, attachedTitle,
+        var attachedRestricted = p.AttachedKind is { } ak && p.AttachedId is { } aid && access.Facts.Restricted(ak, aid);
+        return new PageDetailDto(Dto(p), Links(p.Body, access), backlinks, ancestors, children, attachedTitle, attachedRestricted,
             access.Facts.Owner(RecordKind.Page, p), access.Permissions(Records.Page, p));
     }
 
@@ -71,7 +80,7 @@ public static partial class PageQueries
         p.Visibility, Rules.WikiLinks(p.Body).Count(l => !facts.Exists(l.Kind, l.Id)), p.Version, p.UpdatedAt);
 
     /// <summary>The page tree: siblings by order, then title. Pages whose parent is missing are shown at the top level.</summary>
-    public static List<PageTreeNodeDto> Tree(IReadOnlyList<Page> pages, Auth.Viewer viewer)
+    public static List<PageTreeNodeDto> Tree(IReadOnlyList<Page> pages, Access access)
     {
         var ids = pages.Select(p => p.Id).ToHashSet();
         var children = pages.ToLookup(p => p.ParentId is { } parent && ids.Contains(parent) ? parent : null);
@@ -79,7 +88,7 @@ public static partial class PageQueries
         List<PageTreeNodeDto> Level(string? parent) =>
             [.. children[parent].OrderBy(p => p.Order).ThenBy(p => p.Title, StringComparer.OrdinalIgnoreCase)
                 .Where(p => visited.Add(p.Id))
-                .Select(p => Hidden(p, viewer)
+                .Select(p => access.Hidden(RecordKind.Page, p.Id)
                     ? new PageTreeNodeDto(p.Id, true, null, p.Order, null, Level(p.Id))
                     : new PageTreeNodeDto(p.Id, false, p.Title, p.Order, Attached(p), Level(p.Id)))];
         return Level(null);

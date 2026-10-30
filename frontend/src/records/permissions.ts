@@ -1,4 +1,5 @@
 import type { Application, Flow, Permissions, RecordExtras, Role } from '../api/types';
+import { isRestrictedApp } from '../api/types';
 import type { Model } from '../domain/model';
 
 /** The owner team of a record, following the contract when the server does not say it. */
@@ -12,7 +13,7 @@ export function ownerTeamOf(
   const f = rec as Flow;
   if (f.ownerTeamId) return f.ownerTeamId;
   const from = m?.apps.get(f.fromId);
-  return from && !from.restricted ? (from.teamId ?? null) : null;
+  return from && !isRestrictedApp(from) ? (from.teamId ?? null) : null;
 }
 
 /** What the user may do on a record: the server's answer, or the same rule computed here. */

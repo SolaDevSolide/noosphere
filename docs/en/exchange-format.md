@@ -15,6 +15,7 @@ source:
   url: https://noosphere.example.com
   exportedAt: 2026-10-30T09:00:00Z
 mode: full
+scope: visible                 # visible or full; informative, ignored on import
 items:
   - kind: Domain               # Domain, Team, Application, DataObject, Flow or Page
     id: finance                # kebab-case, unique per kind
@@ -26,6 +27,8 @@ items:
 ```
 
 `mode: full` means that the file holds the whole landscape it was exported from. Items may come in any order.
+`scope: visible` means it holds what the exporting user sees in full; `scope: full` (administrators only) holds
+everything, restricted records and protected notes included.
 
 ## Spec per kind
 
@@ -33,16 +36,21 @@ items:
 | ---- | ----------- |
 | `Domain` | `order` (integer) |
 | `Team` | `contact` (e-mail or channel) |
-| `Application` | `domainId` (required), `teamId`, `kind` (`app` default, `bus`, `saas`, `data`, `file`, `external`), `tech`, `lifecycle` (`live` default, `planned`, `retiring`, `retired`), `visibility` (`everyone` default, `restricted`) |
+| `Application` | `domainId` (required), `teamId`, `kind` (`app` default, `bus`, `saas`, `data`, `file`, `external`), `tech`, `lifecycle` (`live` default, `planned`, `retiring`, `retired`), `visibility` (`everyone` default, `restricted`), `access` (`teamIds`, `usernames`), `protectedNotes` (Markdown) |
 | `DataObject` | `sensitivity` (`internal` default, `public`, `personal`, `sensitive`), `sourceApplicationId` |
-| `Flow` | `fromId`, `toId` (required), `type` (`api` default, `event`, `batch`), `schedule`, `dataObjectIds` (list), `ownerTeamId`, `status` (`live` default, `planned`, `deprecated`), `volume`, `plannedChange` (`summary`, `date` as YYYY-MM-DD) |
-| `Page` | `body` (Markdown), `parentId` (a page), `order` (integer), `attachedTo` (`kind`: `application`, `flow`, `dataObject`, `domain` or `team`, and `id`), `ownerTeamId`, `tags` (list), `visibility` (`everyone` default, `restricted`) |
+| `Flow` | `fromId`, `toId` (required), `type` (`api` default, `event`, `batch`), `schedule`, `dataObjectIds` (list), `ownerTeamId`, `status` (`live` default, `planned`, `deprecated`), `volume`, `plannedChange` (`summary`, `date` as YYYY-MM-DD), `protectedNotes` (Markdown) |
+| `Page` | `body` (Markdown), `parentId` (a page), `order` (integer), `attachedTo` (`kind`: `application`, `flow`, `dataObject`, `domain` or `team`, and `id`), `ownerTeamId`, `tags` (list), `visibility` (`everyone` default, `restricted`), `access` (`teamIds`, `usernames`) |
 
 For a `Page`, `metadata.name` is the title and there is no `metadata.description`: the text is `spec.body`. Wiki
 links in the body (`[[application:billing]]`) are kept as written; a link to a record that does not exist is
 imported and shown as broken. Images are not part of the format yet.
 
-Computed values (completeness, flow sensitivity, `sourceOf`, page links) are not part of the file, and neither are
+`access` lists the teams and users who see a restricted record, and the guests it is shared with; unknown teams
+and users are import errors. `protectedNotes` are written only where the exporting user may read them. When either
+key is absent, an import keeps the current value; an empty `protectedNotes` clears the notes. See
+[access](access.md).
+
+Computed values (completeness, sensitivity, `sourceOf`, page links) are not part of the file, and neither are
 the history, proposals, accounts and team memberships.
 
 ## Example
@@ -96,5 +104,7 @@ Pages are exported after their parent, so that a file reads top-down.
    identical to the record are counted as `unchanged`. Each created or updated record gets a revision ("Imported",
    by the importing administrator).
 3. An import never deletes anything.
+4. A value that looks like a secret is an error, reported without the value (see
+   [access](access.md#secrets-are-refused)).
 
 `dryRun=true` (API) or `--dry-run` (CLI) only runs the checks and counts. Only administrators import.

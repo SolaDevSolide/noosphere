@@ -332,8 +332,10 @@ public static class CommandLine
         var format = (o["--format"] ?? (o["--output"] is { } f && (f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)) ? "yaml" : "json")).ToLowerInvariant();
         if (format is not ("json" or "yaml")) throw new UsageException("--format expects json or yaml.");
         var settings = sp.GetRequiredService<Settings>();
-        var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), Viewer.System,
-            new Contracts.ExchangeSourceDto((await Endpoints.InstanceSettingsStore.Get(db, settings)).InstanceName, settings.PublicUrl, sp.GetRequiredService<TimeProvider>().GetUtcNow()));
+        // The command line works on the database directly: its export is always complete.
+        var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), await Access.System(db),
+            new Contracts.ExchangeSourceDto((await Endpoints.InstanceSettingsStore.Get(db, settings)).InstanceName, settings.PublicUrl, sp.GetRequiredService<TimeProvider>().GetUtcNow()),
+            ExchangeFormat.FullScope);
         var text = format == "yaml" ? ExchangeFormat.ToYaml(envelope) : ExchangeFormat.ToJson(envelope);
         if (o["--output"] is { } file)
         {

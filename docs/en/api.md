@@ -17,17 +17,18 @@ JSON over HTTP, under `/api`, with camelCase keys and enums written as lower-cam
 - **Ids**: stable kebab-case slugs, unique per kind (`crm-to-billing-customers`). On create, a missing `id` is derived
   from the name and made unique (`customer-portal`, `customer-portal-2`). Ids never change.
 - **Versions**: every record has `version`, `createdAt` and `updatedAt`. `PUT` replaces the whole record (a missing
-  optional field is cleared) and must carry the `version` that was read. A stale version returns **409**: "Someone
+  optional field is cleared, except `access` and `protectedNotes`, which are kept when left out) and must carry the
+  `version` that was read. A stale version returns **409**: "Someone
   changed this record. Reload it and try again."
 
 | Status | Meaning |
 | ------ | ------- |
 | 400 | Invalid input (`errors` per field) |
 | 401 | Not signed in, or wrong credentials |
-| 403 | Role not allowed, not in the owning team (send a proposal), restricted record, missing `X-Requested-With` |
+| 403 | Role not allowed, not in the owning team (send a proposal), restricted record or record not shared with a guest, missing `X-Requested-With` |
 | 404 | No such record |
 | 409 | Stale version, id already used, record still in use (delete), outdated proposal (`outdated: true`) |
-| 422 | Import file with errors (body: the import result) |
+| 422 | A field looks like a secret (see [access](access.md#secrets-are-refused)), or an import file with errors (body: the import result) |
 | 429 | Too many sign-in attempts |
 
 ## Authentication and accounts
@@ -64,22 +65,31 @@ cannot be deleted (409).
 | ---- | -------------- | ----------------- |
 | Domain | `name`, `description?`, `order` | |
 | Team | `name`, `description?`, `contact?` | |
-| Application | `name`, `domainId`, `teamId?`, `kind` (`app`, `bus`, `saas`, `data`, `file`, `external`), `tech?`, `description?` (markdown), `lifecycle` (`planned`, `live`, `retiring`, `retired`), `visibility` (`everyone`, `restricted`) | `sourceOf` (data objects whose source it is), `completeness` (0 to 1), `restricted: false` |
+| Application | `name`, `domainId`, `teamId?`, `kind` (`app`, `bus`, `saas`, `data`, `file`, `external`), `tech?`, `description?` (markdown), `lifecycle` (`planned`, `live`, `retiring`, `retired`), `visibility` (`everyone`, `restricted`), `access?` (`{teamIds, usernames}`), `protectedNotes?` | `sourceOf` (data objects whose source it is), `completeness` (0 to 1), `sensitivity` and `sensitivityReasons`, `restricted: false` |
 | Data object | `name`, `sensitivity` (`public`, `internal`, `personal`, `sensitive`), `sourceApplicationId?`, `description?` | |
-| Flow | `name`, `fromId`, `toId`, `type` (`api`, `event`, `batch`), `schedule?`, `dataObjectIds[]`, `ownerTeamId?`, `status` (`planned`, `live`, `deprecated`), `volume?`, `description?`, `plannedChange?` (`{summary, date?}`) | `sensitivity` (most sensitive carried object, `internal` when none), `completeness`, `restricted: false` |
+| Flow | `name`, `fromId`, `toId`, `type` (`api`, `event`, `batch`), `schedule?`, `dataObjectIds[]`, `ownerTeamId?`, `status` (`planned`, `live`, `deprecated`), `volume?`, `description?`, `plannedChange?` (`{summary, date?}`), `protectedNotes?` | `sensitivity` (most sensitive carried object, `internal` when none), `completeness`, `restricted: false` |
 
 Completeness: the share of recommended fields that are filled. For an application: team, tech, description, at
 least one flow, lifecycle. For a flow: schedule, data objects, owner, description.
 
-List filters, all optional: `?domainId=&teamId=&type=&status=&dataObjectId=&q=`. `q` is accent- and
+List filters, all optional: `?domainId=&teamId=&type=&status=&dataObjectId=&sensitivity=&q=`. `q` is accent- and
 case-insensitive.
 
-### Restricted applications
+### Restricted records, guests and protected notes
 
-Only admins see a restricted application in full. Others get `{id, restricted: true, domainId}`, and the flows from
-or to it as `{id, restricted: true, fromId, toId, type}`. Restricted records cannot be changed by non-admins (403),
-and filters and search never match their hidden fields. In the OpenAPI document, lists hold
-`ApplicationDto | RestrictedApplicationDto` (and `FlowDto | RestrictedFlowDto`), told apart by `restricted`.
+See [access](access.md). A reader who may not see a restricted application gets `{id, restricted: true, domainId}`,
+and the flows they may not see as `{id, restricted: true, fromId, toId, type}`. A guest gets an outline of what is
+not shared with them (`restricted: false, shared: false`, the name and place only). Filters and search never match
+hidden fields. In the OpenAPI document, lists hold `ApplicationDto | RestrictedApplicationDto | GuestApplicationDto`
+(and the same for flows and pages), told apart by `restricted` and `shared`.
+
+Application and flow details carry `protectedNotes` (null when the reader may not read them) and
+`protectedNotesHidden`.
+
+| Method and path | Who | Answer |
+| --------------- | --- | ------ |
+| `GET /api/{kind}/{id}/access` | who sees the record in full | `{visibility, owningTeam, readers, publishers, proposers, protectedNotes, canManage}` |
+| `GET /api/access-log?username=&kind=&entityId=&what=&from=&to=&cursor=&limit=` | admin | `{items, nextCursor}`, newest first |
 
 ## Explorer
 
@@ -89,7 +99,7 @@ and filters and search never match their hidden fields. In the OpenAPI document,
   filters (`type`, `status`, `dataObjectId`) keep the matching flows and only the applications at their ends. A flow
   always comes with both of its ends.
 - `GET /api/search?q=` returns at most 20 `{kind, id, title, subtitle}` items, where `kind` is `application`, `flow`,
-  `dataObject`, `team`, `domain` or `page`. Names starting with the text come first. For a page, a match in the body
+  `dataObject`, `team`, `domain` or `page`, plus `sensitivity` for applications. Names starting with the text come first. For a page, a match in the body
   counts too, and the subtitle is an excerpt around it.
 
 ## Proposals
@@ -131,8 +141,9 @@ accounts get `defaultLanguage`. The technical name `noosphere` (command, image, 
 
 ## Exchange
 
-- `GET /api/export?format=json|yaml`, for anyone signed in, downloads the landscape in the
-  [exchange format](exchange-format.md). Restricted applications and pages are left out for non-admins.
+- `GET /api/export?format=json|yaml&scope=visible|full&reason=`, for anyone signed in, downloads the landscape in
+  the [exchange format](exchange-format.md): what the reader sees in full (`visible`, the default), or everything
+  (`full`, administrators only, written to the [access log](access.md#access-log) with the optional `reason`).
 - `POST /api/import?dryRun=true|false`, for admins, takes the file as the request body (JSON or YAML, told apart by
   `Content-Type` or `?format=`) and returns `{created, updated, unchanged, errors[], dryRun, applied}`.
 

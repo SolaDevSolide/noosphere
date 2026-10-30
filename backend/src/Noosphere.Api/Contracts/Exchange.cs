@@ -6,7 +6,8 @@ namespace Noosphere.Api.Contracts;
 /// <summary>Exchange format v1 (docs/format/noosphere-v1.schema.json).</summary>
 /// <param name="FormatVersion">Always <c>noosphere/v1</c>.</param>
 /// <param name="Mode">Always <c>full</c>: the file describes the whole landscape it was exported from.</param>
-public sealed record ExchangeEnvelopeDto(string FormatVersion, ExchangeSourceDto Source, string Mode, IReadOnlyList<ExchangeItemDto> Items);
+/// <param name="Scope"><c>visible</c>: what the exporting user may see (restricted records left out, protected notes only where readable); <c>full</c>: everything (administrators).</param>
+public sealed record ExchangeEnvelopeDto(string FormatVersion, ExchangeSourceDto Source, string Mode, string Scope, IReadOnlyList<ExchangeItemDto> Items);
 
 public sealed record ExchangeSourceDto(string Name, string? Url, DateTimeOffset ExportedAt);
 
