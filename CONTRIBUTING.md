@@ -50,6 +50,10 @@ npm run dev
 npm run lint && npm run format:check && npm test && npm run build
 ```
 
+`npm run dev` proxies `/api` to the API on <http://localhost:5080>; set `NOOSPHERE_API_URL` to use another address.
+`npm run dev:mock` runs the interface on an in-browser mock of the API instead (demo accounts alice, bob, david and
+claire, password `demo`); production builds never include it.
+
 ## Conventions
 
 - Code, API, CLI and exchange format keys are in English. The interface and the documentation are in English and

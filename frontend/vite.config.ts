@@ -8,12 +8,14 @@ export default defineConfig(({ command, mode }) => {
   if (command === 'build' && loadEnv(mode, '.', 'VITE_').VITE_MOCK) {
     throw new Error('VITE_MOCK must not be set for a production build.');
   }
+  // NOOSPHERE_API_URL points the development proxy at another API (default http://localhost:5080).
+  const api = loadEnv(mode, '.', 'NOOSPHERE_').NOOSPHERE_API_URL || 'http://localhost:5080';
   return {
     plugins: [react(), tailwindcss()],
     server: {
       port: 5173,
       proxy: {
-        '/api': { target: 'http://localhost:5080', changeOrigin: false, secure: false },
+        '/api': { target: api, changeOrigin: false, secure: false },
       },
     },
     build: { outDir: 'dist', emptyOutDir: true },
