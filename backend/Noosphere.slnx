@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Noosphere.Api/Noosphere.Api.csproj" />
+    <Project Path="src/Noosphere.Domain/Noosphere.Domain.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Noosphere.Tests/Noosphere.Tests.csproj" />
+  </Folder>
+</Solution>

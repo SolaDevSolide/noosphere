@@ -1,0 +1,46 @@
+# Noosphere with its PostgreSQL database: docker compose up -d, then open http://localhost:8080
+# Settings come from a .env file next to this one (see .env.example).
+services:
+  db:
+    image: mirror.gcr.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: noosphere
+      POSTGRES_USER: ${POSTGRES_USER:-noosphere}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-noosphere}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-noosphere} -d noosphere"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  noosphere:
+    image: ${NOOSPHERE_IMAGE:-noosphere:local}
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NOOSPHERE_DATABASE: Host=db;Port=5432;Database=noosphere;Username=${POSTGRES_USER:-noosphere};Password=${POSTGRES_PASSWORD:-noosphere}
+      # true: the "Alizé" demo landscape and the accounts alice, bob and claire (password "demo"). Never on a shared server.
+      NOOSPHERE_DEMO: ${NOOSPHERE_DEMO:-false}
+      # First administrator, created when there is no account yet (a random password is logged once when empty).
+      NOOSPHERE_ADMIN_USERNAME: ${NOOSPHERE_ADMIN_USERNAME:-admin}
+      NOOSPHERE_ADMIN_PASSWORD: ${NOOSPHERE_ADMIN_PASSWORD:-}
+      NOOSPHERE_LOGIN_RATE_LIMIT: ${NOOSPHERE_LOGIN_RATE_LIMIT:-10}
+      NOOSPHERE_INSTANCE_NAME: ${NOOSPHERE_INSTANCE_NAME:-Noosphere}
+      NOOSPHERE_PUBLIC_URL: ${NOOSPHERE_PUBLIC_URL:-}
+      NOOSPHERE_TRUSTED_PROXIES: ${NOOSPHERE_TRUSTED_PROXIES:-172.16.0.0/12}
+    volumes:
+      - keys:/data/keys
+      - backups:/data/backups
+    ports:
+      - "${NOOSPHERE_BIND:-127.0.0.1}:${NOOSPHERE_PORT:-8080}:8080"
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  keys:
+  backups:

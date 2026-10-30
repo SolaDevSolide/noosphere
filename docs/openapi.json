@@ -1,0 +1,2883 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Noosphere",
+    "description": "Application landscape API: applications, flows, data objects, teams and domains. Guide: docs/en/api.md.",
+    "version": "v1"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me/language": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me/password": {
+      "put": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{username}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/domains": {
+      "get": {
+        "tags": [
+          "Domains"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DomainDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Domains"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}": {
+      "get": {
+        "tags": [
+          "Domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/teams": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Teams"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/applications": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/ApplicationDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RestrictedApplicationDto"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{id}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ApplicationDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RestrictedApplicationDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Applications"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/data-objects": {
+      "get": {
+        "tags": [
+          "Data objects"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DataObjectDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Data objects"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataObjectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataObjectDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}": {
+      "get": {
+        "tags": [
+          "Data objects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataObjectDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Data objects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataObjectInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataObjectDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Data objects"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/flows": {
+      "get": {
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/FlowDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RestrictedFlowDto"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Flows"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlowInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}": {
+      "get": {
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/FlowDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RestrictedFlowDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlowInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlowDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Flows"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/landscape": {
+      "get": {
+        "tags": [
+          "Explorer"
+        ],
+        "parameters": [
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DataObjectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LandscapeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "tags": [
+          "Explorer"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SearchResultDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/export": {
+      "get": {
+        "tags": [
+          "Exchange"
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeEnvelopeDto"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeEnvelopeDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/import": {
+      "post": {
+        "tags": [
+          "Exchange"
+        ],
+        "parameters": [
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "An exchange file, in JSON or YAML.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeEnvelopeDto"
+              }
+            },
+            "application/yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeEnvelopeDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationDto": {
+        "required": [
+          "id",
+          "restricted",
+          "name",
+          "domainId",
+          "teamId",
+          "kind",
+          "tech",
+          "description",
+          "lifecycle",
+          "visibility",
+          "sourceOf",
+          "completeness",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ApplicationKind"
+          },
+          "tech": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/Lifecycle"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "sourceOf": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ids of the data objects whose source is this application (derived from `DataObject.sourceApplicationId`)."
+          },
+          "completeness": {
+            "type": "number",
+            "description": "Share of the recommended fields that are filled, 0 to 1.",
+            "format": "double"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An application the reader may see in full. `restricted` is always false (true on RestrictedApplicationDto)."
+      },
+      "ApplicationInput": {
+        "required": [
+          "id",
+          "name",
+          "domainId",
+          "teamId",
+          "kind",
+          "tech",
+          "description",
+          "lifecycle",
+          "visibility",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "domainId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "teamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ApplicationKind"
+              }
+            ]
+          },
+          "tech": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lifecycle": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Lifecycle"
+              }
+            ]
+          },
+          "visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility"
+              }
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ApplicationKind": {
+        "enum": [
+          "app",
+          "bus",
+          "saas",
+          "data",
+          "file",
+          "external"
+        ],
+        "description": "What an application is: an application proper, a message bus, a SaaS, a data store, a file exchange or a third party."
+      },
+      "DataObjectDto": {
+        "required": [
+          "id",
+          "name",
+          "sensitivity",
+          "sourceApplicationId",
+          "description",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "sourceApplicationId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DataObjectInput": {
+        "required": [
+          "id",
+          "name",
+          "sensitivity",
+          "sourceApplicationId",
+          "description",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sensitivity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Sensitivity"
+              }
+            ]
+          },
+          "sourceApplicationId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DomainDto": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "order",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DomainInput": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "order",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ExchangeEnvelopeDto": {
+        "required": [
+          "formatVersion",
+          "source",
+          "mode",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "formatVersion": {
+            "type": "string",
+            "description": "Always `noosphere/v1`."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ExchangeSourceDto"
+          },
+          "mode": {
+            "type": "string",
+            "description": "Always `full`: the file describes the whole landscape it was exported from."
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExchangeItemDto"
+            }
+          }
+        },
+        "description": "Exchange format v1 (docs/format/noosphere-v1.schema.json)."
+      },
+      "ExchangeItemDto": {
+        "required": [
+          "kind",
+          "id",
+          "metadata",
+          "spec"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "`Domain`, `Team`, `Application`, `DataObject` or `Flow`."
+          },
+          "id": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/ExchangeMetadataDto"
+          },
+          "spec": {
+            "description": "Kind-specific fields (see the JSON Schema).",
+            "$ref": "#/components/schemas/JsonObject"
+          }
+        }
+      },
+      "ExchangeMetadataDto": {
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ExchangeSourceDto": {
+        "required": [
+          "name",
+          "url",
+          "exportedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FlowDto": {
+        "required": [
+          "id",
+          "restricted",
+          "name",
+          "fromId",
+          "toId",
+          "type",
+          "schedule",
+          "dataObjectIds",
+          "sensitivity",
+          "ownerTeamId",
+          "status",
+          "volume",
+          "description",
+          "plannedChange",
+          "completeness",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "fromId": {
+            "type": "string"
+          },
+          "toId": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/FlowType"
+          },
+          "schedule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dataObjectIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sensitivity": {
+            "description": "Most sensitive of the carried data objects (internal when there is none).",
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FlowStatus"
+          },
+          "volume": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "plannedChange": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannedChangeDto"
+              }
+            ]
+          },
+          "completeness": {
+            "type": "number",
+            "format": "double"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A flow the reader may see in full. `restricted` is always false (true on RestrictedFlowDto)."
+      },
+      "FlowInput": {
+        "required": [
+          "id",
+          "name",
+          "fromId",
+          "toId",
+          "type",
+          "schedule",
+          "dataObjectIds",
+          "ownerTeamId",
+          "status",
+          "volume",
+          "description",
+          "plannedChange",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fromId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "toId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FlowType"
+              }
+            ]
+          },
+          "schedule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dataObjectIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FlowStatus"
+              }
+            ]
+          },
+          "volume": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "plannedChange": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannedChangeDto"
+              }
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "FlowStatus": {
+        "enum": [
+          "planned",
+          "live",
+          "deprecated"
+        ]
+      },
+      "FlowType": {
+        "enum": [
+          "api",
+          "event",
+          "batch"
+        ]
+      },
+      "HealthDto": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "`live` or `ready` when healthy, `unavailable` otherwise."
+          },
+          "database": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`ok`, `unreachable` or `migrations-pending`."
+          }
+        }
+      },
+      "ImportErrorDto": {
+        "required": [
+          "index",
+          "kind",
+          "id",
+          "path",
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position of the item in `items`, or null for an error on the envelope.",
+            "format": "int32"
+          },
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "description": "JSON path of the faulty value, e.g. `items[3].spec.fromId`."
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ImportResultDto": {
+        "required": [
+          "created",
+          "updated",
+          "unchanged",
+          "errors",
+          "dryRun",
+          "applied"
+        ],
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updated": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unchanged": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportErrorDto"
+            }
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "applied": {
+            "type": "boolean",
+            "description": "True when the changes were written (not a dry run, no error)."
+          }
+        },
+        "description": "Outcome of an import (or of its dry run): counts of items, or the errors that stopped it (nothing written)."
+      },
+      "JsonObject": {
+        "type": "object"
+      },
+      "LandscapeDto": {
+        "required": [
+          "domains",
+          "teams",
+          "applications",
+          "dataObjects",
+          "flows",
+          "stats",
+          "generatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DomainDto"
+            }
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamDto"
+            }
+          },
+          "applications": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/ApplicationDto"
+                },
+                {
+                  "$ref": "#/components/schemas/RestrictedApplicationDto"
+                }
+              ]
+            }
+          },
+          "dataObjects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DataObjectDto"
+            }
+          },
+          "flows": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/FlowDto"
+                },
+                {
+                  "$ref": "#/components/schemas/RestrictedFlowDto"
+                }
+              ]
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/LandscapeStatsDto"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Everything the explorer needs, in one call. `applications` holds ApplicationDto or\nRestrictedApplicationDto items, `flows` holds FlowDto or RestrictedFlowDto items\n(discriminated by `restricted`)."
+      },
+      "LandscapeStatsDto": {
+        "required": [
+          "applications",
+          "flows",
+          "domains"
+        ],
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "flows": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "domains": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Counts of what the landscape response holds."
+      },
+      "LanguageInput": {
+        "required": [
+          "language"
+        ],
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "Lifecycle": {
+        "enum": [
+          "planned",
+          "live",
+          "retiring",
+          "retired"
+        ]
+      },
+      "LoginInput": {
+        "required": [
+          "username",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MeDto": {
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "language"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "language": {
+            "type": "string",
+            "description": "`en` or `fr`."
+          }
+        },
+        "description": "The signed-in user."
+      },
+      "PasswordChangeInput": {
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "newPassword": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PlannedChangeDto": {
+        "required": [
+          "summary",
+          "date"
+        ],
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "ISO date (YYYY-MM-DD).",
+            "format": "date"
+          }
+        }
+      },
+      "ProblemDto": {
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "errors": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Field errors (field name in camelCase, then messages), on 400 only."
+          }
+        },
+        "description": "Body of every error response."
+      },
+      "RestrictedApplicationDto": {
+        "required": [
+          "id",
+          "restricted",
+          "domainId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "domainId": {
+            "type": "string"
+          }
+        },
+        "description": "A restricted application, as seen by a reader who is not an administrator."
+      },
+      "RestrictedFlowDto": {
+        "required": [
+          "id",
+          "restricted",
+          "fromId",
+          "toId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "fromId": {
+            "type": "string"
+          },
+          "toId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "api",
+              "event",
+              "batch"
+            ]
+          }
+        },
+        "description": "A flow from or to a restricted application, as seen by a reader who is not an administrator."
+      },
+      "Role": {
+        "enum": [
+          "admin",
+          "member",
+          "guest"
+        ]
+      },
+      "SearchKind": {
+        "enum": [
+          "application",
+          "flow",
+          "dataObject",
+          "team",
+          "domain"
+        ]
+      },
+      "SearchResultDto": {
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "subtitle"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SearchKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "Sensitivity": {
+        "enum": [
+          "public",
+          "internal",
+          "personal",
+          "sensitive"
+        ],
+        "description": "Ordered from the least to the most sensitive: the sensitivity of a flow is the maximum of what it carries."
+      },
+      "TeamDto": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "contact",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TeamInput": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "contact",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "UserCreateInput": {
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "language",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Role"
+              }
+            ]
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "UserDto": {
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "language",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "language": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserUpdateInput": {
+        "required": [
+          "displayName",
+          "role",
+          "language",
+          "password",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "role": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Role"
+              }
+            ]
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New password; leave empty to keep the current one. Changing it closes the user's sessions."
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "Visibility": {
+        "enum": [
+          "everyone",
+          "restricted"
+        ],
+        "description": "`Restricted` applications are only shown in full to administrators; others see their id and domain."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Domains"
+    },
+    {
+      "name": "Teams"
+    },
+    {
+      "name": "Applications"
+    },
+    {
+      "name": "Data objects"
+    },
+    {
+      "name": "Flows"
+    },
+    {
+      "name": "Explorer"
+    },
+    {
+      "name": "Exchange"
+    }
+  ]
+}

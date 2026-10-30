@@ -1,0 +1,1211 @@
+{
+  "formatVersion": "noosphere/v1",
+  "source": {
+    "name": "Alizé (demo)",
+    "url": null,
+    "exportedAt": "2026-10-30T00:00:00Z"
+  },
+  "mode": "full",
+  "items": [
+    {
+      "kind": "Domain",
+      "id": "customer",
+      "metadata": {
+        "name": "Customer",
+        "description": "Everything that faces the policyholder: portal, mobile app, CRM and sign-in."
+      },
+      "spec": {
+        "order": 1
+      }
+    },
+    {
+      "kind": "Domain",
+      "id": "contracts",
+      "metadata": {
+        "name": "Contracts",
+        "description": "Quotes, policies and the documents sent with them."
+      },
+      "spec": {
+        "order": 2
+      }
+    },
+    {
+      "kind": "Domain",
+      "id": "claims",
+      "metadata": {
+        "name": "Claims",
+        "description": "Claim declaration, assessment and repair."
+      },
+      "spec": {
+        "order": 3
+      }
+    },
+    {
+      "kind": "Domain",
+      "id": "finance",
+      "metadata": {
+        "name": "Finance",
+        "description": "Billing, payments and accounting."
+      },
+      "spec": {
+        "order": 4
+      }
+    },
+    {
+      "kind": "Domain",
+      "id": "platform",
+      "metadata": {
+        "name": "Data and platform",
+        "description": "Shared infrastructure: event bus, file exchange, data warehouse and mail."
+      },
+      "spec": {
+        "order": 5
+      }
+    },
+    {
+      "kind": "Domain",
+      "id": "external",
+      "metadata": {
+        "name": "Outside Alizé",
+        "description": "Partners and providers outside Alizé."
+      },
+      "spec": {
+        "order": 6
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "banque-azur",
+      "metadata": {
+        "name": "Banque Azur",
+        "description": "External partner."
+      },
+      "spec": {}
+    },
+    {
+      "kind": "Team",
+      "id": "imprimo",
+      "metadata": {
+        "name": "Imprimo",
+        "description": "External partner."
+      },
+      "spec": {}
+    },
+    {
+      "kind": "Team",
+      "id": "reseau-auto",
+      "metadata": {
+        "name": "Réseau Auto+",
+        "description": "External partner."
+      },
+      "spec": {}
+    },
+    {
+      "kind": "Team",
+      "id": "team-crm",
+      "metadata": {
+        "name": "Team CRM"
+      },
+      "spec": {
+        "contact": "#team-crm"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-claims",
+      "metadata": {
+        "name": "Team Claims"
+      },
+      "spec": {
+        "contact": "#team-claims"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-contracts",
+      "metadata": {
+        "name": "Team Contracts"
+      },
+      "spec": {
+        "contact": "#team-contracts"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-data",
+      "metadata": {
+        "name": "Team Data"
+      },
+      "spec": {
+        "contact": "#team-data"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-digital",
+      "metadata": {
+        "name": "Team Digital"
+      },
+      "spec": {
+        "contact": "#team-digital"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-finance",
+      "metadata": {
+        "name": "Team Finance"
+      },
+      "spec": {
+        "contact": "#team-finance"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-payments",
+      "metadata": {
+        "name": "Team Payments"
+      },
+      "spec": {
+        "contact": "#team-payments"
+      }
+    },
+    {
+      "kind": "Team",
+      "id": "team-platform",
+      "metadata": {
+        "name": "Team Platform"
+      },
+      "spec": {
+        "contact": "#team-platform"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "portal",
+      "metadata": {
+        "name": "Customer portal",
+        "description": "Self-service website for policyholders: quotes, claims, invoices and contact details."
+      },
+      "spec": {
+        "domainId": "customer",
+        "teamId": "team-digital",
+        "kind": "app",
+        "tech": "React, .NET",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "mobile",
+      "metadata": {
+        "name": "Mobile app"
+      },
+      "spec": {
+        "domainId": "customer",
+        "teamId": "team-digital",
+        "kind": "app",
+        "tech": "Flutter",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "crm",
+      "metadata": {
+        "name": "CRM",
+        "description": "Customer master data and the history of every interaction."
+      },
+      "spec": {
+        "domainId": "customer",
+        "teamId": "team-crm",
+        "kind": "app",
+        "tech": "Dynamics 365",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "idp",
+      "metadata": {
+        "name": "Identity"
+      },
+      "spec": {
+        "domainId": "customer",
+        "teamId": "team-platform",
+        "kind": "saas",
+        "tech": "Entra ID",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "quotes",
+      "metadata": {
+        "name": "Quotes",
+        "description": "Prices and issues quotes for home and car insurance."
+      },
+      "spec": {
+        "domainId": "contracts",
+        "teamId": "team-contracts",
+        "kind": "app",
+        "tech": "Java",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "policies",
+      "metadata": {
+        "name": "Policies",
+        "description": "Policy administration: the source of truth for contracts."
+      },
+      "spec": {
+        "domainId": "contracts",
+        "teamId": "team-contracts",
+        "kind": "app",
+        "tech": "Java, Oracle",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "docs",
+      "metadata": {
+        "name": "Document generation"
+      },
+      "spec": {
+        "domainId": "contracts",
+        "teamId": "team-contracts",
+        "kind": "app",
+        "tech": "Node.js",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "claims",
+      "metadata": {
+        "name": "Claims",
+        "description": "Claim handling from declaration to settlement."
+      },
+      "spec": {
+        "domainId": "claims",
+        "teamId": "team-claims",
+        "kind": "app",
+        "tech": "Guidewire",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "expert",
+      "metadata": {
+        "name": "Expert network"
+      },
+      "spec": {
+        "domainId": "claims",
+        "teamId": "team-claims",
+        "kind": "app",
+        "tech": ".NET",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "billing",
+      "metadata": {
+        "name": "Billing",
+        "description": "Invoices premiums and sends them by email and post."
+      },
+      "spec": {
+        "domainId": "finance",
+        "teamId": "team-finance",
+        "kind": "app",
+        "tech": ".NET, PostgreSQL",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "payments",
+      "metadata": {
+        "name": "Payments",
+        "description": "Direct debits, card payments and bank reconciliation."
+      },
+      "spec": {
+        "domainId": "finance",
+        "teamId": "team-payments",
+        "kind": "app",
+        "tech": "Go",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "acct",
+      "metadata": {
+        "name": "Accounting"
+      },
+      "spec": {
+        "domainId": "finance",
+        "teamId": "team-finance",
+        "kind": "app",
+        "tech": "SAP",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "bus",
+      "metadata": {
+        "name": "Event bus",
+        "description": "Kafka cluster carrying business events between applications."
+      },
+      "spec": {
+        "domainId": "platform",
+        "teamId": "team-platform",
+        "kind": "bus",
+        "tech": "Kafka",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "sftp",
+      "metadata": {
+        "name": "File exchange"
+      },
+      "spec": {
+        "domainId": "platform",
+        "teamId": "team-platform",
+        "kind": "file",
+        "tech": "SFTP",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "dwh",
+      "metadata": {
+        "name": "Data warehouse"
+      },
+      "spec": {
+        "domainId": "platform",
+        "teamId": "team-data",
+        "kind": "data",
+        "tech": "Snowflake",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "mail",
+      "metadata": {
+        "name": "Mail gateway",
+        "description": "Outbound email relay for every application."
+      },
+      "spec": {
+        "domainId": "platform",
+        "teamId": "team-platform",
+        "kind": "app",
+        "tech": "Postfix",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "bank",
+      "metadata": {
+        "name": "Bank (SEPA)"
+      },
+      "spec": {
+        "domainId": "external",
+        "teamId": "banque-azur",
+        "kind": "external",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "printer",
+      "metadata": {
+        "name": "Print house"
+      },
+      "spec": {
+        "domainId": "external",
+        "teamId": "imprimo",
+        "kind": "external",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "garages",
+      "metadata": {
+        "name": "Partner garages"
+      },
+      "spec": {
+        "domainId": "external",
+        "teamId": "reseau-auto",
+        "kind": "external",
+        "lifecycle": "live",
+        "visibility": "everyone"
+      }
+    },
+    {
+      "kind": "Application",
+      "id": "fraud",
+      "metadata": {
+        "name": "Fraud scoring",
+        "description": "Payment scoring."
+      },
+      "spec": {
+        "domainId": "external",
+        "kind": "external",
+        "lifecycle": "live",
+        "visibility": "restricted"
+      }
+    },
+    {
+      "kind": "DataObject",
+      "id": "customer",
+      "metadata": {
+        "name": "Customer",
+        "description": "A policyholder: identity, contact details and preferences."
+      },
+      "spec": {
+        "sensitivity": "personal",
+        "sourceApplicationId": "crm"
+      }
+    },
+    {
+      "kind": "DataObject",
+      "id": "policy",
+      "metadata": {
+        "name": "Policy",
+        "description": "An insurance contract and its cover."
+      },
+      "spec": {
+        "sensitivity": "personal",
+        "sourceApplicationId": "policies"
+      }
+    },
+    {
+      "kind": "DataObject",
+      "id": "claim",
+      "metadata": {
+        "name": "Claim",
+        "description": "A declared loss, its assessment and settlement."
+      },
+      "spec": {
+        "sensitivity": "sensitive",
+        "sourceApplicationId": "claims"
+      }
+    },
+    {
+      "kind": "DataObject",
+      "id": "invoice",
+      "metadata": {
+        "name": "Invoice",
+        "description": "A premium invoice."
+      },
+      "spec": {
+        "sensitivity": "internal",
+        "sourceApplicationId": "billing"
+      }
+    },
+    {
+      "kind": "DataObject",
+      "id": "payment",
+      "metadata": {
+        "name": "Payment",
+        "description": "A payment received or made."
+      },
+      "spec": {
+        "sensitivity": "sensitive",
+        "sourceApplicationId": "payments"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "crm-to-billing-customers",
+      "metadata": {
+        "name": "Customers",
+        "description": "Nightly extract of new and changed customers, loaded by Billing before the invoice run."
+      },
+      "spec": {
+        "fromId": "crm",
+        "toId": "billing",
+        "type": "batch",
+        "schedule": "Every night 02:00",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-crm",
+        "status": "live",
+        "volume": "15,000 lines",
+        "plannedChange": {
+          "summary": "Billing 4.3 on 4 Nov changes the target API to v4",
+          "date": "2026-11-04"
+        }
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "portal-billing",
+      "metadata": {
+        "name": "Invoice requests"
+      },
+      "spec": {
+        "fromId": "portal",
+        "toId": "billing",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-digital",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "portal-crm",
+      "metadata": {
+        "name": "Contact updates"
+      },
+      "spec": {
+        "fromId": "portal",
+        "toId": "crm",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-digital",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "mobile-crm",
+      "metadata": {
+        "name": "Contact updates"
+      },
+      "spec": {
+        "fromId": "mobile",
+        "toId": "crm",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-digital",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "idp-portal",
+      "metadata": {
+        "name": "Sign-in (OIDC)"
+      },
+      "spec": {
+        "fromId": "idp",
+        "toId": "portal",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-platform",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "idp-mobile",
+      "metadata": {
+        "name": "Sign-in (OIDC)"
+      },
+      "spec": {
+        "fromId": "idp",
+        "toId": "mobile",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-platform",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "portal-quotes",
+      "metadata": {
+        "name": "Quote requests"
+      },
+      "spec": {
+        "fromId": "portal",
+        "toId": "quotes",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer",
+          "policy"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "quotes-policies",
+      "metadata": {
+        "name": "QuoteAccepted"
+      },
+      "spec": {
+        "fromId": "quotes",
+        "toId": "policies",
+        "type": "event",
+        "schedule": "Each accepted quote",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "crm-policies",
+      "metadata": {
+        "name": "Customer lookup"
+      },
+      "spec": {
+        "fromId": "crm",
+        "toId": "policies",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "policies-docs",
+      "metadata": {
+        "name": "Contract documents"
+      },
+      "spec": {
+        "fromId": "policies",
+        "toId": "docs",
+        "type": "api",
+        "schedule": "Each new policy",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "policies-billing",
+      "metadata": {
+        "name": "PolicyIssued"
+      },
+      "spec": {
+        "fromId": "policies",
+        "toId": "bus",
+        "type": "event",
+        "schedule": "Each new policy",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "bus-billing-policy",
+      "metadata": {
+        "name": "PolicyIssued"
+      },
+      "spec": {
+        "fromId": "bus",
+        "toId": "billing",
+        "type": "event",
+        "schedule": "Each new policy",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "docs-mail",
+      "metadata": {
+        "name": "Contract emails"
+      },
+      "spec": {
+        "fromId": "docs",
+        "toId": "mail",
+        "type": "api",
+        "schedule": "Each new policy",
+        "dataObjectIds": [
+          "customer",
+          "policy"
+        ],
+        "ownerTeamId": "team-contracts",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "portal-claims",
+      "metadata": {
+        "name": "Claim declarations"
+      },
+      "spec": {
+        "fromId": "portal",
+        "toId": "claims",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "claim"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "mobile-claims",
+      "metadata": {
+        "name": "Claim photos"
+      },
+      "spec": {
+        "fromId": "mobile",
+        "toId": "claims",
+        "type": "api",
+        "schedule": "On demand",
+        "dataObjectIds": [
+          "claim"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "planned"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "policies-claims",
+      "metadata": {
+        "name": "Coverage check"
+      },
+      "spec": {
+        "fromId": "policies",
+        "toId": "claims",
+        "type": "api",
+        "schedule": "Each claim",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "claims-expert",
+      "metadata": {
+        "name": "Expert assignments"
+      },
+      "spec": {
+        "fromId": "claims",
+        "toId": "expert",
+        "type": "api",
+        "schedule": "Each claim",
+        "dataObjectIds": [
+          "claim"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "claims-garages",
+      "metadata": {
+        "name": "Repair orders"
+      },
+      "spec": {
+        "fromId": "claims",
+        "toId": "garages",
+        "type": "batch",
+        "schedule": "Every hour",
+        "dataObjectIds": [
+          "claim"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "claims-payments",
+      "metadata": {
+        "name": "ClaimSettled"
+      },
+      "spec": {
+        "fromId": "claims",
+        "toId": "payments",
+        "type": "event",
+        "schedule": "Each settlement",
+        "dataObjectIds": [
+          "claim",
+          "payment"
+        ],
+        "ownerTeamId": "team-claims",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "billing-bus",
+      "metadata": {
+        "name": "InvoiceIssued"
+      },
+      "spec": {
+        "fromId": "billing",
+        "toId": "bus",
+        "type": "event",
+        "schedule": "Each invoice",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "bus-payments",
+      "metadata": {
+        "name": "InvoiceIssued"
+      },
+      "spec": {
+        "fromId": "bus",
+        "toId": "payments",
+        "type": "event",
+        "schedule": "Each invoice",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-payments",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "payments-bus",
+      "metadata": {
+        "name": "PaymentReceived"
+      },
+      "spec": {
+        "fromId": "payments",
+        "toId": "bus",
+        "type": "event",
+        "schedule": "Each payment",
+        "dataObjectIds": [
+          "payment"
+        ],
+        "ownerTeamId": "team-payments",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "bus-billing",
+      "metadata": {
+        "name": "PaymentReceived"
+      },
+      "spec": {
+        "fromId": "bus",
+        "toId": "billing",
+        "type": "event",
+        "schedule": "Each payment",
+        "dataObjectIds": [
+          "payment"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "payments-bank",
+      "metadata": {
+        "name": "Direct debits"
+      },
+      "spec": {
+        "fromId": "payments",
+        "toId": "bank",
+        "type": "batch",
+        "schedule": "Daily 18:00",
+        "dataObjectIds": [
+          "payment",
+          "customer"
+        ],
+        "ownerTeamId": "team-payments",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "bank-payments",
+      "metadata": {
+        "name": "Bank statements"
+      },
+      "spec": {
+        "fromId": "bank",
+        "toId": "payments",
+        "type": "batch",
+        "schedule": "Daily 07:00",
+        "dataObjectIds": [
+          "payment"
+        ],
+        "ownerTeamId": "team-payments",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "payments-fraud",
+      "metadata": {
+        "name": "Scoring",
+        "description": "Each payment is scored before it is accepted."
+      },
+      "spec": {
+        "fromId": "payments",
+        "toId": "fraud",
+        "type": "api",
+        "schedule": "Each payment",
+        "dataObjectIds": [
+          "payment"
+        ],
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "billing-acct",
+      "metadata": {
+        "name": "Ledger entries"
+      },
+      "spec": {
+        "fromId": "billing",
+        "toId": "acct",
+        "type": "batch",
+        "schedule": "1st of the month",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "payments-acct",
+      "metadata": {
+        "name": "Cash entries"
+      },
+      "spec": {
+        "fromId": "payments",
+        "toId": "acct",
+        "type": "batch",
+        "schedule": "Daily 20:00",
+        "dataObjectIds": [
+          "payment"
+        ],
+        "ownerTeamId": "team-payments",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "billing-dwh",
+      "metadata": {
+        "name": "Invoices"
+      },
+      "spec": {
+        "fromId": "billing",
+        "toId": "dwh",
+        "type": "batch",
+        "schedule": "Daily 05:00",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-data",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "crm-dwh",
+      "metadata": {
+        "name": "Customers"
+      },
+      "spec": {
+        "fromId": "crm",
+        "toId": "dwh",
+        "type": "batch",
+        "schedule": "Daily 04:00",
+        "dataObjectIds": [
+          "customer"
+        ],
+        "ownerTeamId": "team-data",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "claims-dwh",
+      "metadata": {
+        "name": "Claims"
+      },
+      "spec": {
+        "fromId": "claims",
+        "toId": "dwh",
+        "type": "batch",
+        "schedule": "Daily 03:00",
+        "dataObjectIds": [
+          "claim"
+        ],
+        "ownerTeamId": "team-data",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "policies-dwh",
+      "metadata": {
+        "name": "Policies"
+      },
+      "spec": {
+        "fromId": "policies",
+        "toId": "dwh",
+        "type": "batch",
+        "schedule": "Daily 03:30",
+        "dataObjectIds": [
+          "policy"
+        ],
+        "ownerTeamId": "team-data",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "billing-mail",
+      "metadata": {
+        "name": "Invoice emails"
+      },
+      "spec": {
+        "fromId": "billing",
+        "toId": "mail",
+        "type": "api",
+        "schedule": "Each invoice",
+        "dataObjectIds": [
+          "customer",
+          "invoice"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "billing-sftp",
+      "metadata": {
+        "name": "Print files"
+      },
+      "spec": {
+        "fromId": "billing",
+        "toId": "sftp",
+        "type": "batch",
+        "schedule": "Daily 06:30",
+        "dataObjectIds": [
+          "customer",
+          "invoice"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "sftp-printer",
+      "metadata": {
+        "name": "Print files"
+      },
+      "spec": {
+        "fromId": "sftp",
+        "toId": "printer",
+        "type": "batch",
+        "schedule": "Daily 07:00",
+        "dataObjectIds": [
+          "customer",
+          "invoice"
+        ],
+        "ownerTeamId": "team-platform",
+        "status": "live"
+      }
+    },
+    {
+      "kind": "Flow",
+      "id": "acct-legacy",
+      "metadata": {
+        "name": "GL export (old)",
+        "description": "Old general ledger export, replaced by the data warehouse loads."
+      },
+      "spec": {
+        "fromId": "acct",
+        "toId": "dwh",
+        "type": "batch",
+        "schedule": "Weekly",
+        "dataObjectIds": [
+          "invoice"
+        ],
+        "ownerTeamId": "team-finance",
+        "status": "deprecated"
+      }
+    }
+  ]
+}

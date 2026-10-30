@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SolaDevSolide/noosphere/blob/main/docs/format/noosphere-v1.schema.json",
+  "title": "Noosphere exchange format v1",
+  "description": "A whole application landscape: domains, teams, applications, data objects and flows. The same content can be written in JSON or YAML.",
+  "type": "object",
+  "required": ["formatVersion", "source", "mode", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "formatVersion": { "const": "noosphere/v1" },
+    "source": {
+      "type": "object",
+      "description": "Where the file comes from. Informative: ignored on import.",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "exportedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "mode": {
+      "const": "full",
+      "description": "The file describes the whole landscape it was exported from. An import creates or updates items by id and never deletes."
+    },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "description": "Stable, human-readable id: kebab-case, unique per kind.",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "text": { "type": "string", "maxLength": 500 },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 20000, "description": "Markdown." }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["kind", "id", "metadata", "spec"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["Domain", "Team", "Application", "DataObject", "Flow"] },
+        "id": { "$ref": "#/$defs/id" },
+        "metadata": { "$ref": "#/$defs/metadata" },
+        "spec": { "type": "object" }
+      },
+      "allOf": [
+        { "if": { "properties": { "kind": { "const": "Domain" } } }, "then": { "properties": { "spec": { "$ref": "#/$defs/domainSpec" } } } },
+        { "if": { "properties": { "kind": { "const": "Team" } } }, "then": { "properties": { "spec": { "$ref": "#/$defs/teamSpec" } } } },
+        { "if": { "properties": { "kind": { "const": "Application" } } }, "then": { "properties": { "spec": { "$ref": "#/$defs/applicationSpec" } } } },
+        { "if": { "properties": { "kind": { "const": "DataObject" } } }, "then": { "properties": { "spec": { "$ref": "#/$defs/dataObjectSpec" } } } },
+        { "if": { "properties": { "kind": { "const": "Flow" } } }, "then": { "properties": { "spec": { "$ref": "#/$defs/flowSpec" } } } }
+      ]
+    },
+    "domainSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "order": { "type": "integer", "description": "Display order of the domains (0 when absent)." }
+      }
+    },
+    "teamSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contact": { "$ref": "#/$defs/text", "description": "E-mail address or chat channel." }
+      }
+    },
+    "applicationSpec": {
+      "type": "object",
+      "required": ["domainId"],
+      "additionalProperties": false,
+      "properties": {
+        "domainId": { "$ref": "#/$defs/id" },
+        "teamId": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["app", "bus", "saas", "data", "file", "external"], "default": "app" },
+        "tech": { "$ref": "#/$defs/text" },
+        "lifecycle": { "enum": ["planned", "live", "retiring", "retired"], "default": "live" },
+        "visibility": {
+          "enum": ["everyone", "restricted"],
+          "default": "everyone",
+          "description": "restricted: only administrators see the application in full."
+        }
+      }
+    },
+    "dataObjectSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sensitivity": { "enum": ["public", "internal", "personal", "sensitive"], "default": "internal" },
+        "sourceApplicationId": { "$ref": "#/$defs/id", "description": "The application that is the source of truth for this data." }
+      }
+    },
+    "flowSpec": {
+      "type": "object",
+      "required": ["fromId", "toId"],
+      "additionalProperties": false,
+      "properties": {
+        "fromId": { "$ref": "#/$defs/id" },
+        "toId": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["api", "event", "batch"], "default": "api" },
+        "schedule": { "$ref": "#/$defs/text", "description": "Free text, e.g. \"Every night 02:00\"." },
+        "dataObjectIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "ownerTeamId": { "$ref": "#/$defs/id" },
+        "status": { "enum": ["planned", "live", "deprecated"], "default": "live" },
+        "volume": { "$ref": "#/$defs/text" },
+        "plannedChange": {
+          "type": "object",
+          "required": ["summary"],
+          "additionalProperties": false,
+          "properties": {
+            "summary": { "type": "string", "minLength": 1, "maxLength": 500 },
+            "date": { "type": "string", "format": "date" }
+          }
+        }
+      }
+    }
+  }
+}
