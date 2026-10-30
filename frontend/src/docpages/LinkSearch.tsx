@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { RecordKind, SearchHit } from '../api/types';
-import { Hl, Sdot } from '../explorer/bits';
+import { Hl, Sdot, teamName } from '../explorer/bits';
 import { fold } from '../domain/model';
 import { useLandscape } from '../explorer/landscape';
 import { useI18n } from '../i18n';
 import { IconApp, IconDoc, IconDomain, IconTeam, TypeIcon } from '../ui/icons';
-import { flowLabel } from './model';
+import type { Model } from '../domain/model';
+import { flowLabel, pathOf, type PageIndex } from './model';
+import { usePages } from './store';
 
 export const KB_CLASS: Record<RecordKind, string> = {
   application: 'app',
   flow: 'flow',
   dataObject: 'data',
   team: 'team',
-  domain: 'dom',
+  domain: 'domain',
   page: 'page',
 };
 
@@ -24,10 +26,39 @@ export interface LinkOption {
   sub: string;
 }
 
+/** A short second line for a suggestion: the team of an application, the schedule of a flow, the path of a page. */
+function subOf(
+  m: Model | null,
+  pages: PageIndex,
+  sens: Record<string, string>,
+  kind: RecordKind,
+  id: string,
+  fallback: string,
+) {
+  if (kind === 'page') return pages.has(id) ? pathOf(pages, id) : '';
+  if (!m) return fallback;
+  if (kind === 'application') {
+    const a = m.apps.get(id);
+    return a && 'teamId' in a ? teamName(m, a.teamId) : fallback;
+  }
+  if (kind === 'flow') {
+    const f = m.flow.get(id);
+    return f && 'schedule' in f ? (f.schedule ?? '') : fallback;
+  }
+  if (kind === 'dataObject') {
+    const o = m.objects.get(id);
+    return o ? (sens[o.sensitivity] ?? '') : fallback;
+  }
+  return '';
+}
+
 /** Searches records and pages through /api/search, after a short pause in typing. */
 export function useLinkSearch(query: string | null, kinds?: RecordKind[]) {
   const [state, setState] = useState<{ q: string; items: LinkOption[] | null }>({ q: '', items: null });
   const { model } = useLandscape();
+  const { byId } = usePages();
+  const { t } = useI18n();
+  const sens = t.sens;
   const kindKey = kinds?.join(',') ?? '';
   useEffect(() => {
     if (query === null) return;
@@ -45,11 +76,11 @@ export function useLinkSearch(query: string | null, kinds?: RecordKind[]) {
           const allowed = kindKey ? kindKey.split(',') : null;
           const items = hits
             .filter((h) => !allowed || allowed.includes(h.kind))
-            .slice(0, 8)
+            .slice(0, 6)
             .map((h) => {
               const kind = h.kind as RecordKind;
               const title = kind === 'flow' && model ? (flowLabel(model, h.id) ?? h.title) : h.title;
-              return { kind, id: h.id, title, sub: h.subtitle ?? '' };
+              return { kind, id: h.id, title, sub: subOf(model, byId, sens, kind, h.id, h.subtitle ?? '') };
             });
           setState({ q, items });
         },
@@ -60,7 +91,7 @@ export function useLinkSearch(query: string | null, kinds?: RecordKind[]) {
       alive = false;
       clearTimeout(timer);
     };
-  }, [query, kindKey, model]);
+  }, [query, kindKey, model, byId, sens]);
   return state.items;
 }
 

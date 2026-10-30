@@ -16,3 +16,11 @@ describe('page search results', () => {
     expect(withPages(groups, [])).toBe(groups);
   });
 });
+
+describe('page search excerpts', () => {
+  it('keeps one short line', () => {
+    const [p] = pageItems([{ kind: 'page', id: 'x', title: 'X', subtitle: 'a\nb '.repeat(60) }]);
+    expect(p.sub.length).toBeLessThanOrEqual(90);
+    expect(p.sub).not.toContain('\n');
+  });
+});

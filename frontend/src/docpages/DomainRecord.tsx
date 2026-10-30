@@ -39,7 +39,8 @@ export function DomainRecord() {
     <PageShell title={name}>
       <div className="page-h">
         <div className="ph-t">
-          <span className="kb dom">{t.domainRecord.badge}</span> <span className="muted">{t.domainRecord.label}</span>
+          <span className="kb domain">{t.domainRecord.badge}</span>{' '}
+          <span className="muted">{t.domainRecord.label}</span>
           <h1>{name}</h1>
           <p>{t.domainRecord.apps(apps.length)}</p>
         </div>

@@ -88,7 +88,7 @@ function AttachField({
       </span>
       <div className="attf" aria-labelledby="ps-att-l">
         {value ? (
-          <AttachedChip kind={value.kind} id={value.id} />
+          <AttachedChip kind={value.kind} id={value.id} badge={false} />
         ) : (
           <span className="muted">{t.pages.notAttached}</span>
         )}

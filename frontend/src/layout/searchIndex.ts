@@ -135,7 +135,13 @@ export interface SearchGroup {
 export function pageItems(hits: SearchHit[]): SearchItem[] {
   return hits
     .filter((h) => h.kind === 'page')
-    .map((h) => ({ kind: 'page' as const, id: h.id, label: h.title, sub: h.subtitle ?? '', hay: fold(h.title) }));
+    .map((h) => ({ kind: 'page' as const, id: h.id, label: h.title, sub: excerpt(h.subtitle), hay: fold(h.title) }));
+}
+
+/** The server sends a passage of the page around the match: one short line is enough in the list. */
+function excerpt(s: string | null | undefined): string {
+  const one = (s ?? '').replace(/\s+/g, ' ').trim();
+  return one.length > 90 ? one.slice(0, 89).trimEnd() + '…' : one;
 }
 
 /** Adds the pages group to the grouped results, before the quick filters. */

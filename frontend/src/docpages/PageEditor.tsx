@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
@@ -225,7 +226,6 @@ function Reviewers({ owner }: { owner: string | null }) {
   }, [owner]);
   const team = owner && model ? teamName(model, owner) : t.pages.admins;
   const initials = team
-    .replace(/^Team\s+|^Équipe\s+/i, '')
     .split(/\s+/)
     .map((w) => w.charAt(0))
     .join('')
@@ -332,7 +332,7 @@ function EditorBody({
   const split = lq ? splitKind(lq.query) : null;
   const items = useLinkSearch(lq && !acClosed ? split!.text : null, split?.kinds ?? LINK_KINDS);
   const acOpen = !!lq && !acClosed;
-  const [acPos, setAcPos] = useState({ left: 8, top: 40 });
+  const [acPos, setAcPos] = useState<CSSProperties>({ left: 8, top: 40 });
   useLayoutEffect(() => {
     if (pendingSel.current && ta.current) {
       const [a, b] = pendingSel.current;
@@ -346,7 +346,19 @@ function EditorBody({
     if (!acOpen || !ta.current) return;
     const xy = caretPoint(ta.current, lq!.start);
     const w = Math.min(380, ta.current.clientWidth - 16);
-    setAcPos({ left: Math.max(8, Math.min(xy.x - 12, ta.current.clientWidth - w - 8)), top: xy.y + 6 });
+    const left = Math.max(8, Math.min(xy.x - 12, ta.current.clientWidth - w - 8));
+    // Near the bottom of the window (where the action bar sits), the list opens above the line instead.
+    const line = parseFloat(getComputedStyle(ta.current).lineHeight) || 22;
+    const y = ta.current.getBoundingClientRect().top + xy.y;
+    const below = window.innerHeight - 90 - y;
+    const above = y - line - 72;
+    const up = below < 320 && above > below;
+    const maxHeight = Math.max(160, Math.min(440, (up ? above : below) - 12));
+    setAcPos(
+      up
+        ? { left, top: xy.y - line - 6, transform: 'translateY(-100%)', maxHeight }
+        : { left, top: xy.y + 6, transform: undefined, maxHeight },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [acOpen, lq?.start, d.body]);
 
@@ -656,7 +668,7 @@ function EditorBody({
             <div className="g">
               <button
                 type="button"
-                className="tbtn b"
+                className="tbtn tb-b"
                 title={t.pages.toolbar.bold}
                 aria-label={t.pages.toolbar.bold}
                 onClick={() => applySnippet('b')}
@@ -665,7 +677,7 @@ function EditorBody({
               </button>
               <button
                 type="button"
-                className="tbtn i"
+                className="tbtn tb-i"
                 title={t.pages.toolbar.italic}
                 aria-label={t.pages.toolbar.italic}
                 onClick={() => applySnippet('i')}

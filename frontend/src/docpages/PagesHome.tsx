@@ -22,7 +22,7 @@ function AttachedBadge({ p, lead }: { p: PageSummary; lead: boolean }) {
   if (!p.attachedTo) return null;
   const r = resolveLink(model, byId, p.attachedTo.kind, p.attachedTo.id);
   if (!r.exists || r.restricted) return null;
-  const cls = { application: 'app', flow: 'flow', dataObject: 'data', team: 'team', domain: 'dom', page: 'page' }[
+  const cls = { application: 'app', flow: 'flow', dataObject: 'data', team: 'team', domain: 'domain', page: 'page' }[
     p.attachedTo.kind
   ];
   return (

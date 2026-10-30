@@ -4535,7 +4535,7 @@ ins.d {
   background: var(--info-bg);
   color: var(--info-fg);
 }
-.kb.dom {
+.kb.domain {
   background: var(--surface-2);
   color: var(--fg-muted);
 }
@@ -4648,9 +4648,14 @@ ins.d {
   background: var(--accent-soft);
   border-color: var(--accent);
 }
-.row.pr {
+.row.pr,
+.box a.row.pr {
   grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
+  color: var(--fg);
+}
+.row.pr:hover .rn {
+  color: var(--accent-text);
 }
 .row.pr .ri {
   color: var(--fg-subtle);
@@ -5498,10 +5503,10 @@ a.wl:hover {
 .tbtn.lnk {
   color: var(--accent-text);
 }
-.tbtn.b {
+.tbtn.tb-b {
   font-weight: 800;
 }
-.tbtn.i {
+.tbtn.tb-i {
   font-style: italic;
   font-family: Georgia, serif;
   font-size: 15px;
@@ -5602,10 +5607,17 @@ a.wl:hover {
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
   padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .ac .opt {
   grid-template-columns: 52px minmax(0, 1fr) auto;
   padding: 7px 8px;
+}
+.ac .opt .os {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ac .opt .ol {
   font-size: 13.5px;
@@ -6139,11 +6151,38 @@ a.wl:hover {
     min-height: 44px;
   }
   .tagsf .tagc button {
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
+    margin: -8px -8px -8px -4px;
+  }
+  .tagsf input {
+    min-height: 40px;
   }
   .attf .btn,
-  .tree-h .btn {
+  .tree-h .btn,
+  .pg-wrap .btn.mob-only {
     min-height: 40px;
+    min-width: 40px;
+  }
+  .settings .input,
+  .settings .select,
+  .slug-in .input,
+  .ed-tabs button,
+  .seg.full button,
+  .tree .input,
+  .tree input {
+    min-height: 40px;
+  }
+  .ptrow .tw {
+    width: 40px;
+    height: 40px;
+    margin: -4px -8px -4px -10px;
+  }
+  .cb-h button {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+  .iconbtn.revbtn {
+    min-width: 44px;
   }
 }

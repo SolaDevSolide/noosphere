@@ -425,16 +425,20 @@ export function PageView() {
 }
 
 /** The record a page is attached to, as a chip with its kind. */
-export function AttachedChip({ kind, id }: { kind: RecordKind; id: string }) {
+export function AttachedChip({ kind, id, badge = true }: { kind: RecordKind; id: string; badge?: boolean }) {
   const { t } = useI18n();
   const resolve = useResolver();
   const r = resolve(kind, id);
-  const cls = { application: 'app', flow: 'flow', dataObject: 'data', team: 'team', domain: 'dom', page: 'page' }[kind];
+  const cls = { application: 'app', flow: 'flow', dataObject: 'data', team: 'team', domain: 'domain', page: 'page' }[
+    kind
+  ];
   const inner = (
     <>
-      <span className={'kb ' + cls} style={{ lineHeight: '16px' }}>
-        {t.pages.kindBadge[kind]}
-      </span>
+      {badge && (
+        <span className={'kb ' + cls} style={{ lineHeight: '16px' }}>
+          {t.pages.kindBadge[kind]}
+        </span>
+      )}
       {r.flowType && (
         <span className="oi" style={{ display: 'inline-flex', color: 'var(--tc)' }}>
           <TypeIcon type={r.flowType} size={14} />
