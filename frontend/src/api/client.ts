@@ -4,8 +4,19 @@ import type {
   DataObject,
   Domain,
   ExchangeEnvelope,
+  ChangeKind,
+  FieldDiff,
   Flow,
   FlowInput,
+  HistoryEntry,
+  Inbox,
+  Proposal,
+  ProposalInput,
+  RestoreResult,
+  Revision,
+  Settings,
+  TeamMember,
+  TrashItem,
   ImportResult,
   Landscape,
   Language,
@@ -103,6 +114,21 @@ const q = (params: Record<string, string | undefined>) => {
 };
 const enc = encodeURIComponent;
 
+/** The URL segment of each kind of record. */
+export const KIND_PATH: Record<ChangeKind, string> = {
+  application: 'applications',
+  flow: 'flows',
+  dataObject: 'data-objects',
+  page: 'pages',
+};
+const hist = (kind: ChangeKind, id: string) => `/${KIND_PATH[kind]}/${enc(id)}/history`;
+
+export interface ProposalQuery {
+  status?: string;
+  mine?: boolean;
+  toValidate?: boolean;
+}
+
 export const api = {
   login: (username: string, password: string) => request<Me>('POST', '/auth/login', { username, password }),
   logout: () => request<void>('POST', '/auth/logout'),
@@ -131,6 +157,39 @@ export const api = {
   createUser: (body: UserCreateInput) => request<User>('POST', '/users', body),
   updateUser: (username: string, body: UserUpdateInput) => request<User>('PUT', `/users/${enc(username)}`, body),
   deleteUser: (username: string) => request<void>('DELETE', `/users/${enc(username)}`),
+
+  team: (id: string) => request<Team>('GET', `/teams/${enc(id)}`),
+  teamMembers: (id: string) => request<TeamMember[]>('GET', `/teams/${enc(id)}/members`),
+  setTeamMembers: (id: string, usernames: string[]) =>
+    request<TeamMember[]>('PUT', `/teams/${enc(id)}/members`, { usernames }),
+
+  proposals: (f: ProposalQuery = {}) =>
+    request<Proposal[]>(
+      'GET',
+      '/proposals' +
+        q({ status: f.status, mine: f.mine ? 'true' : undefined, toValidate: f.toValidate ? 'true' : undefined }),
+    ),
+  proposal: (id: string) => request<Proposal>('GET', `/proposals/${enc(id)}`),
+  createProposal: (body: ProposalInput) => request<Proposal>('POST', '/proposals', body),
+  updateProposal: (id: string, body: ProposalInput) => request<Proposal>('PUT', `/proposals/${enc(id)}`, body),
+  submitProposal: (id: string) => request<Proposal>('POST', `/proposals/${enc(id)}/submit`, {}),
+  withdrawProposal: (id: string) => request<Proposal>('POST', `/proposals/${enc(id)}/withdraw`, {}),
+  acceptProposal: (id: string) => request<Proposal>('POST', `/proposals/${enc(id)}/accept`, {}),
+  refuseProposal: (id: string, reason: string) => request<Proposal>('POST', `/proposals/${enc(id)}/refuse`, { reason }),
+  rebaseProposal: (id: string) => request<Proposal>('POST', `/proposals/${enc(id)}/rebase`, {}),
+  inbox: () => request<Inbox>('GET', '/me/inbox'),
+
+  history: (kind: ChangeKind, id: string) => request<HistoryEntry[]>('GET', hist(kind, id)),
+  revision: (kind: ChangeKind, id: string, version: number) => request<Revision>('GET', `${hist(kind, id)}/${version}`),
+  compare: (kind: ChangeKind, id: string, from: number, to: number) =>
+    request<FieldDiff[]>('GET', `${hist(kind, id)}/compare` + q({ from: String(from), to: String(to) })),
+  restore: (kind: ChangeKind, id: string, version: number) =>
+    request<RestoreResult>('POST', `${hist(kind, id)}/${version}/restore`, {}),
+  trash: () => request<TrashItem[]>('GET', '/trash'),
+  restoreTrash: (kind: string, id: string) => request<void>('POST', `/trash/${enc(kind)}/${enc(id)}/restore`, {}),
+
+  settings: () => request<Settings>('GET', '/settings'),
+  updateSettings: (body: Settings) => request<Settings>('PUT', '/settings', body),
 
   exportUrl: (format: 'json' | 'yaml') => `/api/export?format=${format}`,
   importEnvelope: (envelope: ExchangeEnvelope | string, dryRun: boolean, contentType = 'application/json') =>

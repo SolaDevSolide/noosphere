@@ -14,11 +14,21 @@ import type {
   Role,
   SearchHit,
   Sensitivity,
-  User,
   UserCreateInput,
+  UserM2,
   UserUpdateInput,
 } from '../api/types';
 import * as seed from './alize';
+import {
+  afterSave,
+  deleteRecord,
+  guardWrite,
+  handleGovernance,
+  handlePublic,
+  recordExtras,
+  seedGovernance,
+  type GovCtx,
+} from './governance';
 
 const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -30,11 +40,18 @@ const db = {
   dataObjects: clone(seed.dataObjects),
   flows: clone(seed.flows),
   users: [
-    { username: 'alice', displayName: 'Alice Martin', role: 'admin', language: 'en' },
-    { username: 'bob', displayName: 'Bob Durand', role: 'member', language: 'en' },
-    { username: 'claire', displayName: 'Claire Petit', role: 'guest', language: 'fr' },
-  ].map((x): User => ({
-    ...(x as Pick<User, 'username' | 'displayName' | 'role' | 'language'>),
+    { username: 'alice', displayName: 'Alice Martin', role: 'admin', language: 'en', teamIds: [] },
+    {
+      username: 'bob',
+      displayName: 'Bob Durand',
+      role: 'member',
+      language: 'en',
+      teamIds: ['team-finance', 'team-payments'],
+    },
+    { username: 'claire', displayName: 'Claire Petit', role: 'guest', language: 'fr', teamIds: [] },
+    { username: 'david', displayName: 'David Leroy', role: 'member', language: 'en', teamIds: ['team-crm'] },
+  ].map((x): UserM2 => ({
+    ...(x as Pick<UserM2, 'username' | 'displayName' | 'role' | 'language' | 'teamIds'>),
     version: 1,
     createdAt: '2026-09-01T08:00:00Z',
     updatedAt: '2026-09-01T08:00:00Z',
@@ -42,7 +59,7 @@ const db = {
 };
 
 const SESSION_KEY = 'noos-mock-user';
-function currentUser(): User | null {
+function currentUser(): UserM2 | null {
   let name: string | null = null;
   try {
     name = sessionStorage.getItem(SESSION_KEY);
@@ -72,14 +89,14 @@ const problem = (status: number, title: string, detail?: string, errors?: Record
   json(status, { type: 'about:blank', title, status, detail, errors });
 
 // The mock never authorises anyone for restricted applications, so the restricted shapes are always visible.
-const canSeeRestricted = (_u: User) => false;
+const canSeeRestricted = (_u: UserM2) => false;
 
-function viewApp(a: Application, u: User): LandscapeApplication {
+function viewApp(a: Application, u: UserM2): LandscapeApplication {
   return a.visibility === 'restricted' && !canSeeRestricted(u)
     ? { id: a.id, domainId: a.domainId, restricted: true }
     : a;
 }
-function viewFlow(f: Flow, u: User): LandscapeFlow {
+function viewFlow(f: Flow, u: UserM2): LandscapeFlow {
   const hidden = (id: string) => {
     const a = db.applications.find((x) => x.id === id);
     return !!a && a.visibility === 'restricted' && !canSeeRestricted(u);
@@ -126,7 +143,28 @@ function validateFlow(b: FlowInput) {
 
 const now = () => new Date().toISOString();
 
-function search(u: User, text: string): SearchHit[] {
+type Rec = Record<string, unknown>;
+const gov: GovCtx = {
+  db,
+  json: (status, body) => json(status, body),
+  problem: (status, title, detail, errors) => problem(status, title, detail, errors),
+  now,
+  finish: (kind, rec) => {
+    if (kind === 'application') {
+      const a = rec as unknown as Application;
+      a.sourceOf = db.dataObjects.filter((o) => o.sourceApplicationId === a.id).map((o) => o.id);
+      a.completeness = appCompleteness(a);
+    }
+    if (kind === 'flow') {
+      const f = rec as unknown as Flow;
+      f.sensitivity = flowSensitivity(f.dataObjectIds ?? []);
+      f.completeness = flowCompleteness(f);
+    }
+    return rec;
+  },
+};
+
+function search(u: UserM2, text: string): SearchHit[] {
   const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const t = fold(text.trim());
   if (!t) return [];
@@ -199,12 +237,22 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     sessionStorage.removeItem(SESSION_KEY);
     return json(204);
   }
+  const pub = handlePublic(gov, method, path);
+  if (pub) return pub;
   const u = currentUser();
   if (!u) return problem(401, 'Not signed in.');
+  const g = handleGovernance(gov, u, method, url, path, () => parse<Rec>());
+  if (g) return g;
   const can = (r: Role[]) => r.includes(u.role);
 
   if (path === '/auth/me')
-    return json(200, { username: u.username, displayName: u.displayName, role: u.role, language: u.language });
+    return json(200, {
+      username: u.username,
+      displayName: u.displayName,
+      role: u.role,
+      language: u.language,
+      teams: db.teams.filter((x) => u.teamIds?.includes(x.id)).map((x) => ({ id: x.id, name: x.name })),
+    });
   if (path === '/auth/me/language' && method === 'PUT') {
     u.language = parse<{ language: 'en' | 'fr' }>().language;
     return json(204);
@@ -234,10 +282,14 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const cur = db.applications[i];
     if (method === 'GET') {
       const v = viewApp(cur, u);
-      return v.restricted ? problem(403, 'Restricted application.') : json(200, v);
+      return v.restricted
+        ? problem(403, 'Restricted application.')
+        : json(200, { ...v, ...recordExtras(gov, u, 'application', cur as unknown as Rec) });
     }
     if (method === 'PUT') {
       if (!can(['admin', 'member'])) return problem(403, 'Read-only account.');
+      const denied = guardWrite(gov, u, 'application', cur as unknown as Rec);
+      if (denied) return denied;
       const b = parse<ApplicationInput>();
       if (b.version !== cur.version) return problem(409, 'Conflict', 'The record was changed by someone else.');
       const errors = validateApp(b);
@@ -253,14 +305,20 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       };
       next.completeness = appCompleteness(next);
       db.applications[i] = next;
-      return json(200, next);
+      afterSave(gov, u, 'application', next as unknown as Rec);
+      return json(200, { ...next, ...recordExtras(gov, u, 'application', next as unknown as Rec) });
     }
     if (method === 'DELETE') {
       if (!can(['admin'])) return problem(403, 'Only administrators can delete.');
-      db.applications.splice(i, 1);
-      db.flows = db.flows.filter((f) => f.fromId !== id && f.toId !== id);
+      deleteRecord(gov, u, 'application', id);
       return json(204);
     }
+  }
+  m = /^\/data-objects\/([^/]+)$/.exec(path);
+  if (m && method === 'GET') {
+    const o = db.dataObjects.find((x) => x.id === decodeURIComponent(m![1]));
+    if (!o) return problem(404, 'Data object not found.');
+    return json(200, { ...o, ...recordExtras(gov, u, 'dataObject', o as unknown as Rec) });
   }
   m = /^\/flows\/([^/]+)$/.exec(path);
   if (m) {
@@ -270,10 +328,18 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const cur = db.flows[i];
     if (method === 'GET') {
       const v = viewFlow(cur, u);
-      return v.restricted ? problem(403, 'Restricted flow.') : json(200, { ...v, completeness: flowCompleteness(cur) });
+      return v.restricted
+        ? problem(403, 'Restricted flow.')
+        : json(200, {
+            ...v,
+            completeness: flowCompleteness(cur),
+            ...recordExtras(gov, u, 'flow', cur as unknown as Rec),
+          });
     }
     if (method === 'PUT') {
       if (!can(['admin', 'member'])) return problem(403, 'Read-only account.');
+      const denied = guardWrite(gov, u, 'flow', cur as unknown as Rec);
+      if (denied) return denied;
       const b = parse<FlowInput>();
       if (b.version !== cur.version) return problem(409, 'Conflict', 'The record was changed by someone else.');
       const errors = validateFlow(b);
@@ -288,11 +354,16 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         sensitivity: flowSensitivity(b.dataObjectIds ?? []),
       };
       db.flows[i] = next;
-      return json(200, { ...next, completeness: flowCompleteness(next) });
+      afterSave(gov, u, 'flow', next as unknown as Rec);
+      return json(200, {
+        ...next,
+        completeness: flowCompleteness(next),
+        ...recordExtras(gov, u, 'flow', next as unknown as Rec),
+      });
     }
     if (method === 'DELETE') {
       if (!can(['admin'])) return problem(403, 'Only administrators can delete.');
-      db.flows.splice(i, 1);
+      deleteRecord(gov, u, 'flow', id);
       return json(204);
     }
   }
@@ -307,7 +378,8 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         });
       if (db.users.some((x) => x.username === b.username))
         return problem(409, 'Conflict', 'This username already exists.');
-      const nu: User = {
+      const nu: UserM2 = {
+        teamIds: (b as { teamIds?: string[] }).teamIds ?? [],
         username: b.username ?? '',
         displayName: b.displayName ?? '',
         role: b.role ?? 'guest',
@@ -334,6 +406,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         displayName: b.displayName ?? cur.displayName,
         role: b.role ?? cur.role,
         language: b.language === 'fr' || b.language === 'en' ? b.language : cur.language,
+        teamIds: (b as { teamIds?: string[] | null }).teamIds ?? cur.teamIds,
         version: cur.version + 1,
         updatedAt: now(),
       };
@@ -396,6 +469,8 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
   }
   return problem(404, 'Not found.');
 }
+
+seedGovernance(gov);
 
 export function installMockApi() {
   const real = window.fetch.bind(window);
