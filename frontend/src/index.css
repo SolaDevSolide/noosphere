@@ -3619,6 +3619,10 @@ a.endcard:hover {
   .page-h h1 {
     font-size: 20px;
   }
+  /* the title gets its own line; the actions wrap below it */
+  .page-h > .ph-t {
+    flex-basis: 100%;
+  }
   .fields {
     grid-template-columns: minmax(0, 1fr);
     gap: 2px;
