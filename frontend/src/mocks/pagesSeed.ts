@@ -1,5 +1,6 @@
-// Demo documentation pages for the development mock (and the screenshots of the docs). Ids of records match the
-// Alizé demo landscape; a few links are broken on purpose so the warnings show.
+// Demo documentation pages for the development mock: the pages of the server demo (backend/.../Demo), then a few more
+// so the tree is deeper. A few links are broken on purpose so the warnings show. The replay runbook gets a longer body
+// that shows every Markdown feature (callouts, tables, code).
 
 export interface SeedPage {
   id: string;
@@ -62,44 +63,84 @@ Until March, the file came from [[application:crm-legacy|the old CRM export]]. I
 `;
 
 export const SEED_PAGES: SeedPage[] = [
+  // The server demo pages.
   {
-    id: 'alize-overview',
-    title: 'Alizé landscape overview',
-    order: 0,
+    id: 'operations',
+    title: 'Operations handbook',
+    order: 1,
     ownerTeamId: 'team-platform',
-    tags: ['overview'],
-    hoursAgo: 400,
-    body: `Alizé insures cars and homes. Six domains share about twenty applications: start with [[domain:customer]] and [[domain:finance]], where most flows meet.\n\n## Where to start\n\n- The [[page:glossary]] explains the words people use.\n- Runbooks live under each domain; the [[page:billing-handbook]] is the most used.\n`,
+    tags: ['runbook'],
+    hoursAgo: 300,
+    body: 'Runbooks for the recurring operations of the Alizé landscape. Each runbook says when to use it, the steps, and how to check the result.\n\n## Runbooks\n\n- [[page:replay-nightly-import]]: when Billing did not receive the customers from the CRM.\n- [[page:month-end-closing]]: the checks before Accounting closes the month.\n\nKeep a runbook next to the record it is about: attach it to the flow or the application, so that it shows on that record.',
   },
   {
-    id: 'finance',
-    title: 'Finance',
-    order: 10,
+    id: 'replay-nightly-import',
+    title: 'Replay the nightly customer import',
+    parentId: 'operations',
+    order: 1,
+    attachedTo: { kind: 'flow', id: 'crm-to-billing-customers' },
+    tags: ['runbook', 'billing', 'crm'],
+    hoursAgo: 2,
+    body: REPLAY,
+  },
+  {
+    id: 'month-end-closing',
+    title: 'Month-end closing checklist',
+    parentId: 'operations',
+    order: 2,
+    attachedTo: { kind: 'application', id: 'acct' },
+    tags: ['runbook', 'finance'],
+    hoursAgo: 170,
+    body: 'Checks to run with Team Finance before [[application:acct]] closes the month.\n\n1. [[flow:billing-acct]] delivered the ledger entries of the month (1st of the month, after the last invoice run).\n2. [[flow:payments-acct]] delivered the cash entries of the last day.\n3. The totals of invoices and ledger entries match. A gap usually means a credit note issued after the export.\n4. Team Payments confirmed the bank reconciliation.\n\nBackground on the domain: [[page:finance-overview]].',
+  },
+  {
+    id: 'architecture',
+    title: 'Architecture decisions',
+    order: 2,
+    ownerTeamId: 'team-platform',
+    tags: ['adr'],
+    hoursAgo: 900,
+    body: 'Architecture decision records (ADR) of the landscape: one page per decision, with its context, the options and the consequences. A decision is never deleted; a later ADR replaces it.\n\n- [[page:adr-nightly-file]]',
+  },
+  {
+    id: 'adr-nightly-file',
+    title: 'ADR 0007: Why a nightly file and not an API',
+    parentId: 'architecture',
+    order: 1,
+    attachedTo: { kind: 'application', id: 'billing' },
+    tags: ['adr', 'integration'],
+    hoursAgo: 75,
+    body: "**Status:** accepted, to be revisited with Billing 4.3.\n\n## Context\n\n[[application:billing]] needs every new or changed customer of [[application:crm]] before its invoice run at 05:00. The CRM is a SaaS: its API is rate-limited and its webhooks are not guaranteed.\n\n## Options\n\n1. **Nightly file** through [[application:sftp|the file exchange]]: one extract of the day's changes.\n2. **Events** on [[application:bus|the message bus]]: one message per change.\n3. **Calls** from Billing to the CRM API during the invoice run.\n\n## Decision\n\nOption 1: [[flow:crm-to-billing-customers]]. Billing only needs the customers once a day, the file can be replayed (see [[page:replay-nightly-import]]) and the CRM extract is a standard feature.\n\n## Consequences\n\n- A customer changed during the day is invoiced with the old details until the next night.\n- Billing 4.3 offers a customer API (v4). When it is live, option 2 becomes cheaper: this ADR will be replaced.\n\nTerms used here: [[page:glossary]].",
+  },
+  {
+    id: 'finance-overview',
+    title: 'Finance domain overview',
+    order: 3,
     attachedTo: { kind: 'domain', id: 'finance' },
     ownerTeamId: 'team-finance',
-    hoursAgo: 500,
-    body: 'Billing, payments and accounting: how money moves through Alizé.\n',
+    tags: ['domain', 'finance'],
+    hoursAgo: 118,
+    body: 'The Finance domain invoices premiums, collects payments and keeps the books.\n\n| Application | Team | Role |\n| --- | --- | --- |\n| [[application:billing]] | [[team:team-finance]] | Invoices premiums, sends them by email and post |\n| [[application:payments]] | [[team:team-payments]] | Direct debits, card payments, bank reconciliation |\n| [[application:acct]] | [[team:team-finance]] | General ledger |\n\n## Main flows\n\n- Customers come from the CRM every night: [[flow:crm-to-billing-customers]].\n- Invoices go to the ledger once a month: [[flow:billing-acct]].\n- Payments go to the ledger every evening: [[flow:payments-acct]].\n\n## Recurring work\n\n- [[page:month-end-closing]]\n- Words and data used in the domain: [[page:glossary]]',
   },
+  {
+    id: 'glossary',
+    title: 'Glossary',
+    order: 4,
+    ownerTeamId: 'team-data',
+    tags: ['reference'],
+    hoursAgo: 650,
+    body: 'Business words used across the landscape, with the data object that carries each of them.\n\n**Customer**: a policyholder, with identity, contact details and preferences. Source: the CRM. See [[dataObject:customer]].\n\n**Policy**: an insurance contract and its cover. See [[dataObject:policy]].\n\n**Claim**: a declared loss, its assessment and settlement. Sensitive data. See [[dataObject:claim]].\n\n**Invoice**: a premium invoice issued by Billing. See [[dataObject:invoice]].\n\n**Payment**: money received or paid out. See [[dataObject:payment]].\n\n**Delta file**: an extract holding only the records created or changed since the previous one.',
+  },
+  // More pages, for a deeper tree.
   {
     id: 'billing-handbook',
     title: 'Billing handbook',
-    parentId: 'finance',
+    parentId: 'finance-overview',
     order: 0,
     attachedTo: { kind: 'application', id: 'billing' },
     tags: ['overview'],
     hoursAgo: 72,
     body: `[[application:billing]] invoices premiums and sends them by email and post. This handbook gathers what the Finance on-call needs.\n\n## On call\n\nFinance on-call: +33 1 23 45 67 89, nights and weekends.\n\n## Runbooks\n\n- [[page:replay-nightly-import]]\n- [[page:print-file-rejections]]\n`,
-  },
-  {
-    id: 'replay-nightly-import',
-    title: 'Replay the nightly customer import',
-    parentId: 'billing-handbook',
-    order: 0,
-    attachedTo: { kind: 'flow', id: 'crm-to-billing-customers' },
-    ownerTeamId: 'team-finance',
-    tags: ['runbook', 'batch', 'on-call'],
-    hoursAgo: 2,
-    body: REPLAY,
   },
   {
     id: 'invoice-run-calendar',
@@ -134,22 +175,12 @@ export const SEED_PAGES: SeedPage[] = [
   {
     id: 'adr-012-ledger-export',
     title: 'ADR-012 Monthly ledger export',
-    parentId: 'finance',
+    parentId: 'architecture',
     order: 10,
     attachedTo: { kind: 'flow', id: 'billing-acct' },
     tags: ['adr'],
     hoursAgo: 75,
     body: `**Status:** accepted · **Date:** 2026-10-27\n\n## Context\n\n[[application:billing]] sent ledger entries to [[application:acct]] every night, and month-end reconciliation took three days.\n\n## Decision\n\nSend one export on the first day of the month, after the last invoice run.\n\n## Consequences\n\n- Reconciliation takes one morning.\n- Daily figures come from the [[application:dwh]] instead.\n`,
-  },
-  {
-    id: 'month-end-close',
-    title: 'Month-end close checklist',
-    parentId: 'finance',
-    order: 20,
-    ownerTeamId: 'team-finance',
-    tags: ['runbook'],
-    hoursAgo: 600,
-    body: `1. Check the [[page:invoice-run-calendar]] for the earlier run.\n2. Confirm the ledger export ([[page:adr-012-ledger-export]]).\n3. Lock the period in [[application:acct]].\n`,
   },
   {
     id: 'customer-area',
@@ -260,15 +291,6 @@ export const SEED_PAGES: SeedPage[] = [
     ownerTeamId: 'team-data',
     hoursAgo: 1300,
     body: 'New here? Read these first.\n',
-  },
-  {
-    id: 'glossary',
-    title: 'Glossary',
-    parentId: 'getting-started',
-    order: 0,
-    ownerTeamId: 'team-data',
-    hoursAgo: 118,
-    body: `- **Invoice run**: the nightly job of [[application:billing]] that issues invoices.\n- **Source of truth**: the application that owns a data object, such as [[application:crm]] for [[dataObject:customer]].\n`,
   },
   {
     id: 'document-a-flow',
