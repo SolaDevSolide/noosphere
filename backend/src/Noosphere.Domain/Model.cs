@@ -176,8 +176,10 @@ public sealed class Proposal
     public Guid AuthorId { get; set; }
     public string AuthorName { get; set; } = "";
     public AuthorKind AuthorKind { get; set; }
-    /// <summary>For agents (later): the user the agent works for.</summary>
+    /// <summary>For agents: the username of the person the agent works for (also the author).</summary>
     public string? OnBehalfOf { get; set; }
+    /// <summary>For agents: the connection that wrote the proposal. Its drafts are seen by the person and administrators only.</summary>
+    public Guid? AgentConnectionId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateTimeOffset? SubmittedAt { get; set; }
@@ -258,4 +260,131 @@ public sealed class AccessLog
     public AccessLogWhy? Why { get; set; }
     /// <summary>For <see cref="AccessLogWhy.ListedTeam"/>: the team of the access list the reader belongs to.</summary>
     public string? WhyTeamId { get; set; }
+}
+
+/// <summary>
+/// The most an AI agent sees, whatever its person sees: records visible to everyone (<c>public</c>, the default), the
+/// same with protected notes (<c>public+protected</c>), or everything its person sees (<c>asUser</c>; restricted records
+/// also need the <c>docs:read:restricted</c> scope).
+/// </summary>
+public enum AgentCeiling
+{
+    [System.Text.Json.Serialization.JsonStringEnumMemberName("public")] Public,
+    [System.Text.Json.Serialization.JsonStringEnumMemberName("public+protected")] PublicProtected,
+    [System.Text.Json.Serialization.JsonStringEnumMemberName("asUser")] AsUser,
+}
+
+/// <summary>Who may connect an agent: any member, for themselves, or the same with an administrator's approval.</summary>
+public enum AgentWhoConnects { AnyMember, ApprovalRequired }
+
+/// <summary>Settings of AI agents (one row), set by administrators.</summary>
+public sealed class AgentSettings
+{
+    public int Id { get; set; } = 1;
+    public bool Enabled { get; set; } = true;
+    public AgentCeiling Ceiling { get; set; } = AgentCeiling.Public;
+    public int QuotaPerHour { get; set; } = 600;
+    public AgentWhoConnects WhoConnects { get; set; } = AgentWhoConnects.AnyMember;
+    /// <summary>OAuth dynamic client registration (RFC 7591), for clients without a Client ID Metadata Document.</summary>
+    public bool DynamicRegistration { get; set; } = true;
+    /// <summary><c>/llms.txt</c> and the Markdown views answer without a session (records visible to everyone, no protected notes).</summary>
+    public bool AnonymousLlms { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public int Version { get; set; }
+}
+
+/// <summary>
+/// An AI agent (an OAuth client) authorised by a person. It acts for that person, never above the ceiling, and its
+/// scopes say what it may do: <c>docs:read</c>, <c>docs:draft</c>, <c>docs:read:restricted</c>.
+/// </summary>
+public sealed class AgentConnection
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    /// <summary>OAuth client id: the URL of its Client ID Metadata Document, or the id given at dynamic registration.</summary>
+    public string ClientId { get; set; } = "";
+    public string ClientName { get; set; } = "";
+    public string? ClientUri { get; set; }
+    public Guid UserId { get; set; }
+    public List<string> Scopes { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastUsedAt { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
+    /// <summary>Paused by the hourly quota until this time.</summary>
+    public DateTimeOffset? PausedUntil { get; set; }
+    /// <summary>With "approval required": the connection waits until an administrator approves it.</summary>
+    public bool PendingApproval { get; set; }
+    public DateTimeOffset? ApprovedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+    /// <summary>A connection made by the demo toolbox (no tokens).</summary>
+    public bool Demo { get; set; }
+}
+
+public enum AgentActivityKind { Read, Draft, Proposal, Refused, Quota, Revoked }
+
+/// <summary>One call of an agent: what it read, drafted or proposed, or why it was refused. Kept 90 days.</summary>
+public sealed class AgentActivity
+{
+    public long Id { get; set; }
+    public DateTimeOffset At { get; set; }
+    public Guid ConnectionId { get; set; }
+    /// <summary>MCP tool name, or <c>llms.txt</c>, <c>markdown</c>, <c>revoke</c>, <c>stop-all</c>.</summary>
+    public string Tool { get; set; } = "";
+    public AgentActivityKind Kind { get; set; }
+    /// <summary>In English, without the agent's name: "Read Billing (application)".</summary>
+    public string Summary { get; set; } = "";
+    public RecordKind? RecordKind { get; set; }
+    public string? RecordId { get; set; }
+}
+
+public enum AgentTokenKind { Access, Refresh }
+
+/// <summary>An opaque OAuth token. Only its SHA-256 hash is stored.</summary>
+public sealed class AgentToken
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ConnectionId { get; set; }
+    public string Hash { get; set; } = "";
+    public AgentTokenKind Kind { get; set; }
+    public List<string> Scopes { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
+    /// <summary>For a refresh token: when it was exchanged (rotation). A second use revokes the whole connection.</summary>
+    public DateTimeOffset? UsedAt { get; set; }
+    /// <summary>The authorization request (code) the token family comes from.</summary>
+    public Guid? RequestId { get; set; }
+}
+
+/// <summary>A client registered through dynamic client registration (RFC 7591). Metadata-document clients are not stored.</summary>
+public sealed class OAuthClient
+{
+    public string ClientId { get; set; } = "";
+    public string ClientName { get; set; } = "";
+    public string? ClientUri { get; set; }
+    public List<string> RedirectUris { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>
+/// An authorization request, from <c>/oauth/authorize</c> to the consent page, then (approved) its single-use code.
+/// Expires after 10 minutes.
+/// </summary>
+public sealed class OAuthRequest
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string ClientId { get; set; } = "";
+    public string ClientName { get; set; } = "";
+    public string? ClientUri { get; set; }
+    public string RedirectUri { get; set; } = "";
+    public string? State { get; set; }
+    public string CodeChallenge { get; set; } = "";
+    public List<string> Scopes { get; set; } = [];
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+    /// <summary>Set when the person approves; the code then exists.</summary>
+    public Guid? UserId { get; set; }
+    public Guid? ConnectionId { get; set; }
+    public string? CodeHash { get; set; }
+    public DateTimeOffset? CodeUsedAt { get; set; }
+    public DateTimeOffset? DeniedAt { get; set; }
 }
