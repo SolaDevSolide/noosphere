@@ -24,9 +24,9 @@ JSON over HTTP, under `/api`, with camelCase keys and enums written as lower-cam
 | ------ | ------- |
 | 400 | Invalid input (`errors` per field) |
 | 401 | Not signed in, or wrong credentials |
-| 403 | Role not allowed, restricted record, missing `X-Requested-With` |
+| 403 | Role not allowed, not in the owning team (send a proposal), restricted record, missing `X-Requested-With` |
 | 404 | No such record |
-| 409 | Stale version, id already used, record still in use (delete) |
+| 409 | Stale version, id already used, record still in use (delete), outdated proposal (`outdated: true`) |
 | 422 | Import file with errors (body: the import result) |
 | 429 | Too many sign-in attempts |
 
@@ -34,14 +34,16 @@ JSON over HTTP, under `/api`, with camelCase keys and enums written as lower-cam
 
 | Method and path | Who | Body, answer |
 | --------------- | --- | ------------ |
-| `POST /api/auth/login` | anyone | `{username, password}`, then `{username, displayName, role, language}` |
+| `POST /api/auth/login` | anyone | `{username, password}`, then `{username, displayName, role, language, teams}` |
 | `POST /api/auth/logout` | anyone | 204 |
-| `GET /api/auth/me` | signed in | `{username, displayName, role, language}` |
+| `GET /api/auth/me` | signed in | `{username, displayName, role, language, teams: [{id, name}]}` |
 | `PUT /api/auth/me/language` | signed in | `{language: "en" or "fr"}` |
 | `PUT /api/auth/me/password` | signed in | `{currentPassword, newPassword}`, 204; closes the account's other sessions |
-| `GET /api/users`, `GET /api/users/{username}` | admin | `UserDto` |
-| `POST /api/users` | admin | `{username, displayName, role, language?, password}`, 201 |
-| `PUT /api/users/{username}` | admin | `{displayName, role, language, password?, version}` |
+| `GET /api/users`, `GET /api/users/{username}` | admin | `UserDto`, with `teamIds` |
+| `POST /api/users` | admin | `{username, displayName, role, language?, password, teamIds?}`, 201 |
+| `PUT /api/users/{username}` | admin | `{displayName, role, language, password?, teamIds?, version}`; `teamIds` left out keeps the teams |
+| `GET /api/teams/{id}/members` | signed in | `[{username, displayName, role}]` |
+| `PUT /api/teams/{id}/members` | admin | `{usernames: []}` replaces the members |
 | `DELETE /api/users/{username}` | admin | 204; refused for your own account and for the last admin |
 
 Roles: `admin`, `member` and `guest` (see [configuration](configuration.md#roles)).
@@ -49,8 +51,14 @@ Roles: `admin`, `member` and `guest` (see [configuration](configuration.md#roles
 ## Landscape records
 
 `GET/POST /api/domains`, `GET/PUT/DELETE /api/domains/{id}`, and the same for `teams`, `applications`,
-`data-objects` and `flows`. Everyone signed in reads, members and admins create and edit, admins delete. A record
-that others still refer to cannot be deleted (409).
+`data-objects` and `flows`. Everyone signed in reads. Administrators and members of the owning team create, edit and
+delete; other members send a [proposal](proposals.md) instead (a direct write returns 403). Domains and teams are
+changed by administrators only. Every change creates a [revision](history.md). A record that others still refer to
+cannot be deleted (409).
+
+`GET /api/{kind}/{id}` also returns, for the reader, `owningTeamId` (null: administrators only), `permissions:
+{publish, propose}`, `pages` (attached pages) and `mentionedIn` (pages linking to the record). A team also returns its
+`members`.
 
 | Kind | Fields (input) | Computed (output) |
 | ---- | -------------- | ----------------- |
@@ -81,12 +89,50 @@ and filters and search never match their hidden fields. In the OpenAPI document,
   filters (`type`, `status`, `dataObjectId`) keep the matching flows and only the applications at their ends. A flow
   always comes with both of its ends.
 - `GET /api/search?q=` returns at most 20 `{kind, id, title, subtitle}` items, where `kind` is `application`, `flow`,
-  `dataObject`, `team` or `domain`. Names starting with the text come first.
+  `dataObject`, `team`, `domain` or `page`. Names starting with the text come first. For a page, a match in the body
+  counts too, and the subtitle is an excerpt around it.
+
+## Proposals
+
+See [proposals and validation](proposals.md).
+
+| Method and path | Who | Description |
+| --------------- | --- | ----------- |
+| `GET /api/proposals?status=&mine=true&toValidate=true` | signed in | Proposals the reader may see (drafts: their author only), newest first |
+| `GET /api/proposals/{id}` | signed in | One proposal, with each change's snapshots and field `diff` |
+| `POST /api/proposals` | member, admin | `{title, comment?, changes: [{kind, targetId?, operation, baseVersion?, after?}], submit?}`, 201 |
+| `PUT /api/proposals/{id}` | author | Same body plus `version`, while draft or submitted |
+| `POST /api/proposals/{id}/submit`, `/withdraw` | author | |
+| `POST /api/proposals/{id}/accept` | validator | 409 with `outdated: true` when a target changed |
+| `POST /api/proposals/{id}/refuse` | validator | `{reason}`, 3 to 500 characters |
+| `POST /api/proposals/{id}/rebase` | author | Moves the changes onto the latest versions |
+| `GET /api/me/inbox` | signed in | `{toValidate, mineOpen}` |
+
+## History and trash
+
+See [history](history.md): `GET /api/{kind}/{id}/history`, `.../history/{version}`, `.../history/compare?from=&to=`,
+`POST .../history/{version}/restore`, and for administrators `GET /api/trash` and
+`POST /api/trash/{kind}/{id}/restore`.
+
+## Pages
+
+See [pages](pages.md): `GET/POST /api/pages`, `GET /api/pages/tree`, `GET/PUT/DELETE /api/pages/{id}`,
+`GET /api/pages/{id}/raw` and `POST /api/pages/{id}/move`.
+
+## Settings
+
+| Method and path | Who | Body, answer |
+| --------------- | --- | ------------ |
+| `GET /api/settings` | anyone, even signed out | `{instanceName, organisationName, defaultLanguage, version, updatedAt}` |
+| `PUT /api/settings` | admin | `{instanceName, organisationName?, defaultLanguage?, version}` (`version` 0 before the first save) |
+
+The header shows `instanceName`, with `organisationName` under it, and the browser tab uses `instanceName`. New
+accounts get `defaultLanguage`. The technical name `noosphere` (command, image, cookie) never changes.
 
 ## Exchange
 
 - `GET /api/export?format=json|yaml`, for anyone signed in, downloads the landscape in the
-  [exchange format](exchange-format.md). Restricted applications are left out for non-admins.
+  [exchange format](exchange-format.md). Restricted applications and pages are left out for non-admins.
 - `POST /api/import?dryRun=true|false`, for admins, takes the file as the request body (JSON or YAML, told apart by
   `Content-Type` or `?format=`) and returns `{created, updated, unchanged, errors[], dryRun, applied}`.
 
