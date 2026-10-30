@@ -1,11 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
+import { useDocumentTitle } from '../app/settings';
 import { useI18n } from '../i18n';
 import { TopBar } from '../layout/TopBar';
 import { IconWarn } from '../ui/icons';
 
-export function PageShell({ children, narrow }: { children: ReactNode; narrow?: boolean }) {
+export function PageShell({ children, narrow, title }: { children: ReactNode; narrow?: boolean; title?: string }) {
+  useDocumentTitle(title);
   return (
     <div className="shell">
       <TopBar />

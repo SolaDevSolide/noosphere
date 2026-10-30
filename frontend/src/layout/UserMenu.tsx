@@ -3,7 +3,7 @@ import { useGo } from '../ui/useGo';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
-import { IconLogo, IconTeam, IconUpload } from '../ui/icons';
+import { IconLogo, IconReview, IconSettings, IconTeam, IconTrash, IconUpload } from '../ui/icons';
 
 export function LanguageSwitch({ small }: { small?: boolean }) {
   const { lang, t } = useI18n();
@@ -85,6 +85,12 @@ export function UserMenu() {
             <IconLogo size={16} />
             {t.top.explorer}
           </Link>
+          {me.role !== 'guest' && (
+            <Link role="menuitem" className="mi" to="/review" onClick={() => setOpen(false)}>
+              <IconReview />
+              {t.top.review}
+            </Link>
+          )}
           <Link role="menuitem" className="mi" to="/import-export" onClick={() => setOpen(false)}>
             <IconUpload />
             {t.top.importExport}
@@ -93,6 +99,18 @@ export function UserMenu() {
             <Link role="menuitem" className="mi" to="/admin/users" onClick={() => setOpen(false)}>
               <IconTeam />
               {t.top.users}
+            </Link>
+          )}
+          {isAdmin && (
+            <Link role="menuitem" className="mi" to="/admin/trash" onClick={() => setOpen(false)}>
+              <IconTrash />
+              {t.top.trash}
+            </Link>
+          )}
+          {isAdmin && (
+            <Link role="menuitem" className="mi" to="/admin/settings" onClick={() => setOpen(false)}>
+              <IconSettings />
+              {t.top.settings}
             </Link>
           )}
           <hr />

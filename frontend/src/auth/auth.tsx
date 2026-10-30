@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { api, ApiError, setUnauthorizedHandler } from '../api/client';
-import type { Language, Me } from '../api/types';
+import type { Language, MeM2 as Me } from '../api/types';
 import { useI18n } from '../i18n';
 
 type Status = 'loading' | 'anonymous' | 'signed-in';
@@ -11,6 +11,8 @@ interface Auth {
   me: Me | null;
   canEdit: boolean;
   isAdmin: boolean;
+  /** Ids of the teams the user belongs to. */
+  teamIds: string[];
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   changeLanguage: (l: Language) => void;
@@ -82,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       me,
       canEdit: me?.role === 'admin' || me?.role === 'member',
       isAdmin: me?.role === 'admin',
+      teamIds: me?.teams?.map((x) => x.id) ?? [],
       login,
       logout,
       changeLanguage,
