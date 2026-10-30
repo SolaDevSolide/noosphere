@@ -98,12 +98,18 @@ public static partial class Rules
 
     public static string LinkKey(RecordKind kind, string id) => $"{KindName(kind)}:{id}";
 
-    /// <summary>Wiki links of a Markdown body, in order of first appearance, without duplicates (by target).</summary>
+    [GeneratedRegex(@"```[\s\S]*?(?:```|\z)|`[^`\n]*`", RegexOptions.CultureInvariant)]
+    private static partial Regex CodePattern();
+
+    /// <summary>
+    /// Wiki links of a Markdown body, in order of first appearance, without duplicates (by target). Links written in code
+    /// (fenced blocks and inline code) are examples, not links: pages show them as text.
+    /// </summary>
     public static List<WikiLink> WikiLinks(string? body)
     {
         var links = new List<WikiLink>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Match m in WikiLinkPattern().Matches(body ?? ""))
+        foreach (Match m in WikiLinkPattern().Matches(CodePattern().Replace(body ?? "", " ")))
         {
             var label = m.Groups[3].Success && m.Groups[3].Value.Trim().Length > 0 ? m.Groups[3].Value.Trim() : null;
             var link = new WikiLink(LinkKinds[m.Groups[1].Value], m.Groups[2].Value, label);

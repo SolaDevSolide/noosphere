@@ -23,6 +23,20 @@ public class WikiLinkTests
         Assert.Equal("dataObject:customer", links[2].Key);
         Assert.Empty(Rules.WikiLinks(null));
     }
+
+    [Fact]
+    public void Links_written_in_code_are_not_links()
+    {
+        var links = Rules.WikiLinks("""
+            Write `[[flow:id]]` to link a flow, as in [[flow:billing-dwh]].
+
+            ```markdown
+            [[page:example]] and [[team:team-crm]]
+            ```
+            """);
+        Assert.Equal([(RecordKind.Flow, "billing-dwh")], links.Select(l => (l.Kind, l.Id)));
+        Assert.Empty(Rules.WikiLinks("```\n[[page:unclosed]]"));
+    }
 }
 
 /// <summary>Documentation pages. Demo: 7 pages, the runbook is attached to crm-to-billing-customers (owned by Team CRM).</summary>
