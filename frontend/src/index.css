@@ -1113,9 +1113,25 @@ kbd {
 .hit {
   fill: none;
   stroke: transparent;
-  stroke-width: 16;
+  stroke-width: 18;
+  stroke-linecap: round;
   pointer-events: stroke;
   cursor: pointer;
+}
+@media (pointer: coarse) {
+  .hit {
+    stroke-width: 28;
+  }
+}
+.lens .node.leaving {
+  pointer-events: none;
+  animation: leave 0.26s ease forwards;
+  transition: none;
+}
+@keyframes leave {
+  to {
+    opacity: 0;
+  }
 }
 .mk-api {
   fill: var(--c-api);

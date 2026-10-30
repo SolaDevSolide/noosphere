@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useGo } from '../../ui/useGo';
 import { Link } from 'react-router-dom';
 import type { LandscapeFlow } from '../../api/types';
@@ -13,6 +13,7 @@ import { paths } from '../paths';
 import { flip, type LensKind } from '../view';
 import { appLayout, flowLayout, FLOW_CARD_W, lineageLayout, type HeadText, type Layout, type LNode } from './layouts';
 
+const NO_NODES: LNode[] = [];
 const REDUCED = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 function Pill({
@@ -317,6 +318,38 @@ interface Hi {
   nodes: Set<string>;
 }
 
+/** A node that left the lens, kept for its fade-out at the position it had. */
+export interface Leaving {
+  n: LNode;
+  dx: number;
+  dy: number;
+}
+
+export const LEAVE_MS = 260;
+
+/** Nodes present in the previous layout and absent from this one. */
+export function leavingNodes(prev: Leaving[], next: LNode[]): Leaving[] {
+  const keep = new Set(next.map((n) => n.key));
+  return prev.filter((p) => !keep.has(p.n.key));
+}
+
+/** Keeps the nodes that leave the lens on screen for a short fade-out instead of dropping them at once. */
+function useLeaving(nodes: LNode[], dx: number, dy: number): Leaving[] {
+  const prev = useRef<Leaving[]>([]);
+  const [leaving, setLeaving] = useState<Leaving[]>([]);
+  useLayoutEffect(() => {
+    const gone = leavingNodes(prev.current, nodes);
+    prev.current = nodes.map((n) => ({ n, dx, dy }));
+    if (gone.length && !REDUCED()) setLeaving(gone);
+  }, [nodes, dx, dy]);
+  useEffect(() => {
+    if (!leaving.length) return;
+    const id = window.setTimeout(() => setLeaving([]), LEAVE_MS);
+    return () => window.clearTimeout(id);
+  }, [leaving]);
+  return leaving;
+}
+
 export function Lens({
   kind,
   id,
@@ -365,6 +398,11 @@ export function Lens({
   useLayoutEffect(() => {
     flip.rects = null;
   }, [kind, id]);
+  const leaving = useLeaving(
+    lay?.nodes ?? NO_NODES,
+    lay ? Math.max(0, (width - lay.W) / 2) : 0,
+    lay ? Math.max(0, (height - lay.H) / 2 - 10) : 0,
+  );
 
   if (!m) return null;
   if (!lay)
@@ -463,6 +501,16 @@ export function Lens({
               />
             );
           })}
+          {/* wider invisible strokes on top, so a thin line is easy to hover and click */}
+          {lay.wires.map((w) => (
+            <path
+              key={'hit' + w.key}
+              className="hit"
+              data-f={w.f.id}
+              d={w.d}
+              onClick={() => (fullFlow(w.f) ? nav(paths.flowLens(w.f.id)) : onRestricted())}
+            />
+          ))}
         </g>
       </svg>
       <div className="layer fresh" style={{ transform: `translate(${dx}px,${dy}px)` }} key={'p' + kind + id + second}>
@@ -502,6 +550,25 @@ export function Lens({
           </div>
         )}
       </div>
+      {leaving.length > 0 && (
+        <div className="layer" aria-hidden="true">
+          {leaving.map(({ n, dx: ox, dy: oy }) => (
+            <div
+              key={'leave' + n.key}
+              className={'node leaving' + (n.role === 'ghost' ? ' ghost' : '') + (n.role === 'center' ? ' center' : '')}
+              style={{ transform: `translate(${n.x + ox}px,${n.y + oy}px)`, width: n.w, height: n.h }}
+            >
+              {n.role === 'center' ? (
+                <CenterInner m={m} id={n.id} />
+              ) : n.role === 'ghost' ? (
+                <span className="nm">{nameOf(t, m, n.id)}</span>
+              ) : (
+                <NodeInner m={m} id={n.id} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="layer" style={{ transform: `translate(${dx}px,${dy}px)` }}>
         {lay.nodes.map((n) => {
           const restricted = !fullApp(m, n.id);

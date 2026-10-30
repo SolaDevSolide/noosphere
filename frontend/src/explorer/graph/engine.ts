@@ -146,6 +146,8 @@ export interface GModel {
   kFit: number;
   first: boolean;
   layoutDefault: boolean;
+  /** Visible applications and links of the last layout, to tell a real filter change from a remount. */
+  layoutKey?: string;
   lastDoms?: Set<string>;
   params: Params;
   transform?: ZoomTransform;
@@ -261,6 +263,18 @@ interface Rect {
   y: number;
   w: number;
   h: number;
+}
+
+/** Identity of a graph: its visible applications and links. */
+export function graphKey(G: Pick<Graph, 'ids' | 'links'>): string {
+  return (
+    [...G.ids].sort().join(',') +
+    '|' +
+    G.links
+      .map((l) => l.key)
+      .sort()
+      .join(',')
+  );
 }
 
 export class GraphEngine {
@@ -1136,7 +1150,10 @@ export class GraphEngine {
     this.edgeUnion = eu;
     this.prevEdges = G.links;
     this.host.onRun(run);
-    const wantFit = M.first || fresh;
+    // A relayout of the same graph (the view mounted again, an unchanged filter) keeps the default state.
+    const key = graphKey(G);
+    const stillDefault = fresh || (M.layoutDefault && key === M.layoutKey);
+    const wantFit = M.first || fresh || stillDefault;
     const dur = M.first || this.reduced ? 0 : fresh ? 750 : 650;
     this.startTween(dur, () => {
       this.edgeUnion = null;
@@ -1145,7 +1162,8 @@ export class GraphEngine {
     if (wantFit) this.fit(dur);
     else this.maybeRefit();
     M.first = false;
-    M.layoutDefault = fresh;
+    M.layoutDefault = stillDefault;
+    M.layoutKey = key;
     const S = this.S;
     if (S.sel && !G.idset.has(S.sel)) {
       S.sel = null;
@@ -1271,7 +1289,7 @@ export class GraphEngine {
     const r = st.getBoundingClientRect();
     if (!r.width || !r.height) return;
     this.DPR = window.devicePixelRatio || 1;
-    const wasDefault = !!this.G && this.isDefaultNow() && r.width !== this.W;
+    const wasDefault = !!this.G && this.isDefaultNow() && (r.width !== this.W || r.height !== this.H);
     if (this.W && this.H && (r.width !== this.W || r.height !== this.H) && this.G) {
       this.transform = this.transform.translate(
         (r.width - this.W) / 2 / this.transform.k,
@@ -1282,6 +1300,8 @@ export class GraphEngine {
     this.W = r.width;
     this.H = r.height;
     if (wasDefault) {
+      // a running zoom transition still aims at the fit of the old size
+      select(this.cv).interrupt();
       const t = this.fitTransform();
       this.transform = t;
       (this.cv as HTMLCanvasElement & { __zoom?: ZoomTransform }).__zoom = t;
