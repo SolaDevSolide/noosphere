@@ -16,6 +16,8 @@ interface Auth {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   changeLanguage: (l: Language) => void;
+  /** Takes over another account's profile (the demo toolbox signs in as another persona). */
+  adopt: (m: Me) => void;
 }
 
 const Ctx = createContext<Auth | null>(null);
@@ -78,6 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [me, setLang],
   );
 
+  const adopt = useCallback(
+    (m: Me) => {
+      setMe(m);
+      setLang(m.language);
+      setStatus('signed-in');
+    },
+    [setLang],
+  );
+
   const value = useMemo<Auth>(
     () => ({
       status,
@@ -88,8 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       changeLanguage,
+      adopt,
     }),
-    [status, me, login, logout, changeLanguage],
+    [status, me, login, logout, changeLanguage, adopt],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
