@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSettings } from '../app/settings';
 import { useAuth } from '../auth/auth';
+import { useDemo } from '../demo/context';
 import { useI18n } from '../i18n';
 import { useInbox } from '../review/inbox';
 import { toggleTheme } from '../ui/theme';
@@ -15,6 +16,7 @@ export function Brand({ to = '/' }: { to?: string }) {
   const { settings } = useSettings();
   const name = settings.instanceName.trim() || t.brand.name;
   const sub = settings.organisationName.trim() || t.brand.sub;
+  const { on: demo } = useDemo();
   return (
     <Link className="brand" to={to} aria-label={t.brand.home(name)}>
       <span className="logo" aria-hidden="true">
@@ -22,7 +24,14 @@ export function Brand({ to = '/' }: { to?: string }) {
       </span>
       <span className="brand-t">
         <b>{name}</b>
-        <small>{sub}</small>
+        <small>
+          {sub}
+          {demo && (
+            <span className="demo-pill" title={t.agents.demo.markerTitle}>
+              {t.agents.demo.marker}
+            </span>
+          )}
+        </small>
       </span>
     </Link>
   );
@@ -91,8 +100,9 @@ export function ThemeButton() {
 }
 
 export function TopBar({ filter }: { filter?: ReactNode }) {
+  const { on: demo } = useDemo();
   return (
-    <header className="top">
+    <header className={'top' + (demo ? ' demo-on' : '')}>
       <Brand />
       <div className="sgroup">
         <Search />
