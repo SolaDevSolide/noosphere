@@ -154,6 +154,8 @@ export const accessFr: AccessDict = {
   previewGuests: (names: string) => `Partagée en entier avec : ${names}.`,
   publicPagesWarn: (n: number, name: string) =>
     `${plural(n, 'page rattachée', 'pages rattachées')} à ${name} ${n <= 1 ? 'reste publique' : 'restent publiques'}.`,
+  publicOnRestricted: (name: string) =>
+    `${name} est restreinte, mais cette page est visible par tout le monde. Restreignez aussi la page si elle contient quoi que ce soit de privé.`,
   publicPagesText:
     'Les pages gardent leur propre visibilité ; restreignez-les une à une si elles contiennent quoi que ce soit de privé.',
   doRestrict: (name: string) => `Restreindre ${name}`,

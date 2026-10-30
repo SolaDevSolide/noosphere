@@ -866,7 +866,6 @@ export const en = {
     addTag: 'Add a tag',
     removeTag: (tag: string) => `Remove ${tag}`,
     visibilityF: 'Visibility',
-    visibilityAdmins: 'Only administrators make a page restricted.',
     summary: 'Summary of the change',
     proposalTitle: 'Proposal title',
     proposeInstead: 'Propose instead',

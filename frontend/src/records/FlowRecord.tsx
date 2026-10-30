@@ -1,8 +1,22 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useGo } from '../ui/useGo';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import { FLOW_STATUSES, FLOW_TYPES, type Flow, type FlowInput, type Proposal, type RecordExtras } from '../api/types';
+import {
+  FLOW_STATUSES,
+  FLOW_TYPES,
+  isGuestOutline,
+  isRestrictedApp,
+  type Flow,
+  type FlowInput,
+  type NotesExtras,
+  type Proposal,
+  type RecordExtras,
+} from '../api/types';
+import { AccessChips, type AccessPop } from '../access/AccessWindow';
+import { notesDetail, NOTES_MAX, ProtectedNotesField, ProtectedNotesSection } from '../access/ProtectedNotes';
+import { fieldLabelOf, isFieldRefusal, SecretBanner, secretFields } from '../access/secret';
+import { GuestStub, RestrictedStub, SharedBanner } from '../access/Stubs';
 import { useAuth } from '../auth/auth';
 import { nameOf, pct, Sdot, StatusTag, teamName } from '../explorer/bits';
 import { useLandscape } from '../explorer/landscape';
@@ -10,7 +24,7 @@ import { paths } from '../explorer/paths';
 import { appOrder, fullApp } from '../domain/model';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconHistory, IconLock, IconWarn, TypeIcon } from '../ui/icons';
+import { IconHistory, IconWarn, TypeIcon } from '../ui/icons';
 import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import {
@@ -48,11 +62,15 @@ interface Draft {
   status: Flow['status'];
   volume: string;
   description: string;
+  protectedNotes: string;
   changeSummary: string;
   changeDate: string;
 }
 
-const toDraft = (f: Flow): Draft => ({
+type FlowDetail = Flow & RecordExtras & NotesExtras;
+
+const toDraft = (f: FlowDetail): Draft => ({
+  protectedNotes: f.protectedNotes ?? '',
   name: f.name,
   fromId: f.fromId,
   toId: f.toId,
@@ -77,6 +95,7 @@ export function validateFlow(t: Dict, d: Draft): Record<string, string> {
   if (d.changeDate && !/^\d{4}-\d{2}-\d{2}$/.test(d.changeDate)) e.changeDate = t.record.errors.dateFormat;
   if (d.changeDate && !d.changeSummary.trim()) e.changeSummary = t.record.errors.summaryRequired;
   if (d.description.length > 4000) e.description = t.record.errors.tooLong(4000);
+  if (d.protectedNotes.length > NOTES_MAX) e.protectedNotes = t.access.notesTooLong;
   return e;
 }
 
@@ -84,14 +103,16 @@ function FlowForm({
   flow,
   mode,
   ownerName,
+  focus,
   onSaved,
   onProposed,
   onCancel,
   onReload,
 }: {
-  flow: Flow;
+  flow: FlowDetail;
   mode: EditMode;
   ownerName: string | null;
+  focus?: string;
   onSaved: (f: Flow) => void;
   onProposed: (p: Proposal) => void;
   onCancel: () => void;
@@ -104,7 +125,11 @@ function FlowForm({
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [secrets, setSecrets] = useState<string[]>([]);
   const [prop, setProp] = useProposeDraft(mode, flow.name);
+  useEffect(() => {
+    if (focus) document.getElementById(focus)?.focus();
+  }, [focus]);
   const dirty = JSON.stringify(d) !== JSON.stringify(toDraft(flow));
   useUnsavedGuard(dirty);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
@@ -116,6 +141,7 @@ function FlowForm({
     const e = { ...validateFlow(t, d), ...validatePropose(t, prop) };
     setErrors(e);
     setFailure(null);
+    setSecrets([]);
     if (Object.keys(e).length) {
       document.getElementById(Object.keys(e)[0])?.focus();
       return;
@@ -137,13 +163,15 @@ function FlowForm({
         description: d.description.trim() || null,
         plannedChange: d.changeSummary.trim() ? { summary: d.changeSummary.trim(), date: d.changeDate || null } : null,
       };
+      if (!flow.protectedNotesHidden || d.protectedNotes.trim()) body.protectedNotes = d.protectedNotes;
       if (prop.proposing) onProposed(await proposeUpdate('flow', flow.id, flow.version, body, prop));
       else onSaved(await api.updateFlow(flow.id, body));
     } catch (err) {
       if (err instanceof ApiError && err.isConflict) setConflict(true);
-      else if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
-        setErrors(serverErrors(err));
-      else
+      else if (isFieldRefusal(err)) {
+        setErrors(serverErrors(err, t));
+        setSecrets(secretFields(err));
+      } else
         setFailure(
           err instanceof ApiError && err.status === 0
             ? t.common.networkError
@@ -158,6 +186,7 @@ function FlowForm({
   const cancel = () => {
     if (!dirty || window.confirm(t.record.discardConfirm)) onCancel();
   };
+  const errCount = Object.keys(errors).length;
   const appSelect = (id: 'fromId' | 'toId', label: string) => (
     <Field id={id} label={label} required error={errors[id]}>
       <select
@@ -187,10 +216,14 @@ function FlowForm({
           <span className="bt">{failure}</span>
         </div>
       )}
-      {Object.keys(errors).length > 0 && (
-        <div className="banner danger" role="alert">
-          <span className="bt">{t.record.errors.fixBelow}</span>
-        </div>
+      {secrets.length > 0 ? (
+        <SecretBanner fields={secrets} label={(f) => fieldLabelOf(t, f)} />
+      ) : (
+        errCount > 0 && (
+          <div className="banner danger" role="alert">
+            <span className="bt">{t.record.errors.fixBelow}</span>
+          </div>
+        )
       )}
       <div className="fgrid">
         <Field id="name" label={t.record.fields.name} required error={errors.name} full>
@@ -324,11 +357,18 @@ function FlowForm({
             onChange={(e) => set('description', e.target.value)}
           />
         </Field>
+        <ProtectedNotesField
+          value={d.protectedNotes}
+          onChange={(v) => set('protectedNotes', v)}
+          hidden={!!flow.protectedNotesHidden}
+          who={ownerName || t.access.administrators}
+          error={errors.protectedNotes}
+        />
       </div>
       <ProposeFields mode={mode} ownerName={ownerName} value={prop} onChange={setProp} errors={errors} />
       <div className="form-actions sticky">
-        <span className="muted" aria-live="polite">
-          {dirty ? t.record.unsaved : ''}
+        <span className={'muted' + (errCount ? ' notsaved' : '')} aria-live="polite">
+          {errCount ? t.access.notSavedCount(errCount) : dirty ? t.record.unsaved : ''}
         </span>
         <button type="button" className="btn" onClick={cancel} disabled={saving}>
           {t.common.cancel}
@@ -371,8 +411,9 @@ export function FlowRecord() {
   const { model: m, reload: reloadLandscape } = useLandscape();
   const toast = useToast();
   const nav = useGo();
-  const { data: f, setData, error, reload } = useRecord<Flow & RecordExtras>(api.flow, id);
-  const [editing, setEditing] = useState(false);
+  const { data: f, setData, error, reload } = useRecord<FlowDetail>(api.flow, id);
+  const [editing, setEditing] = useState<false | { focus?: string }>(false);
+  const [pop, setPop] = useState<AccessPop>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sent, setSent] = useState<Proposal | null>(null);
   if (error)
@@ -389,15 +430,31 @@ export function FlowRecord() {
     );
   if ((f as { restricted?: boolean }).restricted)
     return (
-      <PageShell>
-        <div className="banner" role="note">
-          <IconLock />
-          <span className="bt">
-            <b>{t.common.restrictedFlow}</b> · {t.common.noAccess}
-          </span>
-        </div>
+      <PageShell title={t.access.restrictedName.flow}>
+        <RestrictedStub kind="flow" badge={<span className="kb flow">{t.search.badge.flow}</span>} />
       </PageShell>
     );
+  if (isGuestOutline(f)) {
+    const ends = `${nameOf(t, m, f.fromId)} → ${nameOf(t, m, f.toId)}`;
+    return (
+      <PageShell title={f.name}>
+        <GuestStub
+          name={f.name}
+          badge={
+            <>
+              <span className="kb flow">{t.search.badge.flow}</span> <span className="muted">{t.type[f.type]}</span>
+            </>
+          }
+          sub={ends}
+          fields={[
+            [t.record.fields.from, nameOf(t, m, f.fromId)],
+            [t.record.fields.to, nameOf(t, m, f.toId)],
+            [t.record.fields.type, t.type[f.type]],
+          ]}
+        />
+      </PageShell>
+    );
+  }
   const missing = [
     !f.schedule && t.record.missingFields.schedule,
     !f.dataObjectIds.length && t.record.missingFields.dataObjects,
@@ -419,6 +476,11 @@ export function FlowRecord() {
   const owner = ownerTeamOf(m, 'flow', f);
   const perm = permissionsFor(me?.role, teamIds, owner, f.permissions);
   const ownerName = owner ? teamName(m, owner) || owner : null;
+  const guest = me?.role === 'guest';
+  const endRestricted = [f.fromId, f.toId].some((x) => {
+    const e = m.apps.get(x);
+    return !!e && !isRestrictedApp(e) && e.visibility === 'restricted';
+  });
   return (
     <PageShell title={f.name}>
       <div className="page-h">
@@ -443,12 +505,12 @@ export function FlowRecord() {
               {t.record.openLens}
             </Link>
             {perm.publish ? (
-              <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+              <button type="button" className="btn primary" onClick={() => setEditing({})}>
                 {t.record.edit}
               </button>
             ) : (
               perm.propose && (
-                <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+                <button type="button" className="btn primary" onClick={() => setEditing({})}>
                   {t.propose.suggest}
                 </button>
               )
@@ -470,8 +532,24 @@ export function FlowRecord() {
             )}
           </div>
         )}
+        {!editing && (
+          <AccessChips
+            kind="flow"
+            id={f.id}
+            name={f.name}
+            version={f.version}
+            visibility={endRestricted ? 'restricted' : 'everyone'}
+            owner={owner}
+            pop={pop}
+            setPop={setPop}
+            pages={f.pages}
+            canPublish={perm.publish}
+            onTransfer={perm.publish ? () => setEditing({ focus: 'ownerTeamId' }) : undefined}
+          />
+        )}
       </div>
-      {!perm.propose && (
+      {guest && <SharedBanner owner={ownerName ?? t.access.administrators} />}
+      {!perm.propose && !guest && (
         <div className="banner" role="note">
           <span className="bt">
             <b>{t.record.readOnly}.</b> {t.record.readOnlyHint}
@@ -499,6 +577,7 @@ export function FlowRecord() {
           flow={f}
           mode={perm.publish ? 'publish' : 'propose'}
           ownerName={ownerName}
+          focus={editing.focus}
           onProposed={(pr) => {
             setSent(pr);
             setEditing(false);
@@ -537,6 +616,12 @@ export function FlowRecord() {
                 <h2 id="desc-h">{t.record.fields.description}</h2>
                 {f.description ? <Markdown text={f.description} /> : <p className="muted">{t.record.noDescription}</p>}
               </section>
+              <ProtectedNotesSection
+                record={f}
+                ownerId={owner}
+                ownerName={ownerName ?? t.access.administrators}
+                restricted={endRestricted}
+              />
               <RecordExtensions kind="flow" record={f} />
             </div>
             <section className="box" aria-labelledby="fields-h">
@@ -568,6 +653,8 @@ export function FlowRecord() {
                   <Sdot s={f.sensitivity} />
                   {t.sens[f.sensitivity]}
                 </dd>
+                <dt>{t.record.fields.protectedNotes}</dt>
+                <dd>{notesDetail(t, f, ownerName ?? t.access.administrators)}</dd>
                 <dt>{t.record.fields.owner}</dt>
                 <dd>
                   {f.ownerTeamId ? <Link to={paths.teamRecord(f.ownerTeamId)}>{teamName(m, f.ownerTeamId)}</Link> : '—'}

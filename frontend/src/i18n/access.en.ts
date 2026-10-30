@@ -150,6 +150,8 @@ export const accessEn = {
   previewEveryone: (name: string) => `Every member will see ${name}; guests see its name only.`,
   previewGuests: (names: string) => `Shared in full with: ${names}.`,
   publicPagesWarn: (n: number, name: string) => `${plural(n, 'page', 'pages')} attached to ${name} stay public.`,
+  publicOnRestricted: (name: string) =>
+    `${name} is restricted, but this page is visible to everyone. Restrict the page too if it holds anything private.`,
   publicPagesText: 'Pages keep their own visibility; restrict them one by one if they hold anything private.',
   doRestrict: (name: string) => `Restrict ${name}`,
   doSave: 'Save',

@@ -13,6 +13,7 @@ const flow = {
   status: 'live' as const,
   volume: '',
   description: '',
+  protectedNotes: '',
   changeSummary: '',
   changeDate: '',
 };

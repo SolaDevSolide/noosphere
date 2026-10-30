@@ -888,7 +888,6 @@ export const fr: Dict = {
     addTag: 'Ajouter une étiquette',
     removeTag: (tag: string) => `Retirer ${tag}`,
     visibilityF: 'Visibilité',
-    visibilityAdmins: 'Seuls les administrateurs rendent une page restreinte.',
     summary: 'Résumé du changement',
     proposalTitle: 'Titre de la proposition',
     proposeInstead: 'Proposer plutôt',

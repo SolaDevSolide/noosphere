@@ -13,6 +13,7 @@ import {
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import {
+  isRestrictedApp,
   isRestrictedPage,
   type AttachedTo,
   type PageDetail,
@@ -27,6 +28,7 @@ import { useLandscape } from '../explorer/landscape';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
 import { ConflictBanner, serverErrors, useRecord, useUnsavedGuard } from '../records/common';
+import { fieldLabelOf, isFieldRefusal, SecretBanner, secretFields } from '../access/secret';
 import { useInbox } from '../review/inbox';
 import {
   IconCallout,
@@ -278,6 +280,7 @@ function EditorBody({
   const [busy, setBusy] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [secrets, setSecrets] = useState<string[]>([]);
   const [showRestored, setShowRestored] = useState(restored);
   const [proposeInstead, setProposeInstead] = useState(false);
   const [comment, setComment] = useState('');
@@ -457,6 +460,7 @@ function EditorBody({
     const e = validateDraft(t, d, { isNew, ownerRequired: isNew && !isAdmin, takenIds });
     setErrors(e);
     setFailure(null);
+    setSecrets([]);
     if (Object.keys(e).length) {
       setSettingsOpen(true);
       setTimeout(() => document.getElementById(Object.keys(e)[0])?.focus(), 0);
@@ -508,8 +512,9 @@ function EditorBody({
     } catch (err) {
       if (err instanceof ApiError && err.isConflict && !isNew) setConflict(true);
       else if (err instanceof ApiError && err.isConflict && isNew) setErrors({ 'ps-slug': t.pages.errors.slugTaken });
-      else if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length) {
-        const se = serverErrors(err);
+      else if (isFieldRefusal(err)) {
+        const se = serverErrors(err, t);
+        setSecrets(secretFields(err));
         const map: Record<string, string> = {};
         for (const [k, v] of Object.entries(se)) {
           const key =
@@ -523,12 +528,15 @@ function EditorBody({
                     ? 'ps-att'
                     : k === 'ownerTeamId'
                       ? 'ps-team'
-                      : 'ps-other';
+                      : k === 'body'
+                        ? 'ps-body'
+                        : 'ps-other';
           map[key] = map[key] ? map[key] + ' ' + v : v;
         }
         setErrors(map);
         if (map['ps-other']) setFailure(map['ps-other']);
-        setSettingsOpen(true);
+        if (Object.keys(map).some((k) => k !== 'ps-body')) setSettingsOpen(true);
+        else document.getElementById('ps-body')?.focus();
       } else
         setFailure(
           err instanceof ApiError && err.status === 0
@@ -555,6 +563,14 @@ function EditorBody({
   };
 
   const lines = d.body ? d.body.split('\n').length : 0;
+  const attachedApp = d.attachedTo?.kind === 'application' && model ? model.apps.get(d.attachedTo.id) : undefined;
+  const publicOn =
+    d.visibility === 'everyone' &&
+    attachedApp &&
+    !isRestrictedApp(attachedApp) &&
+    attachedApp.visibility === 'restricted'
+      ? attachedApp.name
+      : null;
   const ancestors = page?.ancestors ?? [];
   const parentTrail = !page && d.parentId ? byId.get(d.parentId) : null;
   const heading = d.title.trim() || t.pages.untitled;
@@ -639,6 +655,23 @@ function EditorBody({
         <div className="banner danger" role="alert" style={{ marginBottom: 14 }}>
           <IconWarn />
           <span className="bt">{failure}</span>
+        </div>
+      )}
+      {secrets.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <SecretBanner fields={secrets} label={(f) => (f === 'body' ? t.pages.source : fieldLabelOf(t, f))} />
+          {errors['ps-body'] && (
+            <span className="err" id="ps-body-err" style={{ marginTop: 6 }}>
+              <IconWarn size={13} />
+              {errors['ps-body']}
+            </span>
+          )}
+        </div>
+      )}
+      {publicOn && (
+        <div className="banner warn" role="note" style={{ marginBottom: 14 }}>
+          <IconWarn />
+          <span className="bt">{t.access.publicOnRestricted(publicOn)}</span>
         </div>
       )}
 
@@ -774,6 +807,8 @@ function EditorBody({
                   className="md-src"
                   spellCheck={false}
                   aria-label={t.pages.source}
+                  aria-invalid={errors['ps-body'] ? true : undefined}
+                  aria-describedby={errors['ps-body'] ? 'ps-body-err' : undefined}
                   role="combobox"
                   aria-autocomplete="list"
                   aria-expanded={acOpen}
