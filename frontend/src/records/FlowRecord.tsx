@@ -501,9 +501,11 @@ export function FlowRecord() {
         </div>
         {!editing && (
           <div className="page-actions">
-            <Link className="btn" to={paths.flowLens(f.id)}>
-              {t.record.openLens}
-            </Link>
+            {!guest && (
+              <Link className="btn" to={paths.flowLens(f.id)}>
+                {t.record.openLens}
+              </Link>
+            )}
             {perm.publish ? (
               <button type="button" className="btn primary" onClick={() => setEditing({})}>
                 {t.record.edit}
@@ -654,8 +656,12 @@ export function FlowRecord() {
                   <Sdot s={f.sensitivity} />
                   {t.sens[f.sensitivity]}
                 </dd>
-                <dt>{t.record.fields.protectedNotes}</dt>
-                <dd>{notesDetail(t, f, ownerName ?? t.access.administrators)}</dd>
+                {!guest && (
+                  <>
+                    <dt>{t.record.fields.protectedNotes}</dt>
+                    <dd>{notesDetail(t, f, ownerName ?? t.access.administrators)}</dd>
+                  </>
+                )}
                 <dt>{t.record.fields.owner}</dt>
                 <dd>
                   {f.ownerTeamId ? <Link to={paths.teamRecord(f.ownerTeamId)}>{teamName(m, f.ownerTeamId)}</Link> : '—'}

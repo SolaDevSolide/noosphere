@@ -89,7 +89,7 @@ function Card({
     return (
       <button
         type="button"
-        className={'card outline' + (shared ? ' shared' : '')}
+        className={'card outlined' + (shared ? ' shared' : '')}
         data-app={id}
         aria-label={shared ? `${a.name}, ${t.access.sharedWithYou}` : a.name}
         onClick={() => nav(paths.app(id))}
@@ -237,6 +237,7 @@ export function CardsView({
 }) {
   const { t } = useI18n();
   const { model: m, filters } = useLandscape();
+  const guest = useAuth().me?.role === 'guest';
   const [hover, setHover] = useState<string | null>(null);
   const ok = useMemo(() => (m ? makeMatcher(m, filters) : null), [m, filters]);
   if (!m || !ok) return null;
@@ -274,7 +275,9 @@ export function CardsView({
             <section key={d.id} className="dom" aria-label={d.name}>
               <div className="dom-h">
                 <b>{d.name}</b>
-                <span>{partners || !teams.length ? t.overview.partners : teams.map((x) => x.name).join(', ')}</span>
+                <span>
+                  {partners || (!teams.length && !guest) ? t.overview.partners : teams.map((x) => x.name).join(', ')}
+                </span>
               </div>
               {ids.map((id) => (
                 <Card key={id} m={m} id={id} team={team} rel={relOf(id)} onRestricted={onRestricted} />

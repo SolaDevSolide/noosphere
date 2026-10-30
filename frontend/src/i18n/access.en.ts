@@ -101,7 +101,8 @@ export const accessEn = {
     'Restricted: only the teams and people you choose see it. Pick them from « Who can see and edit? » on the record.',
 
   notSaved: 'Not saved.',
-  secretOne: (field: string) => `${field} looks like it contains a secret. Nothing was stored.`,
+  secretOne: (field: string, plural = false) =>
+    `${field} ${plural ? 'look like they contain' : 'looks like it contains'} a secret. Nothing was stored.`,
   secretMany: 'Some fields look like they contain a secret. Nothing was stored.',
   secretMessage: (kind: string) =>
     `This looks like a secret (${kind}). Noosphere is documentation, not a vault: store it in your secret manager and write where it lives instead.`,

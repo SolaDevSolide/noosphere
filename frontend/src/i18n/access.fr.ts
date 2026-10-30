@@ -104,7 +104,8 @@ export const accessFr: AccessDict = {
     'Restreinte : seules les équipes et personnes choisies la voient. Choisissez-les depuis « Qui peut voir et modifier ? » sur la fiche.',
 
   notSaved: 'Non enregistré.',
-  secretOne: (field: string) => `${field} semble contenir un secret. Rien n’a été enregistré.`,
+  secretOne: (field: string, plural = false) =>
+    `${field} ${plural ? 'semblent' : 'semble'} contenir un secret. Rien n’a été enregistré.`,
   secretMany: 'Des champs semblent contenir un secret. Rien n’a été enregistré.',
   secretMessage: (kind: string) =>
     `Ceci ressemble à un secret (${kind}). Noosphere est une documentation, pas un coffre-fort : rangez-le dans votre gestionnaire de secrets et écrivez ici où il se trouve.`,

@@ -43,7 +43,9 @@ export function SecretBanner({ fields, label }: { fields: string[]; label: (fiel
       <IconWarn />
       <span className="bt">
         <b>{t.access.notSaved}</b>
-        {fields.length === 1 ? t.access.secretOne(label(fields[0])) : t.access.secretMany}
+        {fields.length === 1
+          ? t.access.secretOne(label(fields[0]), fields[0] === 'protectedNotes')
+          : t.access.secretMany}
       </span>
     </div>
   );

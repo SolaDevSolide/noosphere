@@ -458,9 +458,11 @@ export function ApplicationRecord() {
         </div>
         {!editing && (
           <div className="page-actions">
-            <Link className="btn" to={paths.appLens(a.id)}>
-              {t.record.openLens}
-            </Link>
+            {!guest && (
+              <Link className="btn" to={paths.appLens(a.id)}>
+                {t.record.openLens}
+              </Link>
+            )}
             {perm.publish ? (
               <button type="button" className="btn primary" onClick={() => setEditing({})}>
                 {t.record.edit}
@@ -640,8 +642,12 @@ export function ApplicationRecord() {
                   </dd>
                 </>
               )}
-              <dt>{t.record.fields.protectedNotes}</dt>
-              <dd>{notesDetail(t, a, ownerName ?? t.access.administrators)}</dd>
+              {!guest && (
+                <>
+                  <dt>{t.record.fields.protectedNotes}</dt>
+                  <dd>{notesDetail(t, a, ownerName ?? t.access.administrators)}</dd>
+                </>
+              )}
               <dt>{t.record.fields.sourceOf}</dt>
               <dd>
                 {a.sourceOf.length

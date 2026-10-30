@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useGo } from '../ui/useGo';
 import { Link, useLocation } from 'react-router-dom';
 import { FLOW_TYPES } from '../api/types';
-import { anyFilter, fullApp, fullFlow, makeMatcher, visibleApps } from '../domain/model';
+import { anyFilter, appMeetsSens, fullApp, fullFlow, makeMatcher, visibleApps } from '../domain/model';
 import { useDocumentTitle } from '../app/settings';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
@@ -263,7 +263,9 @@ export function Explorer() {
   }, []);
 
   const conn = useConnData();
-  const appsShown = m ? visibleApps(m, filters).length : undefined;
+  const appsShown = m
+    ? visibleApps(m, filters).filter((id) => appMeetsSens(m.apps.get(id), filters.appSens)).length
+    : undefined;
   const guest = me?.role === 'guest';
   const filterUi = guest ? null : <FilterControl appsShown={!view ? appsShown : undefined} />;
 
