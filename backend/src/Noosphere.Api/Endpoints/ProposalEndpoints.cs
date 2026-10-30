@@ -31,6 +31,8 @@ public static class ProposalEndpoints
             if (mine == true) query = query.Where(p => p.AuthorId == access.Viewer.Id);
             if (toValidate == true) query = query.Where(p => p.Status == ProposalStatus.Submitted);
             var list = (await query.OrderByDescending(p => p.SubmittedAt ?? p.CreatedAt).ToListAsync())
+                // Drafts of others (agents' drafts, seen by administrators) are listed in the agents console, not here.
+                .Where(p => p.Status != ProposalStatus.Draft || p.AuthorId == access.Viewer.Id)
                 .Where(p => Proposals.Visible(p, access) && (toValidate != true || Proposals.CanDecide(p, access)))
                 .Take(ListLimit).ToList();
             var people = await People.Load(db);

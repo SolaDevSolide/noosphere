@@ -120,6 +120,17 @@ public sealed class RecordFacts
         _ => false,
     };
 
+    /// <summary>Restricted applications and pages, and flows touching a restricted application.</summary>
+    public IEnumerable<(RecordKind Kind, string Id)> RestrictedRecords() =>
+        _apps.Where(a => a.Value.Restricted).Select(a => (RecordKind.Application, a.Key))
+            .Concat(_flows.Keys.Where(f => Restricted(RecordKind.Flow, f)).Select(f => (RecordKind.Flow, f)))
+            .Concat(_pages.Where(p => p.Value.Restricted).Select(p => (RecordKind.Page, p.Key)));
+
+    /// <summary>Applications and flows with protected notes.</summary>
+    public IEnumerable<(RecordKind Kind, string Id)> ProtectedRecords() =>
+        _apps.Where(a => a.Value.HasNotes).Select(a => (RecordKind.Application, a.Key))
+            .Concat(_flows.Where(f => f.Value.HasNotes).Select(f => (RecordKind.Flow, f.Key)));
+
     /// <summary>True when the record (as stored) is restricted: a restricted application or page, or a flow touching a restricted application.</summary>
     public bool Restricted(RecordKind kind, string id) => kind switch
     {
@@ -201,6 +212,11 @@ public sealed class Access(Viewer viewer, IReadOnlySet<string> teams, RecordFact
     public Viewer Viewer { get; } = viewer;
     public IReadOnlySet<string> Teams { get; } = teams;
     public RecordFacts Facts { get; } = facts;
+    /// <summary>For an AI agent (or an anonymous reader of the Markdown views): what the ceiling and the scopes leave of the person's rights.</summary>
+    public AgentLimits? Limits { get; init; }
+
+    /// <summary>The same reader, limited by an agent's ceiling and scopes: min(person, ceiling, scopes).</summary>
+    public Access WithLimits(AgentLimits limits) => new(Viewer, Teams, Facts) { Limits = limits };
 
     public static async Task<Access> Load(NoosphereDbContext db, ClaimsPrincipal user, CancellationToken cancel = default)
     {
@@ -222,6 +238,8 @@ public sealed class Access(Viewer viewer, IReadOnlySet<string> teams, RecordFact
 
     private Services.Sight Of(string? owner, bool restricted, AccessList list)
     {
+        // Under the ceiling, restricted records are invisible to an agent even when its person sees them.
+        if (restricted && Limits is { SeesRestricted: false }) return Services.Sight.Hidden;
         if (Viewer.IsAdmin) return Services.Sight.Full;
         if (restricted) return InTeam(owner) || Listed(list) ? Services.Sight.Full : Services.Sight.Hidden;
         if (!IsGuest) return Services.Sight.Full;
@@ -275,7 +293,8 @@ public sealed class Access(Viewer viewer, IReadOnlySet<string> teams, RecordFact
     public bool SeesFully(RecordKind kind, string id) => Sight(kind, id) == Services.Sight.Full;
 
     /// <summary>Guests never read protected notes, even when named on the access list.</summary>
-    private bool NotesReader(string? owner, AccessList list) => Viewer.IsAdmin || (!IsGuest && (InTeam(owner) || Listed(list)));
+    private bool NotesReader(string? owner, AccessList list) =>
+        Limits is not { ReadsProtectedNotes: false } && (Viewer.IsAdmin || (!IsGuest && (InTeam(owner) || Listed(list))));
 
     /// <summary>
     /// The reader may read the protected notes of a record in this state: they see it in full, and they are an
@@ -340,6 +359,19 @@ public sealed class Access(Viewer viewer, IReadOnlySet<string> teams, RecordFact
         if (Sight(type.Kind, state) == Services.Sight.Hidden)
             throw ApiProblem.Forbidden($"You would no longer see this {type.Noun}: add yourself or one of your teams to its access list.");
     }
+}
+
+/// <summary>
+/// The limits of an agent on top of its person's rights. Restricted records need the <c>asUser</c> ceiling and the
+/// <c>docs:read:restricted</c> scope; protected notes need the <c>public+protected</c> or <c>asUser</c> ceiling.
+/// </summary>
+public sealed record AgentLimits(AgentCeiling Ceiling, bool RestrictedScope)
+{
+    public bool SeesRestricted => Ceiling == AgentCeiling.AsUser && RestrictedScope;
+    public bool ReadsProtectedNotes => Ceiling != AgentCeiling.Public;
+
+    /// <summary>An anonymous reader of <c>/llms.txt</c>: records visible to everyone, without protected notes.</summary>
+    public static readonly AgentLimits Anonymous = new(AgentCeiling.Public, false);
 }
 
 /// <summary>Team memberships of users.</summary>
