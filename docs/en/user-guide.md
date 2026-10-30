@@ -66,6 +66,14 @@ to a version.
 - **Restore**: choose **Restore** on an older version and confirm. Owners publish it again as a new version; anyone
   else sends a proposal to the owners.
 
+## Restricted records, guests and protected notes
+
+An owner can restrict an application or a page and list the teams and people who see it; the others see only that
+it exists. Naming a guest on a record shares it with them. Protected notes hold operational details (who to call,
+where the break-glass account lives) for the owners and the access list. **Who can see and edit?** on a record
+explains who reads, publishes and proposes it. Pasting a token, key or password is refused: write where the secret
+lives instead. Details: [access, protected notes and the access log](access.md).
+
 ## Teams
 
 Administrators manage team memberships on the **Users** page (the **Teams** of each account) and on a team record

@@ -15,6 +15,7 @@ source:
   url: https://noosphere.exemple.fr
   exportedAt: 2026-10-30T09:00:00Z
 mode: full
+scope: visible                 # visible ou full ; informatif, ignoré à l'import
 items:
   - kind: Domain               # Domain, Team, Application, DataObject, Flow ou Page
     id: finance                # kebab-case, unique par type
@@ -26,7 +27,8 @@ items:
 ```
 
 `mode: full` signifie que le fichier contient tout le paysage dont il est issu. Les éléments peuvent venir dans
-n'importe quel ordre.
+n'importe quel ordre. `scope: visible` signifie qu'il contient ce que la personne qui exporte voit en entier ;
+`scope: full` (administrateurs seulement) contient tout, enregistrements restreints et notes protégées compris.
 
 ## `spec` selon le type
 
@@ -34,16 +36,21 @@ n'importe quel ordre.
 | ---- | -------------- |
 | `Domain` | `order` (entier) |
 | `Team` | `contact` (adresse e-mail ou canal) |
-| `Application` | `domainId` (obligatoire), `teamId`, `kind` (`app` par défaut, `bus`, `saas`, `data`, `file`, `external`), `tech`, `lifecycle` (`live` par défaut, `planned`, `retiring`, `retired`), `visibility` (`everyone` par défaut, `restricted`) |
+| `Application` | `domainId` (obligatoire), `teamId`, `kind` (`app` par défaut, `bus`, `saas`, `data`, `file`, `external`), `tech`, `lifecycle` (`live` par défaut, `planned`, `retiring`, `retired`), `visibility` (`everyone` par défaut, `restricted`), `access` (`teamIds`, `usernames`), `protectedNotes` (Markdown) |
 | `DataObject` | `sensitivity` (`internal` par défaut, `public`, `personal`, `sensitive`), `sourceApplicationId` |
-| `Flow` | `fromId`, `toId` (obligatoires), `type` (`api` par défaut, `event`, `batch`), `schedule`, `dataObjectIds` (liste), `ownerTeamId`, `status` (`live` par défaut, `planned`, `deprecated`), `volume`, `plannedChange` (`summary`, `date` au format AAAA-MM-JJ) |
-| `Page` | `body` (Markdown), `parentId` (une page), `order` (entier), `attachedTo` (`kind` : `application`, `flow`, `dataObject`, `domain` ou `team`, et `id`), `ownerTeamId`, `tags` (liste), `visibility` (`everyone` par défaut, `restricted`) |
+| `Flow` | `fromId`, `toId` (obligatoires), `type` (`api` par défaut, `event`, `batch`), `schedule`, `dataObjectIds` (liste), `ownerTeamId`, `status` (`live` par défaut, `planned`, `deprecated`), `volume`, `plannedChange` (`summary`, `date` au format AAAA-MM-JJ), `protectedNotes` (Markdown) |
+| `Page` | `body` (Markdown), `parentId` (une page), `order` (entier), `attachedTo` (`kind` : `application`, `flow`, `dataObject`, `domain` ou `team`, et `id`), `ownerTeamId`, `tags` (liste), `visibility` (`everyone` par défaut, `restricted`), `access` (`teamIds`, `usernames`) |
 
 Pour une `Page`, `metadata.name` est le titre et il n'y a pas de `metadata.description` : le texte est dans
 `spec.body`. Les liens wiki du texte (`[[application:billing]]`) sont gardés tels quels ; un lien vers un
 enregistrement absent est importé et affiché comme cassé. Les images ne font pas encore partie du format.
 
-Les valeurs calculées (complétude, sensibilité des flux, `sourceOf`, liens des pages) ne figurent pas dans le
+`access` liste les équipes et les personnes qui voient un enregistrement restreint, et les invités avec qui il est
+partagé ; une équipe ou une personne inconnue est une erreur d'import. `protectedNotes` n'est écrit que là où la
+personne qui exporte peut les lire. Quand l'une de ces clés est absente, l'import garde la valeur actuelle ; un
+`protectedNotes` vide efface les notes. Voir [accès](acces.md).
+
+Les valeurs calculées (complétude, sensibilité, `sourceOf`, liens des pages) ne figurent pas dans le
 fichier, pas plus que l'historique, les propositions, les comptes et les appartenances aux équipes.
 
 ## Exemple
@@ -98,6 +105,8 @@ Les pages sont exportées après leur parente, pour que le fichier se lise de ha
    `version` augmente). Les éléments identiques à l'enregistrement comptent comme `unchanged`. Chaque enregistrement
    créé ou modifié reçoit une révision (« Imported », au nom de l'administrateur qui importe).
 3. Un import ne supprime jamais rien.
+4. Une valeur qui ressemble à un secret est une erreur, signalée sans la valeur (voir
+   [accès](acces.md#les-secrets-sont-refusés)).
 
 `dryRun=true` (API) ou `--dry-run` (ligne de commande) ne fait que les vérifications et les comptes. Seuls les
 administrateurs importent.

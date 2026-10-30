@@ -15,7 +15,11 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
 - Des pages de documentation en Markdown, en arborescence, rattachées aux fiches, avec des liens wiki
   (`[[application:billing]]`), des rétroliens et la détection des liens cassés, un éditeur avec aperçu en direct,
   suggestions de liens et trois modèles de page.
-- Des applications et des pages restreintes, visibles en entier par les seuls administrateurs.
+- Des applications et des pages restreintes avec des listes d'accès (équipes et personnes), des fiches partagées
+  avec des invités, des notes protégées pour les détails d'exploitation et un journal des accès pour les
+  administrateurs.
+- Les secrets collés par erreur (jetons, clés, mots de passe) sont refusés : Noosphere documente où ils se trouvent.
+- Une sensibilité calculée pour chaque application, d'après ses données et les flux qui la touchent.
 - Un format d'échange documenté (JSON ou YAML) pour importer et exporter tout le paysage.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
@@ -37,14 +41,14 @@ Puis ouvrir <http://localhost:8080>.
 ### Comptes de démonstration
 
 Avec `NOOSPHERE_DEMO=true`, Noosphere charge « Alizé », un assureur fictif (20 applications, 36 flux, 6 domaines,
-5 objets de données, 7 pages de documentation, un historique sur Billing et quelques propositions) et quatre
+5 objets de données, 7 pages de documentation, un historique sur Billing, quelques propositions, une application Fraud scoring restreinte, des notes protégées sur Billing et un portail client partagé avec `claire`) et quatre
 comptes, tous avec le mot de passe `demo` :
 
 | Identifiant | Rôle   | Équipes                     | Peut                                                                |
 | ----------- | ------ | --------------------------- | ------------------------------------------------------------------- |
 | `alice`     | admin  |                             | tout, y compris les domaines, les équipes, les comptes et les réglages |
 | `bob`       | member | Team Finance, Team Payments | publier sur les enregistrements de ses équipes, valider les propositions |
-| `claire`    | guest  |                             | lire seulement                                                      |
+| `claire`    | guest  |                             | lire les noms, et le portail client partagé avec elle               |
 | `david`     | member | Team CRM                    | publier pour Team CRM, proposer ailleurs                            |
 
 Connectez-vous en `bob` pour valider les deux propositions que `david` a envoyées à Team Finance.
@@ -72,6 +76,7 @@ Tous les réglages sont des variables d'environnement (voir [.env.example](.env.
 | `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`             | Nom de l'instance tant qu'un administrateur ne l'a pas réglé          |
 | `NOOSPHERE_PUBLIC_URL`       | (adresse de la requête) | Adresse publique écrite dans les exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (aucun)                 | Réseaux du reverse proxy autorisés à envoyer les en-têtes `X-Forwarded-*` |
+| `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`                   | Durée de conservation du journal des accès, en jours                  |
 
 ## Ligne de commande
 
@@ -93,6 +98,7 @@ docker compose exec noosphere noosphere demo reset --yes
 - [Propositions et validation](docs/fr/proposals.md)
 - [Historique](docs/fr/history.md)
 - [Pages](docs/fr/pages.md)
+- [Accès, notes protégées et journal des accès](docs/fr/acces.md)
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

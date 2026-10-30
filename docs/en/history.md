@@ -25,7 +25,8 @@ any two of them and restores one.
 
 Restoring follows the same rules as editing: an owner (or an administrator) publishes the old version as a new
 revision; any other member gets a submitted proposal instead. The history of a restricted record is shown to
-administrators only.
+those who see the record; protected notes appear as `"••• protected"` in snapshots and compares for those who may
+not read them (see [access](access.md)).
 
 ## Deleted records
 

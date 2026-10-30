@@ -18,7 +18,8 @@ organised in a **tree**.
 | `attachedTo` | `{kind, id}`, with `kind` one of `application`, `flow`, `dataObject`, `domain`, `team` |
 | `ownerTeamId` | owning team; when empty, the owner of the attached record owns the page (administrators when none) |
 | `tags` | up to 20 short texts |
-| `visibility` | `everyone` or `restricted` (administrators only; others get `{id, restricted: true, parentId, order}`) |
+| `visibility` | `everyone` or `restricted` (administrators, the owning team and the access list; others get `{id, restricted: true, parentId, order}`) |
+| `access` | `{teamIds, usernames}`: who sees a restricted page, and the guests it is shared with (see [access](access.md)) |
 
 Saving a page follows the [proposal and validation](proposals.md) rules and creates a [revision](history.md).
 
@@ -72,7 +73,7 @@ pages, the pages with broken links, and a reminder that every page is also serve
   afterwards, so links to the page keep working.
 - **Owner.** Any member can create a page: attach it to a record (its owner then owns the page) or choose an owner
   team. Members of the owning team publish; others **Suggest a change**, which becomes a [proposal](proposals.md).
-  Only administrators make a page restricted.
+  The owners can make a page restricted and choose who sees it.
 - **Templates.** **New page** offers a blank page and three templates: **Runbook** (symptoms, checks, fix, escalation),
   **Decision record (ADR)** (context, decision, consequences) and **Application overview** (purpose, flows, contacts,
   links). A template adds its tag

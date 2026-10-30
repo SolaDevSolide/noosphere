@@ -70,6 +70,15 @@ un lien vers la proposition à l'origine d'une version.
 - **Restaurer** : choisissez **Restaurer** sur une version antérieure et confirmez. Les propriétaires la republient
   dans une nouvelle version ; les autres envoient une proposition aux propriétaires.
 
+## Fiches restreintes, invités et notes protégées
+
+Un propriétaire peut restreindre une application ou une page et lister les équipes et les personnes qui la voient ;
+les autres voient seulement qu'elle existe. Nommer un invité sur une fiche la partage avec lui. Les notes protégées
+gardent les détails d'exploitation (qui appeler, où est le compte de secours) pour les propriétaires et la liste
+d'accès. **Qui peut voir et modifier ?** sur une fiche explique qui la lit, la publie et la propose. Coller un jeton,
+une clé ou un mot de passe est refusé : écrivez plutôt où se trouve le secret. Détails :
+[accès, notes protégées et journal des accès](acces.md).
+
 ## Équipes
 
 Les administrateurs gèrent l'appartenance aux équipes sur la page **Utilisateurs** (les **Équipes** de chaque compte)

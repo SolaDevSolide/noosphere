@@ -28,7 +28,8 @@ A record without an owning team is owned by administrators.
 - **Other members** send a change proposal instead of saving. Owners may also tick "Propose instead" to have their
   change reviewed.
 - **Guests** read only: they cannot propose.
-- Restricted applications and pages, and flows touching a restricted application, are changed by administrators only.
+- Restricted records are proposed by those who see them, and published by administrators and the owning team.
+  Protected notes left out of a proposal are kept (see [access](access.md#protected-notes)).
 
 Record responses carry `owningTeamId` and `permissions: {publish, propose}` for the reader, so the interface shows
 either "Edit" or "Suggest a change". A direct `PUT`, `POST` or `DELETE` by someone who may not publish returns 403.
