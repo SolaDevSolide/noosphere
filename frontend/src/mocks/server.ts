@@ -31,6 +31,7 @@ import {
   type GovCtx,
 } from './governance';
 import { handlePages, seedPages } from './pages';
+import { handleAgents, seedAgents } from './agents';
 import { slugify } from '../docpages/model';
 
 const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
@@ -274,6 +275,27 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
   if (g) return g;
   const pg = handlePages(gov, u, method, path, () => parse<Rec>());
   if (pg) return pg;
+  const ag = handleAgents(
+    gov,
+    u,
+    method,
+    url,
+    path,
+    () => parse<Rec>(),
+    (name) => {
+      const n = db.users.find((x) => x.username === name);
+      if (!n) return null;
+      sessionStorage.setItem(SESSION_KEY, n.username);
+      return {
+        username: n.username,
+        displayName: n.displayName,
+        role: n.role,
+        language: n.language,
+        teams: db.teams.filter((x) => n.teamIds.includes(x.id)).map((x) => ({ id: x.id, name: x.name })),
+      };
+    },
+  );
+  if (ag) return ag;
   const can = (r: Role[]) => r.includes(u.role);
 
   if (path === '/auth/me')
@@ -578,6 +600,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
 }
 
 seedGovernance(gov);
+seedAgents(gov);
 
 export function installMockApi() {
   const real = window.fetch.bind(window);
