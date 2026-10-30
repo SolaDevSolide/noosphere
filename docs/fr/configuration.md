@@ -15,9 +15,11 @@ Chaque réglage est une variable d'environnement qui commence par `NOOSPHERE_`. 
 | `NOOSPHERE_KEYS_DIR`         | `/data/keys` dans l'image                  | Dossier des clés qui protègent les cookies de session. Sans lui, les sessions se ferment à chaque recréation du conteneur. |
 | `NOOSPHERE_BACKUPS_DIR`      | `/data/backups` dans l'image               | Avant de migrer une base qui contient des données, toutes les tables y sont copiées en JSON. Vide : pas de sauvegarde (un avertissement est journalisé). |
 | `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`                                | Nom de l'instance tant qu'un administrateur ne l'a pas réglé (`PUT /api/settings`) ; affiché dans l'en-tête et écrit dans `source.name` des exports. |
-| `NOOSPHERE_PUBLIC_URL`       | (adresse de la requête)                    | Écrit dans `source.url` des exports, par exemple `https://noosphere.exemple.fr`. |
+| `NOOSPHERE_PUBLIC_URL`       | (adresse de la requête)                    | Écrit dans `source.url` des exports, par exemple `https://noosphere.exemple.fr`. C'est aussi l'émetteur et la ressource du [serveur MCP](agents.md#référence-oauth) : à définir quand Noosphere est derrière un proxy. |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (aucun ; `172.16.0.0/12` dans le compose)  | Réseaux (CIDR) ou adresses du reverse proxy autorisés à envoyer `X-Forwarded-For` et `X-Forwarded-Proto`. |
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`                                      | Nombre de jours de conservation du [journal des accès](acces.md#journal-des-accès) ; les lignes plus anciennes sont supprimées au démarrage puis chaque jour. |
+| `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`                                    | Nombre de jours de conservation de l'[activité des agents IA](agents.md#réglages-des-agents) ; les jetons et demandes d'autorisation expirés sont supprimés avec elle. |
+| `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`                                | Enregistrements de clients OAuth (`POST /oauth/register`) permis par minute et par adresse cliente ; au-delà, 429. |
 
 Les variables standard d'ASP.NET Core s'appliquent aussi, par exemple `ASPNETCORE_URLS` (l'image écoute sur
 `http://+:8080`) et `Logging__LogLevel__Default`.

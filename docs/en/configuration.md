@@ -15,9 +15,11 @@ Every setting is an environment variable starting with `NOOSPHERE_`. With Docker
 | `NOOSPHERE_KEYS_DIR`         | `/data/keys` in the image                 | Where the keys that protect session cookies are stored. Without it, sessions end at each restart of a container. |
 | `NOOSPHERE_BACKUPS_DIR`      | `/data/backups` in the image              | Before migrating a database that holds data, every table is copied there as JSON. Empty: no backup (a warning is logged). |
 | `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`                               | Instance name until an administrator sets one in the settings (`PUT /api/settings`); shown in the header and written as `source.name` in exports. |
-| `NOOSPHERE_PUBLIC_URL`       | (address of the request)                  | Written as `source.url` in exports, e.g. `https://noosphere.example.com`. |
+| `NOOSPHERE_PUBLIC_URL`       | (address of the request)                  | Written as `source.url` in exports, e.g. `https://noosphere.example.com`. Also the issuer and resource of the [MCP server](agents.md#oauth-reference): set it when Noosphere runs behind a proxy. |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (none; `172.16.0.0/12` in the compose file) | Networks (CIDR) or addresses of the reverse proxy allowed to send `X-Forwarded-For` and `X-Forwarded-Proto`. |
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`                                     | Days the [access log](access.md#access-log) is kept; older lines are deleted at startup and every day. |
+| `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`                                   | Days the [AI agents' activity](agents.md#agent-settings) is kept; expired tokens and authorization requests are deleted with it. |
+| `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`                               | OAuth client registrations (`POST /oauth/register`) allowed per minute and per client address; beyond, 429. |
 
 Standard ASP.NET Core variables also apply, for example `ASPNETCORE_URLS` (the image listens on
 `http://+:8080`) and `Logging__LogLevel__Default`.

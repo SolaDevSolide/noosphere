@@ -29,7 +29,7 @@ JSON over HTTP, under `/api`, with camelCase keys and enums written as lower-cam
 | 404 | No such record |
 | 409 | Stale version, id already used, record still in use (delete), outdated proposal (`outdated: true`) |
 | 422 | A field looks like a secret (see [access](access.md#secrets-are-refused)), or an import file with errors (body: the import result) |
-| 429 | Too many sign-in attempts |
+| 429 | Too many sign-in attempts, or client registrations |
 
 ## Authentication and accounts
 
@@ -140,6 +140,34 @@ See [pages](pages.md): `GET/POST /api/pages`, `GET /api/pages/tree`, `GET/PUT/DE
 
 The header shows `instanceName`, with `organisationName` under it, and the browser tab uses `instanceName`. New
 accounts get `defaultLanguage`. The technical name `noosphere` (command, image, cookie) never changes.
+
+## AI agents
+
+See [AI agents (MCP)](agents.md) for the MCP server at `/mcp`, the OAuth endpoints (`/.well-known/*`, `/oauth/*`),
+`/llms.txt`, `/llms-full.txt` and the Markdown views, which live outside `/api`.
+
+| Method and path | Who | Body, answer |
+| --------------- | --- | ------------ |
+| `GET /api/settings/agents` | signed in | `{enabled, ceiling, quotaPerHour, whoConnects, dynamicRegistration, anonymousLlms, mcpUrl, version, updatedAt}` |
+| `PUT /api/settings/agents` | admin | The same fields (each optional) plus `version` |
+| `GET /api/me/agents` | signed in | `{connections, drafts, proposals, settings}`: my connections, my agents' drafts and other proposals |
+| `GET /api/agents` | admin | Every connection: `{id, clientId, clientName, clientUri, person, scopes, state, createdAt, lastUsedAt, revokedAt, pausedUntil, approvedAt, callsLastHour, openDrafts, lastActivity, demo}` |
+| `POST /api/agents/{id}/revoke` | admin, or the person | Revokes the connection and its tokens at once |
+| `POST /api/agents/{id}/approve` | admin | A connection waiting for approval (409 otherwise) |
+| `GET /api/agents/{id}/capabilities` | admin, or the person | `{connectionId, clientName, person, ceiling, scopes, items: [{key, allowed, text: {en, fr}}]}` for "What this agent can do" |
+| `GET /api/agents/activity?connectionId=&kind=&cursor=&limit=` | signed in | `{items, nextCursor}`, newest first; mine only, every connection for an admin. `kind`: `read`, `draft`, `proposal`, `refused`, `quota`, `revoked` |
+| `POST /api/agents/stop-all` | admin | `{confirm: true}`, then `{revokedConnections, revokedTokens, at}` |
+| `GET /api/oauth/requests/{id}`, `POST .../approve`, `POST .../deny` | signed in | The consent page: see [OAuth reference](agents.md#oauth-reference) |
+
+An activity line is `{id, at, connectionId, agentName, person, tool, kind, summary, recordKind, recordId,
+recordTitle}`. Proposals written by an agent have `authorKind: "agent"`, `onBehalfOf` (the person, `{username,
+displayName}`), `agentName` and `agentConnectionId`.
+
+## Demo toolbox
+
+With `NOOSPHERE_DEMO=true` only (404 otherwise): `GET /api/demo/state`, `POST /api/demo/switch`,
+`POST /api/demo/simulate/{edit|proposal|decision|agent|guest-read}` and `POST /api/demo/reset`. See
+[demo toolbox](demo.md).
 
 ## Exchange
 

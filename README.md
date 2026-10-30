@@ -22,6 +22,10 @@ before changing this API?".
   filter on it.
 - A documented exchange format (JSON or YAML) to import and export the landscape: what you can see, or, for
   administrators, a full export recorded in the access log.
+- **AI agents** connect through MCP (`/mcp`) for one person, after a consent page: they search, read and draft
+  changes with that person's rights, capped by an administrator's ceiling and an hourly quota, and never publish.
+  Every call is in their activity; **My agents** and an agents console revoke them, one by one or all at once.
+  `/llms.txt`, `/llms-full.txt` and a Markdown view of every record.
 - English and French interface. Runs as one container next to PostgreSQL.
 
 ## Quick start
@@ -52,7 +56,9 @@ password `demo`:
 | `claire` | guest  |                             | read names, and the customer portal shared with her        |
 | `david`  | member | Team CRM                    | publish for Team CRM, propose changes elsewhere            |
 
-Sign in as `bob` to validate the two proposals that `david` sent to Team Finance.
+Sign in as `bob` to validate the two proposals that `david` sent to Team Finance. The
+[demo toolbox](docs/en/demo.md) switches persona in one click and makes a colleague, another team, a validator, an AI
+agent or the guest act, to try the collaboration features alone.
 
 Never turn demo mode on for a shared server.
 
@@ -77,6 +83,8 @@ All settings are environment variables (see [.env.example](.env.example) and
 | `NOOSPHERE_PUBLIC_URL`       | (request address)   | Public address written in exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (none)              | Reverse proxy networks allowed to send `X-Forwarded-*` headers |
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`               | Days the access log is kept                                    |
+| `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`             | Days the AI agents' activity is kept                           |
+| `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`         | OAuth client registrations per minute and per client address   |
 
 ## Command line
 
@@ -99,6 +107,8 @@ docker compose exec noosphere noosphere demo reset --yes
 - [History](docs/en/history.md)
 - [Pages](docs/en/pages.md)
 - [Access, protected notes and the access log](docs/en/access.md)
+- [AI agents (MCP)](docs/en/agents.md), with llms.txt and the Markdown views
+- [Demo toolbox](docs/en/demo.md)
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)
