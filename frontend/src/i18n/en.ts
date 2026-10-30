@@ -1,3 +1,4 @@
+import { accessEn } from './access.en';
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export const en = {
@@ -44,6 +45,7 @@ export const en = {
     pages: 'Pages',
     reviewWaiting: (n: number) => `${plural(n, 'proposal', 'proposals')} to validate`,
     trash: 'Trash',
+    access: 'Access',
     settings: 'Settings',
     role: { admin: 'Administrator', member: 'Member', guest: 'Guest' },
   },
@@ -382,6 +384,8 @@ export const en = {
     unsaved: 'You have unsaved changes.',
     discardConfirm: 'Discard your changes?',
     fields: {
+      protectedNotes: 'Protected notes',
+      access: 'Access list',
       name: 'Name',
       id: 'Identifier',
       domain: 'Domain',
@@ -489,10 +493,6 @@ export const en = {
     title: 'Import and export',
     intro: 'Move a whole landscape in or out of Noosphere with the noosphere/v1 exchange format.',
     exportH: 'Export',
-    exportText:
-      'Download every domain, team, application, data object and flow. The file can be versioned, reviewed and imported again.',
-    exportJson: 'Download JSON',
-    exportYaml: 'Download YAML',
     importH: 'Import',
     importText:
       'Records are matched by id: new ids are created, existing ones are updated. Nothing is deleted. Start with a dry run to see what would change.',
@@ -862,7 +862,6 @@ export const en = {
     addTag: 'Add a tag',
     removeTag: (tag: string) => `Remove ${tag}`,
     visibilityF: 'Visibility',
-    visibilityAdmins: 'Only administrators make a page restricted.',
     summary: 'Summary of the change',
     proposalTitle: 'Proposal title',
     proposeInstead: 'Propose instead',
@@ -920,6 +919,7 @@ export const en = {
     order: 'Order',
   },
   notFound: { title: 'Page not found', text: 'This address does not match any page.' },
+  access: accessEn,
 };
 
 export type Dict = typeof en;

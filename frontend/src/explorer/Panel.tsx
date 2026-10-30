@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import type { LandscapeFlow } from '../api/types';
 import { isRestrictedApp, isRestrictedFlow } from '../api/types';
 import { appOrder, flowsOf, fullApp, fullFlow, lineage, makeMatcher, type Model } from '../domain/model';
+import { useSettings } from '../app/settings';
+import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconApp, IconLock, IconWarn, TypeIcon } from '../ui/icons';
+import { IconApp, IconLock, IconShare, IconWarn, TypeIcon } from '../ui/icons';
 import { LineSample, nameOf, objName, pct, Sdot, StatusTag, teamName } from './bits';
 import { useLandscape } from './landscape';
 import { paths } from './paths';
@@ -129,6 +131,42 @@ export function RestrictedPanel() {
       </div>
       <h2>{t.panel.restrictedTitle}</h2>
       <p>{t.panel.restrictedText}</p>
+    </>
+  );
+}
+
+/** A guest's panel: a welcome, the records shared with them, and whom to ask for another. */
+function GuestPanel() {
+  const { t } = useI18n();
+  const { model: m } = useLandscape();
+  const { me } = useAuth();
+  const { settings } = useSettings();
+  if (!m) return null;
+  const shared = m.appIds.map((id) => fullApp(m, id)).filter((a): a is NonNullable<typeof a> => !!a);
+  return (
+    <>
+      <h2>{t.access.welcome(me?.displayName.split(' ')[0] ?? '')}</h2>
+      <p>{t.access.guestIntro(settings.organisationName)}</p>
+      <h3>{t.access.sharedH(shared.length)}</h3>
+      {shared.length ? (
+        <div className="attn">
+          {shared.map((a) => (
+            <Link key={a.id} className="row" to={paths.app(a.id)}>
+              <span className="ri">
+                <IconShare />
+              </span>
+              <span className="rn">
+                {a.name}
+                <small>{[m.domain.get(a.domainId)?.name, teamName(m, a.teamId)].filter(Boolean).join(' · ')}</small>
+              </span>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <p className="muted">{t.access.nothingShared}</p>
+      )}
+      <h3>{t.access.needAnother}</h3>
+      <p style={{ fontSize: 13 }}>{t.access.askOwner}</p>
     </>
   );
 }
@@ -473,13 +511,16 @@ export function Panel({
   onRestricted: () => void;
   children?: ReactNode;
 }) {
+  const { me } = useAuth();
+  const guest = me?.role === 'guest';
   let body: ReactNode;
   if (restricted) body = <RestrictedPanel />;
+  else if (guest && !view) body = <GuestPanel />;
   else if (children) body = children;
   else if (!view) body = <WhereToLook onRestricted={onRestricted} />;
   else if (view.kind === 'app') body = <AppPanel id={view.id} />;
   else if (view.kind === 'flow') body = <FlowPanel id={view.id} onRestricted={onRestricted} />;
   else if (view.kind === 'object') body = <ObjectPanel id={view.id} onRestricted={onRestricted} />;
   else body = <TeamPanel id={view.id} onRestricted={onRestricted} />;
-  return <div className="pn-in">{body}</div>;
+  return <div className={'pn-in' + (guest && !view && !restricted ? ' gp' : '')}>{body}</div>;
 }

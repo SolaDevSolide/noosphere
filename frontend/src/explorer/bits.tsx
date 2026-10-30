@@ -1,5 +1,5 @@
 import type { FlowType, LandscapeFlow, Sensitivity } from '../api/types';
-import { isRestrictedApp, isRestrictedFlow } from '../api/types';
+import { isRestrictedFlow } from '../api/types';
 import type { Dict } from '../i18n/en';
 import { useT } from '../i18n';
 import type { Model } from '../domain/model';
@@ -10,7 +10,8 @@ export const pct = (v: number | undefined) => Math.round((v ?? 0) * 100);
 export function nameOf(t: Dict, m: Model, id: string) {
   const a = m.apps.get(id);
   if (!a) return id;
-  return isRestrictedApp(a) ? t.common.restrictedApp : a.name;
+  // a guest's outline keeps the name; only restricted applications lose it
+  return a.restricted ? t.common.restrictedApp : a.name;
 }
 export const flowName = (t: Dict, f: LandscapeFlow) => (isRestrictedFlow(f) ? t.common.restrictedFlow : f.name);
 export const teamName = (m: Model, id: string | null | undefined) => (id ? (m.teams.get(id)?.name ?? id) : '');

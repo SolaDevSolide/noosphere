@@ -146,3 +146,32 @@ export type DataObjectDetail = S['DataObjectDetailDto'];
 
 export const isRestrictedPage = (p: PageListItem | PageDetail | RestrictedPage): p is RestrictedPage =>
   p.restricted === true;
+
+/* ---- Milestone 3: access lists, protected notes, sensitivity, access log ---- */
+
+export type AccessList = S['AccessListDto'];
+export type SensitivityReason = S['SensitivityReasonDto'];
+/** "Who can see and edit?" for one record, as explained by the server. */
+export type RecordAccess = S['RecordAccessDto'];
+export type AccessTeam = S['AccessTeamDto'];
+export type AccessLogEntry = S['AccessLogEntryDto'];
+export type AccessLogPage = S['AccessLogPageDto'];
+export type AccessLogWhat = S['AccessLogWhat'];
+export type AccessLogWhy = NonNullable<S['AccessLogWhy']>;
+/** Someone who can be named on an access list. */
+export type Person = S['PersonDto'];
+export type AccessOverview = S['AccessOverviewDto'];
+export type AccessRecord = S['AccessRecordDto'];
+export type GuestPage = S['GuestPageDto'];
+
+/** Extra members of an application or flow detail: its protected notes, or the fact that they are hidden. */
+export interface NotesExtras {
+  protectedNotes?: string | null;
+  protectedNotesHidden?: boolean;
+}
+
+/** What `protectedNotes` holds in history, compares and proposals for readers who may not read them. */
+export const PROTECTED_MASK = '••• protected';
+
+/** True for a guest's outline of a record not shared with them. */
+export const isGuestOutline = (x: object): boolean => 'shared' in x && (x as { shared?: boolean }).shared === false;

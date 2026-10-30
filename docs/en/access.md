@@ -3,7 +3,9 @@
 [Français](../fr/acces.md)
 
 Noosphere is open by default: every member reads the whole landscape. This page covers the exceptions:
-restricted records, guests, protected notes, the secret check and the access log.
+restricted records, guests, protected notes, the secret check and the access log. The
+[user guide](user-guide.md#restricted-records-guests-and-protected-notes) shows where each one appears in the
+interface.
 
 ## Who sees a record
 

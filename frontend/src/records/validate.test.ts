@@ -13,6 +13,7 @@ const flow = {
   status: 'live' as const,
   volume: '',
   description: '',
+  protectedNotes: '',
   changeSummary: '',
   changeDate: '',
 };
@@ -36,6 +37,7 @@ describe('record validation', () => {
       teamId: '',
       tech: '',
       description: '',
+      protectedNotes: '',
     };
     expect(validateApp(en, app)).toEqual({});
     expect(validateApp(en, { ...app, name: 'x'.repeat(121) }).name).toBe(en.record.errors.tooLong(120));

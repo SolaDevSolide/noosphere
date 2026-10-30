@@ -1,3 +1,4 @@
+import { AccessChips, type AccessPop } from '../access/AccessWindow';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
@@ -114,6 +115,7 @@ export function TeamRecord() {
   const [membersError, setMembersError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [pop, setPop] = useState<AccessPop>(null);
 
   useEffect(() => {
     let alive = true;
@@ -169,6 +171,17 @@ export function TeamRecord() {
             {t.history.button}
           </button>
         </div>
+        <AccessChips
+          kind="team"
+          id={team.id}
+          name={team.name}
+          version={team.version}
+          visibility="everyone"
+          owner={null}
+          pop={pop}
+          setPop={setPop}
+          canPublish={isAdmin}
+        />
       </div>
       {historyOpen && (
         <HistoryPanel

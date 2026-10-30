@@ -5,6 +5,8 @@ import { useDocumentTitle } from '../app/settings';
 import { useI18n } from '../i18n';
 import { TopBar } from '../layout/TopBar';
 import { IconWarn } from '../ui/icons';
+import type { Dict } from '../i18n/en';
+import { fieldKey, translateMessage } from '../access/secret';
 
 export function PageShell({ children, narrow, title }: { children: ReactNode; narrow?: boolean; title?: string }) {
   useDocumentTitle(title);
@@ -145,12 +147,16 @@ export const describe = (id: string, hint?: string, error?: string) => ({
   'aria-describedby': [hint && id + '-hint', error && id + '-err'].filter(Boolean).join(' ') || undefined,
 });
 
-/** Server validation messages, keyed by field name in camelCase. */
-export function serverErrors(e: ApiError): Record<string, string> {
+/**
+ * Server validation messages, keyed by field name in camelCase (the proposal prefix `changes[0].after.` removed). With
+ * the dictionary, secret refusals are translated.
+ */
+export function serverErrors(e: ApiError, t?: Dict): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(e.fieldErrors)) {
-    const key = k.charAt(0).toLowerCase() + k.slice(1).replace(/^\$\./, '');
-    out[key] = Array.isArray(v) ? v.join(' ') : String(v);
+    const key = fieldKey(k);
+    const msgs = (Array.isArray(v) ? v : [String(v)]).map((m) => (t ? translateMessage(t, m) : m));
+    out[key] = out[key] ? out[key] + ' ' + msgs.join(' ') : msgs.join(' ');
   }
   return out;
 }

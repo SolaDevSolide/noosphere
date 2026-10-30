@@ -15,10 +15,13 @@ before changing this API?".
 - Markdown documentation pages in a tree, attached to records, with wiki links (`[[application:billing]]`),
   backlinks and broken link detection, an editor with live preview, link suggestions and three page templates.
 - Restricted applications and pages with access lists of teams and people, records shared with guests, protected
-  notes for operational details, and an access log for administrators.
+  notes for operational details, and an access log for administrators. A **Who can see and edit?** window on every
+  record, and an **Access** page for administrators.
 - Secrets pasted by mistake (tokens, keys, passwords) are refused: Noosphere documents where secrets live.
-- A computed sensitivity for every application, from the data it holds and the flows touching it.
-- A documented exchange format (JSON or YAML) to import and export the whole landscape.
+- A computed sensitivity for every application, from the data it holds and the flows touching it, with a landscape
+  filter on it.
+- A documented exchange format (JSON or YAML) to import and export the landscape: what you can see, or, for
+  administrators, a full export recorded in the access log.
 - English and French interface. Runs as one container next to PostgreSQL.
 
 ## Quick start

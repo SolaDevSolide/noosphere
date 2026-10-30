@@ -1,23 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import { isRestrictedPage, type PageDetail, type RecordKind, type RestrictedPage } from '../api/types';
+import {
+  isGuestOutline,
+  isRestrictedPage,
+  type AccessList,
+  type PageDetail,
+  type RecordKind,
+  type RestrictedPage,
+  type Visibility,
+} from '../api/types';
+import { AccessChips, type AccessPop } from '../access/AccessWindow';
+import { RestrictDialog } from '../access/RestrictDialog';
+import { GuestStub, RestrictedStub } from '../access/Stubs';
+import { useAuth } from '../auth/auth';
 import { teamName } from '../explorer/bits';
 import { useLandscape } from '../explorer/landscape';
 import { useI18n } from '../i18n';
 import { HistoryPanel } from '../records/HistoryPanel';
 import { useRecord } from '../records/common';
-import {
-  IconChevron,
-  IconCode,
-  IconCopy,
-  IconDoc,
-  IconEdit,
-  IconHistory,
-  IconLock,
-  IconWarn,
-  TypeIcon,
-} from '../ui/icons';
+import { IconChevron, IconCode, IconCopy, IconDoc, IconEdit, IconHistory, IconWarn, TypeIcon } from '../ui/icons';
 import { useModal } from '../ui/modal';
 import { useToast } from '../ui/Toast';
 import { DocMarkdown, useParsedDoc, type TocEntry } from './DocMarkdown';
@@ -265,7 +267,37 @@ export function PageView() {
   const { data, error, reload } = useRecord<PageDetail | RestrictedPage>(api.page, id);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [raw, setRaw] = useState<{ open: boolean; text: string | null }>({ open: false, text: null });
-  const page = data && !isRestrictedPage(data) && data.id === id ? data : null;
+  const [pop, setPop] = useState<AccessPop>(null);
+  const [restrict, setRestrict] = useState<'restrict' | 'guest' | null>(null);
+  const { me } = useAuth();
+  const outline = !!data && isGuestOutline(data);
+  const page = data && !isRestrictedPage(data) && !outline && data.id === id ? data : null;
+  const saveAccess = async (visibility: Visibility, access: AccessList) => {
+    if (!page) return;
+    const next = await api.updatePage(page.id, {
+      id: page.id,
+      version: page.version,
+      title: page.title,
+      body: page.body,
+      parentId: page.parentId,
+      order: page.order,
+      attachedTo: page.attachedTo,
+      ownerTeamId: page.ownerTeamId,
+      tags: page.tags,
+      visibility,
+      access,
+    });
+    setRestrict(null);
+    reload();
+    void reloadPages();
+    toast(
+      visibility === 'restricted' && page.visibility !== 'restricted'
+        ? t.access.restrictedToast(page.title, next.version)
+        : visibility === 'everyone' && page.visibility === 'restricted'
+          ? t.access.madeEveryone(page.title, next.version)
+          : t.access.savedToast(page.title, next.version),
+    );
+  };
 
   const fetchRaw = () => api.pageRaw(id);
   const copy = () => {
@@ -308,15 +340,17 @@ export function PageView() {
       </div>
     );
   else if (data && isRestrictedPage(data))
+    body = <RestrictedStub kind="page" badge={<span className="kb page">{t.pages.badge}</span>} />;
+  else if (data && outline) {
+    const title = (data as { title?: string }).title ?? id;
     body = (
-      <div className="banner" role="note">
-        <IconLock />
-        <span className="bt">
-          <b>{t.pages.restrictedPage}</b> · {t.pages.restrictedText}
-        </span>
-      </div>
+      <GuestStub
+        name={title}
+        badge={<span className="kb page">{t.pages.badge}</span>}
+        fields={[[t.pages.titleF, title]]}
+      />
     );
-  else if (!page || !model) body = <PageSkeleton />;
+  } else if (!page || !model) body = <PageSkeleton />;
   else {
     const kind = pageKind(page.tags);
     const ownerName = page.owningTeamId ? teamName(model, page.owningTeamId) : t.pages.admins;
@@ -370,6 +404,39 @@ export function PageView() {
               )}
             </div>
           </div>
+          <AccessChips
+            kind="page"
+            id={page.id}
+            name={page.title}
+            version={page.version}
+            visibility={page.visibility}
+            access={page.access}
+            owner={page.owningTeamId}
+            pop={pop}
+            setPop={setPop}
+            canPublish={page.permissions.publish}
+            onRestrict={me?.role === 'guest' ? undefined : setRestrict}
+            onMakeEveryone={() =>
+              void saveAccess('everyone', { teamIds: [], usernames: page.access?.usernames ?? [] }).catch(
+                (e: unknown) => toast(e instanceof ApiError ? e.detail || e.message : t.common.genericError),
+              )
+            }
+          />
+          {restrict && (
+            <RestrictDialog
+              target={{
+                kind: 'page',
+                name: page.title,
+                visibility: page.visibility,
+                access: page.access,
+                owner: page.owningTeamId,
+              }}
+              mode={restrict}
+              flowCount={0}
+              onClose={() => setRestrict(null)}
+              onSave={saveAccess}
+            />
+          )}
           <div className="metabar">
             <span className="lab">{t.pages.owner}</span>
             {page.owningTeamId ? (

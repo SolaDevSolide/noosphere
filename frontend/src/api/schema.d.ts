@@ -1975,6 +1975,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PersonDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccessOverviewDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/access-log": {
         parameters: {
             query?: never;
@@ -2775,6 +2845,16 @@ export interface components {
         AccessLogWhat: "record" | "protectedNotes" | "export";
         /** @enum {unknown} */
         AccessLogWhy: "admin" | "owningTeam" | "listedTeam" | "listedUser" | null;
+        /** @description The Access page (administrators): roles, restricted records, protected notes, guests and teams. */
+        AccessOverviewDto: {
+            roles: components["schemas"]["RoleCountsDto"];
+            /** @description Restricted applications and pages, and flows touching a restricted application. */
+            restricted: components["schemas"]["AccessRecordDto"][];
+            /** @description Applications and flows with protected notes. */
+            protectedNotes: components["schemas"]["AccessRecordDto"][];
+            guests: components["schemas"]["GuestSharesDto"][];
+            teams: components["schemas"]["TeamAccessDto"][];
+        };
         AccessPublishersDto: {
             /** @description The owning team (empty when only administrators publish). */
             teams: components["schemas"]["AccessTeamDto"][];
@@ -2788,6 +2868,14 @@ export interface components {
             teams: components["schemas"]["AccessTeamDto"][];
             /** @description People who read it by name, outside those teams (administrators always read). */
             users: components["schemas"]["UserRefDto"][];
+        };
+        /** @description A record named on the Access page. */
+        AccessRecordDto: {
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            title: string;
+            /** @description Null when only administrators own it. */
+            owningTeamId: null | string;
         };
         /** @description A team as shown in the "Who can see and edit?" window. */
         AccessTeamDto: {
@@ -3163,6 +3251,11 @@ export interface components {
             /** Format: int32 */
             order: number;
         };
+        /** @description The records a guest reads in full, because they are named on their access list. */
+        GuestSharesDto: {
+            user: components["schemas"]["UserRefDto"];
+            records: components["schemas"]["AccessRecordDto"][];
+        };
         HealthDto: {
             /** @description `live` or `ready` when healthy, `unavailable` otherwise. */
             status: string;
@@ -3428,6 +3521,14 @@ export interface components {
             /** @description Send a change proposal (members and administrators, on applications, flows, data objects and pages). */
             propose: boolean;
         };
+        /** @description Someone who can be named on an access list: what the "Restrict" picker lists. */
+        PersonDto: {
+            username: string;
+            displayName: string;
+            role: components["schemas"]["Role"];
+            /** @description Teams the person belongs to. */
+            teamIds: string[];
+        };
         PlannedChangeDto: {
             summary: string;
             /**
@@ -3642,6 +3743,15 @@ export interface components {
         RevisionOperation: "create" | "update" | "delete" | "restore";
         /** @enum {unknown} */
         Role: "admin" | "member" | "guest";
+        /** @description How many accounts hold each role. */
+        RoleCountsDto: {
+            /** Format: int32 */
+            admins: number;
+            /** Format: int32 */
+            members: number;
+            /** Format: int32 */
+            guests: number;
+        };
         /** @enum {unknown} */
         SearchKind: "application" | "flow" | "dataObject" | "team" | "domain" | "page";
         SearchResultDto: {
@@ -3684,6 +3794,17 @@ export interface components {
             defaultLanguage: null | string;
             /** Format: int32 */
             version: null | number;
+        };
+        /** @description What a team owns and how many people publish there. */
+        TeamAccessDto: {
+            id: string;
+            name: string;
+            /** Format: int32 */
+            members: number;
+            /** Format: int32 */
+            applications: number;
+            /** Format: int32 */
+            flows: number;
         };
         /** @description A team (administrators only change it) with its members and pages. */
         TeamDetailDto: {

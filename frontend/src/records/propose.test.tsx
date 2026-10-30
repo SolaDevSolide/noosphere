@@ -95,7 +95,7 @@ describe('editing a record', () => {
 
   it('keeps guests read-only', async () => {
     open({ publish: false, propose: false }, { ...ME.david, role: 'guest', teams: [] });
-    expect(await screen.findByText('Read only.')).toBeInTheDocument();
+    expect(await screen.findByText(/Shared with you by/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Suggest a change' })).toBeNull();
     expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument();
   });

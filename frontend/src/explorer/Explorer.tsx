@@ -2,8 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useGo } from '../ui/useGo';
 import { Link, useLocation } from 'react-router-dom';
 import { FLOW_TYPES } from '../api/types';
-import { anyFilter, fullApp, fullFlow, makeMatcher, visibleApps } from '../domain/model';
+import { anyFilter, appMeetsSens, fullApp, fullFlow, makeMatcher, visibleApps } from '../domain/model';
 import { useDocumentTitle } from '../app/settings';
+import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
 import { TopBar } from '../layout/TopBar';
@@ -105,7 +106,11 @@ export function Explorer() {
   const loc = useLocation();
   const nav = useGo();
   const { model: m, error, loading, reload, filters, second, setSecond } = useLandscape();
-  const { view, mode } = parseLocation(loc.pathname, loc.search);
+  const { me } = useAuth();
+  const parsed = parseLocation(loc.pathname, loc.search);
+  const view = parsed.view;
+  // Guests get the outline only: the cards, without the connections and graph views.
+  const mode = me?.role === 'guest' ? 'cards' : parsed.mode;
   const [trail, setTrail] = useState<NonNullable<View>[]>([]);
   const [restricted, setRestricted] = useState(false);
   const [pick, setPick] = useState<ConnPick>({ a: null, b: null, hover: null });
@@ -258,8 +263,11 @@ export function Explorer() {
   }, []);
 
   const conn = useConnData();
-  const appsShown = m ? visibleApps(m, filters).length : undefined;
-  const filterUi = <FilterControl appsShown={!view ? appsShown : undefined} />;
+  const appsShown = m
+    ? visibleApps(m, filters).filter((id) => appMeetsSens(m.apps.get(id), filters.appSens)).length
+    : undefined;
+  const guest = me?.role === 'guest';
+  const filterUi = guest ? null : <FilterControl appsShown={!view ? appsShown : undefined} />;
 
   let stage: React.ReactNode;
   let panelChildren: React.ReactNode = null;
@@ -341,15 +349,15 @@ export function Explorer() {
         )
       );
       const head = (
-        <OvHead title={t.overview.title} sub={sub}>
-          {!team && <div className="ov-ctl">{seg}</div>}
+        <OvHead title={t.overview.title} sub={guest ? t.access.outlineSub : sub}>
+          {!team && !guest && <div className="ov-ctl">{seg}</div>}
         </OvHead>
       );
       stage = <CardsView team={team} head={head} onRestricted={() => setRestricted(true)} />;
     }
   }
 
-  const showLegend = !!m && !graph && !(mode === 'connections' && !view);
+  const showLegend = !!m && !graph && !guest && !(mode === 'connections' && !view);
   const ccardOpen = block && !view && mode === 'connections' && !!(pick.a || pick.hover);
   useEffect(() => {
     document.body.classList.toggle('ccard-open', ccardOpen);
@@ -394,7 +402,7 @@ export function Explorer() {
               );
             })}
         </nav>
-        <ActiveChips appsShown={!view ? appsShown : undefined} />
+        {!guest && <ActiveChips appsShown={!view ? appsShown : undefined} />}
         <div className="bar-r">
           {lensView?.kind === 'app' && !compact && (
             <button

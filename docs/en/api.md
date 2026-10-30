@@ -90,6 +90,8 @@ Application and flow details carry `protectedNotes` (null when the reader may no
 | --------------- | --- | ------ |
 | `GET /api/{kind}/{id}/access` | who sees the record in full | `{visibility, owningTeam, readers, publishers, proposers, protectedNotes, canManage}` |
 | `GET /api/access-log?username=&kind=&entityId=&what=&from=&to=&cursor=&limit=` | admin | `{items, nextCursor}`, newest first |
+| `GET /api/people` | member, admin | `[{username, displayName, role, teamIds}]`: who can be named on an access list |
+| `GET /api/access/overview` | admin | the Access page: `{roles, restricted, protectedNotes, guests, teams}` |
 
 ## Explorer
 

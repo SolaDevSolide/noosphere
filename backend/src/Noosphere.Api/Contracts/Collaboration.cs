@@ -311,3 +311,27 @@ public sealed record AccessLogEntryDto(long Id, DateTimeOffset At, UserRefDto Us
 
 /// <param name="NextCursor">Pass it as <c>cursor</c> for the next (older) page; null on the last page.</param>
 public sealed record AccessLogPageDto(IReadOnlyList<AccessLogEntryDto> Items, string? NextCursor);
+
+/// <summary>Someone who can be named on an access list: what the "Restrict" picker lists.</summary>
+/// <param name="TeamIds">Teams the person belongs to.</param>
+public sealed record PersonDto(string Username, string DisplayName, Role Role, IReadOnlyList<string> TeamIds);
+
+/// <summary>A record named on the Access page.</summary>
+/// <param name="OwningTeamId">Null when only administrators own it.</param>
+public sealed record AccessRecordDto(RecordKind Kind, string Id, string Title, string? OwningTeamId);
+
+/// <summary>How many accounts hold each role.</summary>
+public sealed record RoleCountsDto(int Admins, int Members, int Guests);
+
+/// <summary>The records a guest reads in full, because they are named on their access list.</summary>
+public sealed record GuestSharesDto(UserRefDto User, IReadOnlyList<AccessRecordDto> Records);
+
+/// <summary>What a team owns and how many people publish there.</summary>
+public sealed record TeamAccessDto(string Id, string Name, int Members, int Applications, int Flows);
+
+/// <summary>The Access page (administrators): roles, restricted records, protected notes, guests and teams.</summary>
+/// <param name="Restricted">Restricted applications and pages, and flows touching a restricted application.</param>
+/// <param name="ProtectedNotes">Applications and flows with protected notes.</param>
+public sealed record AccessOverviewDto(
+    RoleCountsDto Roles, IReadOnlyList<AccessRecordDto> Restricted, IReadOnlyList<AccessRecordDto> ProtectedNotes,
+    IReadOnlyList<GuestSharesDto> Guests, IReadOnlyList<TeamAccessDto> Teams);

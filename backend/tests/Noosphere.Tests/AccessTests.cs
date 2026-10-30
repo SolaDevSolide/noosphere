@@ -473,4 +473,33 @@ public class AccessTests : IDisposable
             access = new { teamIds = new[] { "team-audit" } }, version = payroll.GetProperty("version").GetInt32() });
         Assert.Contains("access list", (await (await alice.DeleteAsync("/api/teams/team-audit")).Read(HttpStatusCode.Conflict)).Str("detail"), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Members_list_people_and_admins_read_the_access_overview()
+    {
+        await Setup();
+        var people = await (await As("bob")).GetJson("/api/people");
+        var gail = people.EnumerateArray().Single(p => p.Str("username") == "gail");
+        Assert.Equal(("GAIL", "guest"), (gail.Str("displayName"), gail.Str("role")));
+        Assert.Equal(["team-data"], people.EnumerateArray().Single(p => p.Str("username") == "henri").GetProperty("teamIds").EnumerateArray().Select(t => t.GetString()));
+        await (await As("claire")).GetJson("/api/people", HttpStatusCode.Forbidden);
+
+        await (await As("bob")).GetJson("/api/access/overview", HttpStatusCode.Forbidden);
+        var overview = await (await As("alice")).GetJson("/api/access/overview");
+        var roles = overview.GetProperty("roles");
+        Assert.Equal((1, 2), (roles.GetProperty("guests").GetInt32() - 1, roles.GetProperty("admins").GetInt32() + 1));
+        var restricted = overview.GetProperty("restricted").EnumerateArray().Select(r => (r.Str("kind"), r.Str("id"))).ToList();
+        Assert.Contains(("application", "payroll"), restricted);
+        Assert.Contains(("application", "fraud"), restricted);
+        Assert.Contains(("flow", "payroll-hr"), restricted);
+        var notes = overview.GetProperty("protectedNotes").EnumerateArray().Select(r => r.Str("id")).ToList();
+        Assert.Contains("billing", notes);
+        Assert.Contains("payroll-hr", notes);
+        var shares = overview.GetProperty("guests").EnumerateArray().ToDictionary(g => g.GetProperty("user").Str("username"), g => g.GetProperty("records").Ids());
+        Assert.Equal(["portal"], shares["claire"]);
+        Assert.Equal(["payroll"], shares["gail"]);
+        var finance = overview.GetProperty("teams").EnumerateArray().Single(t => t.Str("id") == "team-finance");
+        Assert.True(finance.GetProperty("applications").GetInt32() >= 2);
+        Assert.Equal(1, finance.GetProperty("members").GetInt32());
+    }
 }

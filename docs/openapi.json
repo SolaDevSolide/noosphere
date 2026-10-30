@@ -2316,6 +2316,47 @@
         }
       }
     },
+    "/api/people": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PersonDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/access/overview": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessOverviewDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/access-log": {
       "get": {
         "tags": [
@@ -3937,6 +3978,48 @@
           null
         ]
       },
+      "AccessOverviewDto": {
+        "required": [
+          "roles",
+          "restricted",
+          "protectedNotes",
+          "guests",
+          "teams"
+        ],
+        "type": "object",
+        "properties": {
+          "roles": {
+            "$ref": "#/components/schemas/RoleCountsDto"
+          },
+          "restricted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessRecordDto"
+            },
+            "description": "Restricted applications and pages, and flows touching a restricted application."
+          },
+          "protectedNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessRecordDto"
+            },
+            "description": "Applications and flows with protected notes."
+          },
+          "guests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GuestSharesDto"
+            }
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamAccessDto"
+            }
+          }
+        },
+        "description": "The Access page (administrators): roles, restricted records, protected notes, guests and teams."
+      },
       "AccessPublishersDto": {
         "required": [
           "teams",
@@ -3984,6 +4067,34 @@
             "description": "People who read it by name, outside those teams (administrators always read)."
           }
         }
+      },
+      "AccessRecordDto": {
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "owningTeamId"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Null when only administrators own it."
+          }
+        },
+        "description": "A record named on the Access page."
       },
       "AccessTeamDto": {
         "required": [
@@ -5385,6 +5496,25 @@
         },
         "description": "A page not shared with a guest: its title and place in the tree only. `shared` is always false."
       },
+      "GuestSharesDto": {
+        "required": [
+          "user",
+          "records"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessRecordDto"
+            }
+          }
+        },
+        "description": "The records a guest reads in full, because they are named on their access list."
+      },
       "HealthDto": {
         "required": [
           "status"
@@ -6314,6 +6444,34 @@
         },
         "description": "What the signed-in user may do with a record."
       },
+      "PersonDto": {
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "teamIds"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "teamIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Teams the person belongs to."
+          }
+        },
+        "description": "Someone who can be named on an access list: what the \"Restrict\" picker lists."
+      },
       "PlannedChangeDto": {
         "required": [
           "summary",
@@ -7106,6 +7264,29 @@
           "guest"
         ]
       },
+      "RoleCountsDto": {
+        "required": [
+          "admins",
+          "members",
+          "guests"
+        ],
+        "type": "object",
+        "properties": {
+          "admins": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "members": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "guests": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "How many accounts hold each role."
+      },
       "SearchKind": {
         "enum": [
           "application",
@@ -7263,6 +7444,37 @@
             "format": "int32"
           }
         }
+      },
+      "TeamAccessDto": {
+        "required": [
+          "id",
+          "name",
+          "members",
+          "applications",
+          "flows"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "members": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "applications": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "flows": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "What a team owns and how many people publish there."
       },
       "TeamDetailDto": {
         "required": [

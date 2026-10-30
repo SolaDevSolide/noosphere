@@ -1,6 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FLOW_STATUSES, FLOW_TYPES, isRestrictedFlow, type Sensitivity } from '../api/types';
-import { anyFilter, EMPTY_FILTERS, filterCount, makeMatcher, matches, type Filters } from '../domain/model';
+import {
+  anyFilter,
+  appMeetsSens,
+  EMPTY_FILTERS,
+  filterCount,
+  makeMatcher,
+  matches,
+  type Filters,
+} from '../domain/model';
+import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import { IconFilter, IconWarn, TypeIcon } from '../ui/icons';
 import { Sdot, objName } from './bits';
@@ -14,6 +23,7 @@ const SENS_BASE: Sensitivity[] = ['internal', 'personal', 'sensitive'];
 export function FilterControl({ appsShown }: { appsShown?: number }) {
   const { t } = useI18n();
   const { model, filters, setFilters } = useLandscape();
+  const { me } = useAuth();
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const pop = useRef<HTMLDivElement>(null);
@@ -46,7 +56,10 @@ export function FilterControl({ appsShown }: { appsShown?: number }) {
   }, [open]);
 
   if (!model) return null;
+  const guest = me?.role === 'guest';
   const count = filterCount(filters);
+  const appTotal = model.appIds.length;
+  const appsMeeting = model.appIds.filter((id) => appMeetsSens(model.apps.get(id), filters.appSens)).length;
   const total = model.flows.length;
   const nMatch = model.flows.filter(makeMatcher(model, filters)).length;
   const sensVals = [...SENS_BASE];
@@ -120,6 +133,37 @@ export function FilterControl({ appsShown }: { appsShown?: number }) {
                 ✕
               </button>
             </div>
+            {!guest && (
+              <div className="fp-sec fp-new">
+                <span className="fp-l" id="fp-lv-l">
+                  {t.access.filterTitle}
+                  <span className="newtag">{t.access.newTag}</span>
+                </span>
+                <div className="seg lvseg" role="group" aria-labelledby="fp-lv-l" aria-describedby="fp-lv-help">
+                  <button
+                    type="button"
+                    aria-pressed={!filters.appSens}
+                    onClick={() => set({ ...filters, appSens: null })}
+                  >
+                    {t.access.any}
+                  </button>
+                  {(['internal', 'personal', 'sensitive'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      aria-pressed={filters.appSens === v}
+                      onClick={() => set({ ...filters, appSens: filters.appSens === v ? null : v })}
+                    >
+                      <Sdot s={v} />
+                      {t.access.levelShort[v]}
+                    </button>
+                  ))}
+                </div>
+                <small className="fp-help" id="fp-lv-help">
+                  {t.access.filterHelp}
+                </small>
+              </div>
+            )}
             <div className="fp-sec">
               <span className="fp-l">{t.filters.quick}</span>
               <div className="fp-presets">
@@ -244,8 +288,10 @@ export function FilterControl({ appsShown }: { appsShown?: number }) {
             </div>
             <div className="fp-f">
               <span className="fcount">
-                {(anyFilter(filters) ? t.filters.matchCount(nMatch, total) : t.filters.allShown(total)) +
-                  (appsShown != null ? t.filters.appsSuffix(appsShown) : '')}
+                {filters.appSens
+                  ? t.access.appsShown(appsMeeting, appTotal)
+                  : (anyFilter(filters) ? t.filters.matchCount(nMatch, total) : t.filters.allShown(total)) +
+                    (appsShown != null ? t.filters.appsSuffix(appsShown) : '')}
               </span>
               <button type="button" className="aclear" onClick={() => set(EMPTY_FILTERS)}>
                 {t.common.clearAll}
@@ -277,6 +323,10 @@ export function ActiveChips({ appsShown }: { appsShown?: number }) {
   for (const v of filters.hidden) {
     const name = model.domain.get(v)?.name ?? v;
     add('hid' + v, t.filters.without(name), toggleIn(filters, 'hidden', v), t.filters.showDomain(name));
+  }
+  if (filters.appSens) {
+    const label = t.access.filterChip(t.access.levelShort[filters.appSens]);
+    add('appsens', label, { ...filters, appSens: null });
   }
   if (filters.isolated) add('iso', t.filters.isolatedChip, { ...filters, isolated: false }, t.filters.showUnlinked);
   if (!chips.length) return <div className="active" aria-label={t.filters.active} />;

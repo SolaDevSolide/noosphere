@@ -1,3 +1,4 @@
+import { accessFr } from './access.fr';
 import type { Dict } from './en';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n <= 1 ? one : many}`;
@@ -46,6 +47,7 @@ export const fr: Dict = {
     pages: 'Pages',
     reviewWaiting: (n: number) => `${plural(n, 'proposition', 'propositions')} à valider`,
     trash: 'Corbeille',
+    access: 'Accès',
     settings: 'Réglages',
     role: { admin: 'Administrateur', member: 'Membre', guest: 'Invité' },
   },
@@ -399,6 +401,8 @@ export const fr: Dict = {
     unsaved: 'Vous avez des modifications non enregistrées.',
     discardConfirm: 'Abandonner vos modifications ?',
     fields: {
+      protectedNotes: 'Notes protégées',
+      access: 'Liste d’accès',
       name: 'Nom',
       id: 'Identifiant',
       domain: 'Domaine',
@@ -507,10 +511,6 @@ export const fr: Dict = {
     title: 'Import et export',
     intro: "Faites entrer ou sortir toute une cartographie de Noosphere avec le format d'échange noosphere/v1.",
     exportH: 'Export',
-    exportText:
-      'Téléchargez tous les domaines, équipes, applications, données et flux. Le fichier peut être versionné, relu et réimporté.',
-    exportJson: 'Télécharger en JSON',
-    exportYaml: 'Télécharger en YAML',
     importH: 'Import',
     importText:
       "Les fiches sont rapprochées par identifiant : les nouveaux sont créés, les existants mis à jour. Rien n'est supprimé. Commencez par une simulation pour voir ce qui changerait.",
@@ -884,7 +884,6 @@ export const fr: Dict = {
     addTag: 'Ajouter une étiquette',
     removeTag: (tag: string) => `Retirer ${tag}`,
     visibilityF: 'Visibilité',
-    visibilityAdmins: 'Seuls les administrateurs rendent une page restreinte.',
     summary: 'Résumé du changement',
     proposalTitle: 'Titre de la proposition',
     proposeInstead: 'Proposer plutôt',
@@ -943,4 +942,5 @@ export const fr: Dict = {
     order: 'Ordre',
   },
   notFound: { title: 'Page introuvable', text: 'Cette adresse ne correspond à aucune page.' },
+  access: accessFr,
 };

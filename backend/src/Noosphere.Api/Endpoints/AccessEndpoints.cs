@@ -35,6 +35,16 @@ public static class AccessEndpoints
                 .Produces<ProblemDto>(StatusCodes.Status403Forbidden).Produces<ProblemDto>(StatusCodes.Status404NotFound);
         }
 
+        // Everyone a member may name on an access list: the "Restrict" picker. Guests do not list people.
+        api.MapGet("/people", async (NoosphereDbContext db) =>
+        {
+            var memberships = (await db.TeamMembers.AsNoTracking().ToListAsync()).ToLookup(m => m.UserId, m => m.TeamId);
+            return (await db.Users.AsNoTracking().OrderBy(u => u.DisplayName).ThenBy(u => u.Username).ToListAsync())
+                .Select(u => new PersonDto(u.Username, u.DisplayName, u.Role, [.. memberships[u.Id].Order(StringComparer.Ordinal)])).ToList();
+        }).RequireEditor().WithTags("Access");
+
+        api.MapGet("/access/overview", Overview).RequireAdmin().WithTags("Access");
+
         api.MapGet("/access-log", async ([FromQuery] string? username, [FromQuery] string? kind, [FromQuery] string? entityId,
             [FromQuery] string? what, [FromQuery] string? from, [FromQuery] string? to, [FromQuery] string? cursor, [FromQuery] int? limit,
             NoosphereDbContext db) =>
@@ -79,6 +89,35 @@ public static class AccessEndpoints
                 l.Why, Team(l.WhyTeamId), l.Kind is { } ok && l.EntityId is { } oid ? Team(facts.Owner(ok, oid)) : null)).ToList();
             return new AccessLogPageDto(items, rows.Count > size ? items[^1].Id.ToString(CultureInfo.InvariantCulture) : null);
         }).RequireAdmin().WithTags("Access");
+    }
+
+    /// <summary>The Access page: role counts, restricted records, protected notes, what is shared with each guest, and teams.</summary>
+    private static async Task<AccessOverviewDto> Overview(NoosphereDbContext db, CancellationToken cancel)
+    {
+        var facts = await RecordFacts.Load(db, cancel);
+        var users = await db.Users.AsNoTracking().OrderBy(u => u.DisplayName).ThenBy(u => u.Username).ToListAsync(cancel);
+        var memberships = await db.TeamMembers.AsNoTracking().ToListAsync(cancel);
+        var apps = await db.Applications.AsNoTracking().OrderBy(a => a.Name).ToListAsync(cancel);
+        var flows = await db.Flows.AsNoTracking().OrderBy(f => f.Name).ToListAsync(cancel);
+        var pages = await db.Pages.AsNoTracking().OrderBy(p => p.Title).ToListAsync(cancel);
+        AccessRecordDto App(Application a) => new(RecordKind.Application, a.Id, a.Name, a.TeamId);
+        AccessRecordDto FlowRef(Flow f) => new(RecordKind.Flow, f.Id, f.Name, facts.Owner(RecordKind.Flow, f.Id));
+        AccessRecordDto PageRef(Page p) => new(RecordKind.Page, p.Id, p.Title, facts.Owner(RecordKind.Page, p.Id));
+
+        var restricted = apps.Where(a => a.Visibility == Visibility.Restricted).Select(App)
+            .Concat(flows.Where(f => facts.Restricted(RecordKind.Flow, f.Id)).Select(FlowRef))
+            .Concat(pages.Where(p => p.Visibility == Visibility.Restricted).Select(PageRef)).ToList();
+        var notes = apps.Where(a => a.ProtectedNotes is not null).Select(App)
+            .Concat(flows.Where(f => f.ProtectedNotes is not null).Select(FlowRef)).ToList();
+        var guests = users.Where(u => u.Role == Role.Guest).Select(u => new GuestSharesDto(new UserRefDto(u.Username, u.DisplayName),
+            [.. apps.Where(a => a.AccessUsernames.Contains(u.Username)).Select(App),
+             .. pages.Where(p => p.AccessUsernames.Contains(u.Username)).Select(PageRef)])).ToList();
+        var counts = memberships.GroupBy(m => m.TeamId).ToDictionary(g => g.Key, g => g.Count());
+        var teams = (await db.Teams.AsNoTracking().OrderBy(t => t.Name).ToListAsync(cancel)).Select(t => new TeamAccessDto(t.Id, t.Name,
+            counts.GetValueOrDefault(t.Id), apps.Count(a => a.TeamId == t.Id), flows.Count(f => facts.Owner(RecordKind.Flow, f.Id) == t.Id))).ToList();
+        return new AccessOverviewDto(
+            new RoleCountsDto(users.Count(u => u.Role == Role.Admin), users.Count(u => u.Role == Role.Member), users.Count(u => u.Role == Role.Guest)),
+            restricted, notes, guests, teams);
     }
 
     /// <summary>A date (<c>2026-10-30</c>: the whole day for <c>to</c>) or a date and time with an offset.</summary>

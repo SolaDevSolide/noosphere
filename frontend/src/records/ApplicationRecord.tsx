@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useGo } from '../ui/useGo';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
@@ -6,11 +6,20 @@ import {
   APP_KINDS,
   LIFECYCLES,
   VISIBILITIES,
+  isGuestOutline,
+  type AccessList,
   type Application,
   type ApplicationInput,
+  type NotesExtras,
   type Proposal,
   type RecordExtras,
+  type Visibility,
 } from '../api/types';
+import { AccessChips, useSensitivityWhy, type AccessPop } from '../access/AccessWindow';
+import { notesDetail, NOTES_MAX, ProtectedNotesField, ProtectedNotesSection } from '../access/ProtectedNotes';
+import { RestrictDialog } from '../access/RestrictDialog';
+import { fieldLabelOf, isFieldRefusal, SecretBanner, secretFields } from '../access/secret';
+import { GuestStub, RestrictedStub, SharedBanner } from '../access/Stubs';
 import { useAuth } from '../auth/auth';
 import { pct, Sdot, teamName } from '../explorer/bits';
 import { useLandscape } from '../explorer/landscape';
@@ -18,7 +27,7 @@ import { FlowRow } from '../explorer/Panel';
 import { paths } from '../explorer/paths';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconHistory, IconLock } from '../ui/icons';
+import { IconHistory } from '../ui/icons';
 import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import {
@@ -49,9 +58,28 @@ type Draft = Pick<Application, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'vis
   teamId: string;
   tech: string;
   description: string;
+  protectedNotes: string;
 };
 
-const toDraft = (a: Application): Draft => ({
+type AppDetail = Application & RecordExtras & NotesExtras;
+
+/** The body of a PUT that changes nothing but `patch`; the access list and protected notes are kept when left out. */
+export const appInput = (a: Application, patch: Partial<ApplicationInput> = {}): ApplicationInput => ({
+  id: a.id,
+  version: a.version,
+  name: a.name,
+  domainId: a.domainId,
+  teamId: a.teamId,
+  kind: a.kind,
+  tech: a.tech,
+  description: a.description,
+  lifecycle: a.lifecycle,
+  visibility: a.visibility,
+  ...patch,
+});
+
+const toDraft = (a: AppDetail): Draft => ({
+  protectedNotes: a.protectedNotes ?? '',
   name: a.name,
   domainId: a.domainId,
   teamId: a.teamId ?? '',
@@ -69,6 +97,7 @@ export function validateApp(t: Dict, d: Draft): Record<string, string> {
   if (!d.domainId) e.domainId = t.record.errors.required;
   if (d.tech.length > 200) e.tech = t.record.errors.tooLong(200);
   if (d.description.length > 4000) e.description = t.record.errors.tooLong(4000);
+  if (d.protectedNotes.length > NOTES_MAX) e.protectedNotes = t.access.notesTooLong;
   return e;
 }
 
@@ -76,14 +105,17 @@ function AppForm({
   app,
   mode,
   ownerName,
+  focus,
   onSaved,
   onProposed,
   onCancel,
   onReload,
 }: {
-  app: Application;
+  app: AppDetail;
   mode: EditMode;
   ownerName: string | null;
+  /** A field to focus when the form opens ("Let another team publish" opens it on the team). */
+  focus?: string;
   onSaved: (a: Application) => void;
   onProposed: (p: Proposal) => void;
   onCancel: () => void;
@@ -96,7 +128,11 @@ function AppForm({
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const [secrets, setSecrets] = useState<string[]>([]);
   const [prop, setProp] = useProposeDraft(mode, app.name);
+  useEffect(() => {
+    if (focus) document.getElementById(focus)?.focus();
+  }, [focus]);
   const dirty = JSON.stringify(d) !== JSON.stringify(toDraft(app));
   useUnsavedGuard(dirty);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((x) => ({ ...x, [k]: v }));
@@ -106,6 +142,7 @@ function AppForm({
     const e = { ...validateApp(t, d), ...validatePropose(t, prop) };
     setErrors(e);
     setFailure(null);
+    setSecrets([]);
     if (Object.keys(e).length) {
       document.getElementById(Object.keys(e)[0])?.focus();
       return;
@@ -124,13 +161,16 @@ function AppForm({
         lifecycle: d.lifecycle,
         visibility: d.visibility,
       };
+      // Notes the author may not read are only sent when they write replacement notes.
+      if (!app.protectedNotesHidden || d.protectedNotes.trim()) body.protectedNotes = d.protectedNotes;
       if (prop.proposing) onProposed(await proposeUpdate('application', app.id, app.version, body, prop));
       else onSaved(await api.updateApplication(app.id, body));
     } catch (err) {
       if (err instanceof ApiError && err.isConflict) setConflict(true);
-      else if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
-        setErrors(serverErrors(err));
-      else
+      else if (isFieldRefusal(err)) {
+        setErrors(serverErrors(err, t));
+        setSecrets(secretFields(err));
+      } else
         setFailure(
           err instanceof ApiError && err.status === 0
             ? t.common.networkError
@@ -158,10 +198,14 @@ function AppForm({
           <span className="bt">{failure}</span>
         </div>
       )}
-      {errCount > 0 && (
-        <div className="banner danger" role="alert">
-          <span className="bt">{t.record.errors.fixBelow}</span>
-        </div>
+      {secrets.length > 0 ? (
+        <SecretBanner fields={secrets} label={(f) => fieldLabelOf(t, f)} />
+      ) : (
+        errCount > 0 && (
+          <div className="banner danger" role="alert">
+            <span className="bt">{t.record.errors.fixBelow}</span>
+          </div>
+        )
       )}
       <div className="fgrid">
         <Field id="name" label={t.record.fields.name} required error={errors.name}>
@@ -240,10 +284,10 @@ function AppForm({
             ))}
           </select>
         </Field>
-        <Field id="visibility" label={t.record.fields.visibility} hint={t.record.hints.visibility}>
+        <Field id="visibility" label={t.record.fields.visibility} hint={t.access.visibilityHint}>
           <select
             className="select"
-            {...describe('visibility', t.record.hints.visibility)}
+            {...describe('visibility', t.access.visibilityHint)}
             value={d.visibility}
             onChange={(e) => set('visibility', e.target.value as Draft['visibility'])}
           >
@@ -282,11 +326,18 @@ function AppForm({
             onChange={(e) => set('description', e.target.value)}
           />
         </Field>
+        <ProtectedNotesField
+          value={d.protectedNotes}
+          onChange={(v) => set('protectedNotes', v)}
+          hidden={!!app.protectedNotesHidden}
+          who={ownerName || t.access.administrators}
+          error={errors.protectedNotes}
+        />
       </div>
       <ProposeFields mode={mode} ownerName={ownerName} value={prop} onChange={setProp} errors={errors} />
       <div className="form-actions sticky">
-        <span className="muted" aria-live="polite">
-          {dirty ? t.record.unsaved : ''}
+        <span className={'muted' + (errCount ? ' notsaved' : '')} aria-live="polite">
+          {errCount ? t.access.notSavedCount(errCount) : dirty ? t.record.unsaved : ''}
         </span>
         <button type="button" className="btn" onClick={cancel} disabled={saving}>
           {t.common.cancel}
@@ -306,10 +357,13 @@ export function ApplicationRecord() {
   const { model: m, reload: reloadLandscape } = useLandscape();
   const toast = useToast();
   const nav = useGo();
-  const { data: a, setData, error, reload } = useRecord<Application & RecordExtras>(api.application, id);
-  const [editing, setEditing] = useState(false);
+  const { data: a, setData, error, reload } = useRecord<AppDetail>(api.application, id);
+  const [editing, setEditing] = useState<false | { focus?: string }>(false);
+  const [pop, setPop] = useState<AccessPop>(null);
+  const [restrict, setRestrict] = useState<'restrict' | 'guest' | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sent, setSent] = useState<Proposal | null>(null);
+  const sensWhy = useSensitivityWhy(id, (a as { sourceOf?: string[] } | null)?.sourceOf ?? []);
 
   if (error)
     return (
@@ -323,17 +377,34 @@ export function ApplicationRecord() {
         <RecordSkeleton />
       </PageShell>
     );
-  if ((a as { restricted?: boolean }).restricted)
+  if ((a as { restricted?: boolean }).restricted) {
+    const dom = m.domain.get((a as { domainId?: string }).domainId ?? '')?.name;
     return (
-      <PageShell>
-        <div className="banner" role="note">
-          <IconLock />
-          <span className="bt">
-            <b>{t.common.restrictedApp}</b> · {t.common.noAccess}
-          </span>
-        </div>
+      <PageShell title={t.access.restrictedName.application}>
+        <RestrictedStub kind="application" badge={<span className="kb app">{t.search.badge.app}</span>} sub={dom} />
       </PageShell>
     );
+  }
+  if (isGuestOutline(a)) {
+    const dom = m.domain.get(a.domainId)?.name ?? a.domainId;
+    return (
+      <PageShell title={a.name}>
+        <GuestStub
+          name={a.name}
+          badge={
+            <>
+              <span className="kb app">{t.search.badge.app}</span> <span className="muted">{t.kindName[a.kind]}</span>
+            </>
+          }
+          sub={dom}
+          fields={[
+            [t.record.fields.domain, dom],
+            [t.record.fields.kind, t.kindName[a.kind]],
+          ]}
+        />
+      </PageShell>
+    );
+  }
   const ins = m.flowsIn.get(id) ?? [];
   const outs = m.flowsOut.get(id) ?? [];
   const domain = m.domain.get(a.domainId);
@@ -358,29 +429,47 @@ export function ApplicationRecord() {
   const owner = ownerTeamOf(m, 'application', a);
   const perm = permissionsFor(me?.role, teamIds, owner, a.permissions);
   const ownerName = owner ? teamName(m, owner) || owner : null;
+  const guest = me?.role === 'guest';
+  const saveAccess = async (visibility: Visibility, access: AccessList) => {
+    const next = await api.updateApplication(a.id, appInput(a, { visibility, access }));
+    setData({ ...a, ...next });
+    setRestrict(null);
+    reloadLandscape();
+    toast(
+      visibility === 'restricted' && a.visibility !== 'restricted'
+        ? t.access.restrictedToast(a.name, next.version)
+        : visibility === 'everyone' && a.visibility === 'restricted'
+          ? t.access.madeEveryone(a.name, next.version)
+          : t.access.savedToast(a.name, next.version),
+    );
+  };
+  const makeEveryone = () => {
+    void saveAccess('everyone', { teamIds: [], usernames: a.access?.usernames ?? [] }).catch((e: unknown) =>
+      toast(e instanceof ApiError ? e.detail || e.message : t.common.genericError),
+    );
+  };
   return (
     <PageShell title={a.name}>
       <div className="page-h">
         <div className="ph-t">
           <span className="kb app">{t.search.badge.app}</span> <span className="muted">{t.kindName[a.kind]}</span>
           <h1>{a.name}</h1>
-          <p>
-            {[domain?.name, teamName(m, a.teamId), a.tech].filter(Boolean).join(' · ')}
-            {a.visibility === 'restricted' && <> · {t.visibility.restricted}</>}
-          </p>
+          <p>{[domain?.name, teamName(m, a.teamId), a.tech].filter(Boolean).join(' · ')}</p>
         </div>
         {!editing && (
           <div className="page-actions">
-            <Link className="btn" to={paths.appLens(a.id)}>
-              {t.record.openLens}
-            </Link>
+            {!guest && (
+              <Link className="btn" to={paths.appLens(a.id)}>
+                {t.record.openLens}
+              </Link>
+            )}
             {perm.publish ? (
-              <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+              <button type="button" className="btn primary" onClick={() => setEditing({})}>
                 {t.record.edit}
               </button>
             ) : (
               perm.propose && (
-                <button type="button" className="btn primary" onClick={() => setEditing(true)}>
+                <button type="button" className="btn primary" onClick={() => setEditing({})}>
                   {t.propose.suggest}
                 </button>
               )
@@ -402,8 +491,38 @@ export function ApplicationRecord() {
             )}
           </div>
         )}
+        {!editing && (
+          <AccessChips
+            kind="application"
+            id={a.id}
+            name={a.name}
+            version={a.version}
+            visibility={a.visibility}
+            access={a.access}
+            owner={owner}
+            sensitivity={a.sensitivity ? { level: a.sensitivity, reasons: a.sensitivityReasons ?? [] } : undefined}
+            pop={pop}
+            setPop={setPop}
+            pages={a.pages}
+            canPublish={perm.publish}
+            onRestrict={setRestrict}
+            onMakeEveryone={makeEveryone}
+            onTransfer={perm.publish ? () => setEditing({ focus: 'teamId' }) : undefined}
+          />
+        )}
       </div>
-      {!perm.propose && (
+      {restrict && (
+        <RestrictDialog
+          target={{ kind: 'application', name: a.name, visibility: a.visibility, access: a.access, owner }}
+          mode={restrict}
+          pages={a.pages}
+          flowCount={ins.length + outs.length}
+          onClose={() => setRestrict(null)}
+          onSave={saveAccess}
+        />
+      )}
+      {guest && <SharedBanner owner={ownerName ?? t.access.administrators} />}
+      {!perm.propose && !guest && (
         <div className="banner" role="note">
           <span className="bt">
             <b>{t.record.readOnly}.</b> {t.record.readOnlyHint}
@@ -418,6 +537,7 @@ export function ApplicationRecord() {
           name={a.name}
           canPublish={perm.publish}
           canPropose={perm.propose}
+          notesOwner={ownerName}
           onClose={() => setHistoryOpen(false)}
           onRestored={() => {
             reload();
@@ -431,6 +551,7 @@ export function ApplicationRecord() {
           app={a}
           mode={perm.publish ? 'publish' : 'propose'}
           ownerName={ownerName}
+          focus={editing.focus}
           onProposed={(pr) => {
             setSent(pr);
             setEditing(false);
@@ -452,6 +573,12 @@ export function ApplicationRecord() {
               <h2 id="desc-h">{t.record.fields.description}</h2>
               {a.description ? <Markdown text={a.description} /> : <p className="muted">{t.record.noDescription}</p>}
             </section>
+            <ProtectedNotesSection
+              record={a}
+              ownerId={owner}
+              ownerName={ownerName ?? t.access.administrators}
+              restricted={a.visibility === 'restricted'}
+            />
             <RecordExtensions kind="application" record={a} />
             <section className="box" aria-labelledby="flows-h">
               <h2 id="flows-h">{t.record.flowsIn(ins.length)}</h2>
@@ -490,7 +617,37 @@ export function ApplicationRecord() {
               <dt>{t.record.fields.lifecycle}</dt>
               <dd>{t.lifecycle[a.lifecycle]}</dd>
               <dt>{t.record.fields.visibility}</dt>
-              <dd>{t.visibility[a.visibility]}</dd>
+              <dd>
+                <button
+                  type="button"
+                  className="linkbtn"
+                  aria-haspopup="dialog"
+                  onClick={() => {
+                    setPop('access');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  {t.visibility[a.visibility]}
+                </button>
+              </dd>
+              {a.sensitivity && !guest && (
+                <>
+                  <dt>{t.record.fields.sensitivity}</dt>
+                  <dd>
+                    <span className="lvl">
+                      <Sdot s={a.sensitivity} />
+                      {t.sens[a.sensitivity]}
+                    </span>
+                    <span className="why">{sensWhy}</span>
+                  </dd>
+                </>
+              )}
+              {!guest && (
+                <>
+                  <dt>{t.record.fields.protectedNotes}</dt>
+                  <dd>{notesDetail(t, a, ownerName ?? t.access.administrators)}</dd>
+                </>
+              )}
               <dt>{t.record.fields.sourceOf}</dt>
               <dd>
                 {a.sourceOf.length

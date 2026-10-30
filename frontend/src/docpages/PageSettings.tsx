@@ -353,14 +353,13 @@ export function PageSettings({
               <button
                 type="button"
                 aria-pressed={draft.visibility === 'restricted'}
-                disabled={!isAdmin && draft.visibility !== 'restricted'}
                 onClick={() => set('visibility', 'restricted')}
               >
                 <IconLock />
                 {t.visibility.restricted}
               </button>
             </div>
-            {!isAdmin && <small>{t.pages.visibilityAdmins}</small>}
+            <small>{t.access.visibilityHint}</small>
           </div>
         </div>
       </details>

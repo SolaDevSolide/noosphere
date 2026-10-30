@@ -10,6 +10,7 @@ import { ImportExportPage } from './pages/ImportExportPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFound } from './pages/NotFound';
 import { UsersPage } from './pages/UsersPage';
+import { AccessPage } from './access/AccessPage';
 import { DomainRecord } from './docpages/DomainRecord';
 import { NewPageEditor, PageEditor } from './docpages/PageEditor';
 import { PagesHome } from './docpages/PagesHome';
@@ -44,6 +45,7 @@ function SignedIn() {
               <Route path="/review" element={<ReviewPage />} />
               <Route path="/review/:id" element={<ProposalPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/admin/access" element={<AccessPage />} />
               <Route path="/admin/settings" element={<SettingsPage />} />
               <Route path="/admin/trash" element={<TrashPage />} />
               <Route path="/import-export" element={<ImportExportPage />} />

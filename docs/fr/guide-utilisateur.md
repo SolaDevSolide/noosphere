@@ -72,12 +72,49 @@ un lien vers la proposition à l'origine d'une version.
 
 ## Fiches restreintes, invités et notes protégées
 
-Un propriétaire peut restreindre une application ou une page et lister les équipes et les personnes qui la voient ;
-les autres voient seulement qu'elle existe. Nommer un invité sur une fiche la partage avec lui. Les notes protégées
-gardent les détails d'exploitation (qui appeler, où est le compte de secours) pour les propriétaires et la liste
-d'accès. **Qui peut voir et modifier ?** sur une fiche explique qui la lit, la publie et la propose. Coller un jeton,
-une clé ou un mot de passe est refusé : écrivez plutôt où se trouve le secret. Détails :
-[accès, notes protégées et journal des accès](acces.md).
+Sous le titre de chaque fiche, une puce indique qui peut la voir : **Visible par tous**, ou **Restreinte · 2 équipes,
+1 personne**. Cliquez-la pour ouvrir **Qui peut voir et modifier ?** : qui lit la fiche, qui publie et
+valide ses modifications, qui peut en proposer, qui lit ses notes protégées, et quelles pages rattachées restent
+publiques. Détails : [accès, notes protégées et journal des accès](acces.md).
+
+- **Restreindre une application ou une page** : les propriétaires choisissent **Restreindre cette fiche** (ou
+  **Changer qui peut la voir**) dans cette fenêtre. Choisissez des équipes et des personnes avec le champ de
+  recherche ; l'équipe propriétaire et les administrateurs la voient toujours. L'aperçu dit qui verra la fiche et ce
+  que verront les autres. Les pages rattachées gardent leur propre visibilité : la fenêtre liste celles qui restent
+  publiques. **La rendre visible par tous** lève la restriction.
+- **Partager avec un invité** : sur une fiche publique, les propriétaires nomment les invités qui peuvent l'ouvrir en
+  entier. Les invités voient le plan du paysage (noms des applications et domaines) ; une fiche qui ne leur
+  est pas partagée affiche un court avis à la place. Les fiches restreintes leur sont entièrement cachées, et ils ne
+  lisent jamais les notes protégées.
+- **Confier à une autre équipe** : ouvre le formulaire sur le champ **Équipe** (**Propriétaire** sur un flux).
+  L'enregistrement confie la fiche à cette équipe ; les membres qui ne peuvent pas publier l'envoient en proposition.
+- **Notes protégées** : une section des applications et des flux pour les détails d'exploitation (adresses de
+  production, qui appeler, où sont les identifiants). L'équipe propriétaire, la liste d'accès et les administrateurs
+  les lisent ; les autres voient un cadenas et, dans l'historique et les comparaisons, `••• protected` à la place du
+  texte. Un membre qui ne peut pas les lire peut écrire des notes de remplacement ; laisser le champ vide garde les
+  notes actuelles.
+- **Sensibilité** : une application est aussi sensible que la donnée la plus sensible dont elle est la source, ou que
+  ses flux transportent. Le badge à côté de la puce de visibilité en donne les raisons. Dans le paysage,
+  **Filtrer → Applications · sensibilité au moins** estompe les applications moins sensibles, et la recherche affiche
+  le niveau après chaque application.
+- **Les secrets sont refusés** : coller un jeton, une clé privée ou un mot de passe dans un champ (fiches, pages,
+  propositions, réglages, imports) est refusé avec un message sous le champ ; rien n'est enregistré. Écrivez plutôt
+  où se trouve le secret. Les jetons de substitution comme `<password>`, `***`, `${VAR}` ou `{{var}}` sont acceptés.
+
+### Export
+
+**Import et export → Exporter le paysage** propose **Ce que vous voyez** (les fiches restreintes que vous ne
+voyez pas sont omises ; les notes protégées seulement là où vous pouvez les lire) et, pour les administrateurs,
+**Export complet** avec toutes les fiches restreintes et notes protégées. Un export complet est inscrit au journal des
+accès, avec un motif facultatif.
+
+### La page Accès
+
+Les administrateurs ouvrent **Accès** dans le menu du compte : la règle et ses deux exceptions, les rôles et le
+nombre de personnes de chacun, les fiches partagées avec chaque invité, ce que chaque équipe possède et a restreint,
+et le **journal des accès** (chaque ouverture d'une fiche restreinte ou de notes protégées par quelqu'un hors de
+l'équipe propriétaire, chaque lecture par un administrateur, chaque export complet). Filtrez-le par personne, fiche,
+type, nature et dates ; les lignes sont gardées 365 jours.
 
 ## Équipes
 

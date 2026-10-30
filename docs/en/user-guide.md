@@ -68,11 +68,43 @@ to a version.
 
 ## Restricted records, guests and protected notes
 
-An owner can restrict an application or a page and list the teams and people who see it; the others see only that
-it exists. Naming a guest on a record shares it with them. Protected notes hold operational details (who to call,
-where the break-glass account lives) for the owners and the access list. **Who can see and edit?** on a record
-explains who reads, publishes and proposes it. Pasting a token, key or password is refused: write where the secret
-lives instead. Details: [access, protected notes and the access log](access.md).
+Under the title of every record, a chip says who can see it: **Visible to everyone**, or **Restricted · 2 teams,
+1 person**. Click it to open **Who can see and edit?**: who reads the record, who publishes and validates its changes,
+who may propose one, who reads its protected notes, and which attached pages stay public. Details: [access, protected
+notes and the access log](access.md).
+
+- **Restrict an application or a page**: owners choose **Restrict this record** (or **Change who can see it**) in that
+  window. Pick teams and people with the search field; the owning team and administrators always see it. The preview
+  says who will see the record and what the others will see. Pages attached to the record keep their own visibility:
+  the dialog lists the ones that stay public. **Make visible to everyone** lifts the restriction.
+- **Share with a guest**: on a public record, owners name the guests who may open it in full. Guests see the outline
+  of the landscape (application names and domains); a record not shared with them shows a short notice instead.
+  Restricted records are hidden from guests entirely, and guests never read protected notes.
+- **Let another team publish**: opens the edit form on the **Team** field (**Owner** on a flow). Saving hands the
+  record to that team; members who cannot publish send it as a proposal.
+- **Protected notes**: a section of applications and flows for operational details (production addresses, who to
+  call, where credentials live). The owning team, the access list and administrators read them; the others see a lock
+  and, in history and comparisons, `••• protected` instead of the text. A member who cannot read them may write
+  replacement notes; leaving the field empty keeps the current ones.
+- **Sensitivity**: an application is as sensitive as the most sensitive data it is the source of, or that its flows
+  carry. The badge next to the visibility chip lists the reasons. In the landscape, **Filter → Applications ·
+  sensitivity at least** dims the less sensitive applications, and search shows the level after each application.
+- **Secrets are refused**: pasting a token, a private key or a password in any field (records, pages, proposals,
+  settings, imports) is refused with a message under the field; nothing is stored. Write where the secret lives
+  instead. Placeholders such as `<password>`, `***`, `${VAR}` or `{{var}}` are fine.
+
+### Export
+
+**Import and export → Export the landscape** offers **What you can see** (restricted records you cannot see are left
+out; protected notes only where you can read them) and, for administrators, **Full export** with every restricted
+record and protected note. A full export is recorded in the access log, with an optional reason.
+
+### The Access page
+
+Administrators open **Access** in the account menu: the rule and its two exceptions, the roles and how many people
+hold each, the records shared with each guest, what each team owns and restricted, and the **access log** (every
+opening of a restricted record or of protected notes by someone outside the owning team, every administrator read,
+every full export). Filter it by person, record, kind, what and dates; lines are kept 365 days.
 
 ## Teams
 

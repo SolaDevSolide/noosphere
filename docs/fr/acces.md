@@ -3,7 +3,9 @@
 [English](../en/access.md)
 
 Noosphere est ouvert par défaut : chaque membre lit tout le paysage. Cette page décrit les exceptions : les fiches
-restreintes, les invités, les notes protégées, le contrôle des secrets et le journal des accès.
+restreintes, les invités, les notes protégées, le contrôle des secrets et le journal des accès. Le
+[guide utilisateur](guide-utilisateur.md#fiches-restreintes-invités-et-notes-protégées) montre où chacune apparaît
+dans l'interface.
 
 ## Qui voit une fiche
 

@@ -3,7 +3,7 @@ import { useGo } from '../ui/useGo';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
-import { IconLogo, IconReview, IconSettings, IconTeam, IconTrash, IconUpload } from '../ui/icons';
+import { IconLogo, IconReview, IconSettings, IconShield, IconTeam, IconTrash, IconUpload } from '../ui/icons';
 
 export function LanguageSwitch({ small }: { small?: boolean }) {
   const { lang, t } = useI18n();
@@ -99,6 +99,12 @@ export function UserMenu() {
             <Link role="menuitem" className="mi" to="/admin/users" onClick={() => setOpen(false)}>
               <IconTeam />
               {t.top.users}
+            </Link>
+          )}
+          {isAdmin && (
+            <Link role="menuitem" className="mi" to="/admin/access" onClick={() => setOpen(false)}>
+              <IconShield />
+              {t.top.access}
             </Link>
           )}
           {isAdmin && (

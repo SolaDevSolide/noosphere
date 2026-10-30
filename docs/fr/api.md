@@ -93,6 +93,8 @@ Le détail d'une application ou d'un flux porte `protectedNotes` (null si le lec
 | ----------------- | --- | ------- |
 | `GET /api/{kind}/{id}/access` | qui voit l'enregistrement en entier | `{visibility, owningTeam, readers, publishers, proposers, protectedNotes, canManage}` |
 | `GET /api/access-log?username=&kind=&entityId=&what=&from=&to=&cursor=&limit=` | admin | `{items, nextCursor}`, du plus récent au plus ancien |
+| `GET /api/people` | membre, admin | `[{username, displayName, role, teamIds}]` : les personnes qu'on peut nommer dans une liste d'accès |
+| `GET /api/access/overview` | admin | la page Accès : `{roles, restricted, protectedNotes, guests, teams}` |
 
 ## Explorateur
 

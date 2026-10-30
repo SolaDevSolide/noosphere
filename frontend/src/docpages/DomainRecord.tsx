@@ -1,3 +1,4 @@
+import { AccessChips, type AccessPop } from '../access/AccessWindow';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api/client';
@@ -21,6 +22,7 @@ export function DomainRecord() {
   const { model: m } = useLandscape();
   const { data, error, reload } = useRecord<DomainDetail>(api.domain, id);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [pop, setPop] = useState<AccessPop>(null);
   if (error)
     return (
       <PageShell>
@@ -59,6 +61,17 @@ export function DomainRecord() {
             {t.history.button}
           </button>
         </div>
+        <AccessChips
+          kind="domain"
+          id={id}
+          name={name}
+          version={data.version ?? 0}
+          visibility="everyone"
+          owner={null}
+          pop={pop}
+          setPop={setPop}
+          canPublish={isAdmin}
+        />
       </div>
       {historyOpen && (
         <HistoryPanel
