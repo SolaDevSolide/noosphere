@@ -165,7 +165,8 @@ const gov: GovCtx = {
     }
     if (kind === 'page') {
       // A page proposed for creation carries the editor's input: give it an id and the defaults.
-      if (!rec.id) rec.id = slugify(typeof rec.title === 'string' ? rec.title : '').slice(0, 64) || 'page-' + Date.now();
+      if (!rec.id)
+        rec.id = slugify(typeof rec.title === 'string' ? rec.title : '').slice(0, 64) || 'page-' + Date.now();
       rec.parentId ??= null;
       rec.order ??= 0;
       rec.attachedTo ??= null;
