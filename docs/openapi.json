@@ -2664,6 +2664,25 @@
         }
       }
     },
+    "/api/me/agents": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyAgentsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/applications/{id}/history": {
       "get": {
         "tags": [
@@ -3782,6 +3801,728 @@
           }
         }
       }
+    },
+    "/api/oauth/requests/{id}": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentRequestDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oauth/requests/{id}/approve": {
+      "post": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ConsentApproveInput"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResultDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oauth/requests/{id}/deny": {
+      "post": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentResultDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/agents": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AI agents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentSettingsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentConnectionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{id}/revoke": {
+      "post": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConnectionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{id}/approve": {
+      "post": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentConnectionDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/{id}/capabilities": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentCapabilitiesDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/activity": {
+      "get": {
+        "tags": [
+          "AI agents"
+        ],
+        "parameters": [
+          {
+            "name": "connectionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentActivityPageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agents/stop-all": {
+      "post": {
+        "tags": [
+          "AI agents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopAllInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopAllResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/state": {
+      "get": {
+        "tags": [
+          "Demo"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/switch": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoSwitchInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoSwitchResultDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/simulate/edit": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoRecordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoEditResultDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/simulate/proposal": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/DemoRecordInput"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoProposalResultDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/simulate/decision": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoDecisionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoDecisionResultDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/simulate/agent": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoAgentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoAgentResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/simulate/guest-read": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoRecordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoGuestReadResultDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/reset": {
+      "post": {
+        "tags": [
+          "Demo"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoResetInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoResetResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4116,6 +4857,437 @@
           }
         },
         "description": "A team as shown in the \"Who can see and edit?\" window."
+      },
+      "AgentActivityDto": {
+        "required": [
+          "id",
+          "at",
+          "connectionId",
+          "agentName",
+          "person",
+          "tool",
+          "kind",
+          "summary",
+          "recordKind",
+          "recordId",
+          "recordTitle"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agentName": {
+            "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "tool": {
+            "type": "string",
+            "description": "MCP tool (`search`, `draft_change`...), or `llms.txt`, `markdown`, `revoke`, `stop-all`."
+          },
+          "kind": {
+            "description": "`read`, `draft`, `proposal`, `refused`, `quota` or `revoked`.",
+            "$ref": "#/components/schemas/AgentActivityKind"
+          },
+          "summary": {
+            "type": "string",
+            "description": "In English, without the agent's name: \"Read Billing (application).\""
+          },
+          "recordKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RecordKind"
+              }
+            ]
+          },
+          "recordId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "recordTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the record now, when the reader may see it."
+          }
+        },
+        "description": "One call of an agent."
+      },
+      "AgentActivityKind": {
+        "enum": [
+          "read",
+          "draft",
+          "proposal",
+          "refused",
+          "quota",
+          "revoked"
+        ]
+      },
+      "AgentActivityPageDto": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentActivityDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` for the next (older) page; null on the last page."
+          }
+        }
+      },
+      "AgentCapabilitiesDto": {
+        "required": [
+          "connectionId",
+          "agentName",
+          "person",
+          "ceiling",
+          "scopes",
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agentName": {
+            "type": "string"
+          },
+          "person": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "ceiling": {
+            "$ref": "#/components/schemas/AgentCeiling"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityDto"
+            }
+          }
+        },
+        "description": "\"What this agent can do\", in plain words: min(person's rights, ceiling, scopes)."
+      },
+      "AgentCeiling": {
+        "enum": [
+          "public",
+          "public+protected",
+          "asUser"
+        ],
+        "description": "The most an AI agent sees, whatever its person sees: records visible to everyone (`public`, the default), the\nsame with protected notes (`public+protected`), or everything its person sees (`asUser`; restricted records\nalso need the `docs:read:restricted` scope)."
+      },
+      "AgentConnectionDto": {
+        "required": [
+          "id",
+          "clientId",
+          "clientName",
+          "clientUri",
+          "person",
+          "scopes",
+          "state",
+          "createdAt",
+          "lastUsedAt",
+          "revokedAt",
+          "pausedUntil",
+          "approvedAt",
+          "callsLastHour",
+          "openDrafts",
+          "lastActivity",
+          "demo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string",
+            "description": "OAuth client id: the URL of its metadata document, or the id given at registration."
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "clientUri": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "person": {
+            "description": "The person it acts for.",
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "`docs:read`, `docs:draft`, `docs:read:restricted`."
+          },
+          "state": {
+            "$ref": "#/components/schemas/AgentState"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "pausedUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "approvedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "callsLastHour": {
+            "type": "integer",
+            "description": "Calls since the start of the current hour (the quota window).",
+            "format": "int32"
+          },
+          "openDrafts": {
+            "type": "integer",
+            "description": "Drafts it has not submitted yet.",
+            "format": "int32"
+          },
+          "lastActivity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AgentActivityDto"
+              }
+            ]
+          },
+          "demo": {
+            "type": "boolean",
+            "description": "Made by the demo toolbox."
+          }
+        },
+        "description": "An AI agent connected by a person."
+      },
+      "AgentSettingsDto": {
+        "required": [
+          "enabled",
+          "ceiling",
+          "quotaPerHour",
+          "whoConnects",
+          "dynamicRegistration",
+          "anonymousLlms",
+          "mcpUrl",
+          "version",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "The MCP server and the OAuth endpoints answer. Off: every agent is refused, and nobody can connect one."
+          },
+          "ceiling": {
+            "description": "`public` (default): records visible to everyone, without protected notes. `public+protected`: the same with protected notes. `asUser`: what the person sees (restricted records also need the `docs:read:restricted` scope).",
+            "$ref": "#/components/schemas/AgentCeiling"
+          },
+          "quotaPerHour": {
+            "type": "integer",
+            "description": "Calls per hour and per connection; over it, the connection is paused until the next hour.",
+            "format": "int32"
+          },
+          "whoConnects": {
+            "description": "`anyMember`: everyone connects agents for themselves. `approvalRequired`: a new connection waits for an administrator.",
+            "$ref": "#/components/schemas/AgentWhoConnects"
+          },
+          "dynamicRegistration": {
+            "type": "boolean",
+            "description": "OAuth dynamic client registration (RFC 7591) is open, for clients without a Client ID Metadata Document."
+          },
+          "anonymousLlms": {
+            "type": "boolean",
+            "description": "`/llms.txt`, `/llms-full.txt` and the Markdown views answer without a session: records visible to everyone, without protected notes."
+          },
+          "mcpUrl": {
+            "type": "string",
+            "description": "Address of the MCP server, to paste in an agent's configuration."
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "Settings of AI agents (MCP server, OAuth, llms.txt)."
+      },
+      "AgentSettingsInput": {
+        "required": [
+          "enabled",
+          "ceiling",
+          "quotaPerHour",
+          "whoConnects",
+          "dynamicRegistration",
+          "anonymousLlms",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "ceiling": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AgentCeiling"
+              }
+            ]
+          },
+          "quotaPerHour": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "whoConnects": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AgentWhoConnects"
+              }
+            ]
+          },
+          "dynamicRegistration": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "anonymousLlms": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The version that was read (409 when someone saved in between).",
+            "format": "int32"
+          }
+        }
+      },
+      "AgentSettingsSummaryDto": {
+        "required": [
+          "enabled",
+          "ceiling",
+          "whoConnects",
+          "quotaPerHour",
+          "mcpUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "ceiling": {
+            "$ref": "#/components/schemas/AgentCeiling"
+          },
+          "whoConnects": {
+            "$ref": "#/components/schemas/AgentWhoConnects"
+          },
+          "quotaPerHour": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mcpUrl": {
+            "type": "string"
+          }
+        },
+        "description": "What the \"My agents\" page shows to its reader."
+      },
+      "AgentState": {
+        "enum": [
+          "pending",
+          "active",
+          "paused",
+          "revoked"
+        ],
+        "description": "`pending`: waits for an administrator's approval; `paused`: over the hourly quota; `revoked`: disconnected."
+      },
+      "AgentWhoConnects": {
+        "enum": [
+          "anyMember",
+          "approvalRequired"
+        ],
+        "description": "Who may connect an agent: any member, for themselves, or the same with an administrator's approval."
       },
       "ApplicationDetailDto": {
         "type": "object",
@@ -4485,6 +5657,28 @@
           "agent"
         ]
       },
+      "CapabilityDto": {
+        "required": [
+          "key",
+          "allowed",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "`read`, `draft`, `publish`, `restricted`, `protectedNotes` or `quota`."
+          },
+          "allowed": {
+            "type": "boolean",
+            "description": "false for what the agent cannot do."
+          },
+          "text": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          }
+        },
+        "description": "One line of \"What this agent can do\"."
+      },
       "ChangeOperation": {
         "enum": [
           "create",
@@ -4515,6 +5709,136 @@
             }
           }
         }
+      },
+      "ConsentApproveInput": {
+        "required": [
+          "scopes"
+        ],
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Optional: grant fewer scopes than asked."
+          }
+        }
+      },
+      "ConsentRequestDto": {
+        "required": [
+          "id",
+          "clientId",
+          "clientKind",
+          "clientName",
+          "clientUri",
+          "redirectHost",
+          "person",
+          "scopes",
+          "capabilities",
+          "ceiling",
+          "approvalRequired",
+          "alreadyConnected",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientKind": {
+            "$ref": "#/components/schemas/OAuthClientKind"
+          },
+          "clientName": {
+            "type": "string"
+          },
+          "clientUri": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "redirectHost": {
+            "type": "string",
+            "description": "Where the browser goes back after the decision."
+          },
+          "person": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsentScopeDto"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapabilityDto"
+            }
+          },
+          "ceiling": {
+            "$ref": "#/components/schemas/AgentCeiling"
+          },
+          "approvalRequired": {
+            "type": "boolean",
+            "description": "An administrator approves new connections before they work."
+          },
+          "alreadyConnected": {
+            "type": "boolean",
+            "description": "The person already has a connection with this client: approving replaces its access."
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "What the consent page shows: who asks, for whom, and what it will be allowed to do."
+      },
+      "ConsentResultDto": {
+        "required": [
+          "redirectTo",
+          "pendingApproval"
+        ],
+        "type": "object",
+        "properties": {
+          "redirectTo": {
+            "type": "string",
+            "description": "Where the consent page sends the browser: the agent's redirect URI with the code (or the error)."
+          },
+          "pendingApproval": {
+            "type": "boolean",
+            "description": "The connection waits for an administrator before it works."
+          }
+        }
+      },
+      "ConsentScopeDto": {
+        "required": [
+          "scope",
+          "grantable",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string"
+          },
+          "grantable": {
+            "type": "boolean",
+            "description": "false when the ceiling or the person's role does not allow it (it is then left out)."
+          },
+          "text": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          }
+        },
+        "description": "A scope asked by the agent."
       },
       "DataObjectDetailDto": {
         "type": "object",
@@ -4678,6 +6002,408 @@
               "integer"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "DemoAgentInput": {
+        "required": [
+          "scenario"
+        ],
+        "type": "object",
+        "properties": {
+          "scenario": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`draft`, `submit`, `refused` or `quota`."
+          }
+        }
+      },
+      "DemoAgentResultDto": {
+        "required": [
+          "scenario",
+          "connectionId",
+          "activity",
+          "proposalId",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "scenario": {
+            "type": "string"
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentActivityDto"
+            },
+            "description": "The activity lines written by the scenario, oldest first."
+          },
+          "proposalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoDecisionInput": {
+        "required": [
+          "proposalId",
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "decision": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`accept` or `refuse`."
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For a refusal; a default reason is given when empty."
+          }
+        }
+      },
+      "DemoDecisionResultDto": {
+        "required": [
+          "proposalId",
+          "status",
+          "decidedBy",
+          "refusalReason",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "refusalReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoEditResultDto": {
+        "required": [
+          "kind",
+          "id",
+          "version",
+          "author",
+          "outdatedProposals",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "description": "The new version: a save based on an older one now gets 409.",
+            "format": "int32"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "outdatedProposals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Open proposals on the record, outdated by this change."
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoGuestReadResultDto": {
+        "required": [
+          "kind",
+          "id",
+          "read",
+          "accessLogLines",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "read": {
+            "type": "boolean",
+            "description": "The guest could read the record in full."
+          },
+          "accessLogLines": {
+            "type": "integer",
+            "description": "Access log lines written by the read.",
+            "format": "int32"
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoNoticeDto": {
+        "required": [
+          "title",
+          "detail",
+          "link"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "link": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A path of the interface to open (`/review/…`)."
+          }
+        },
+        "description": "What the interface shows as a toast after a demo action, in the language of the signed-in user."
+      },
+      "DemoPersonaDto": {
+        "required": [
+          "username",
+          "displayName",
+          "role",
+          "teams",
+          "whatToTry",
+          "current"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamRefDto"
+            }
+          },
+          "whatToTry": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "description": "A demo account, with what to try with it."
+      },
+      "DemoProposalResultDto": {
+        "required": [
+          "proposalId",
+          "kind",
+          "id",
+          "author",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "proposalId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoRecordInput": {
+        "required": [
+          "kind",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`application`, `flow`, `dataObject` or `page`."
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DemoResetInput": {
+        "required": [
+          "confirm"
+        ],
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "DemoResetResultDto": {
+        "required": [
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoScenarioDto": {
+        "required": [
+          "id",
+          "endpoint",
+          "label",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "`edit`, `proposal`, `decision`, `agent:draft`, `agent:submit`, `agent:refused`, `agent:quota`, `guest-read`, `reset`."
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "The endpoint that runs it."
+          },
+          "label": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          },
+          "description": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          }
+        },
+        "description": "A demo action."
+      },
+      "DemoStateDto": {
+        "required": [
+          "personas",
+          "scenarios",
+          "current",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "personas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemoPersonaDto"
+            }
+          },
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemoScenarioDto"
+            }
+          },
+          "current": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The signed-in demo user; null when signed out."
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
+          }
+        }
+      },
+      "DemoSwitchInput": {
+        "required": [
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "DemoSwitchResultDto": {
+        "required": [
+          "me",
+          "notice"
+        ],
+        "type": "object",
+        "properties": {
+          "me": {
+            "$ref": "#/components/schemas/MeDto"
+          },
+          "notice": {
+            "$ref": "#/components/schemas/DemoNoticeDto"
           }
         }
       },
@@ -5806,6 +7532,22 @@
           "retired"
         ]
       },
+      "LocalizedTextDto": {
+        "required": [
+          "en",
+          "fr"
+        ],
+        "type": "object",
+        "properties": {
+          "en": {
+            "type": "string"
+          },
+          "fr": {
+            "type": "string"
+          }
+        },
+        "description": "A text in the two languages of the interface."
+      },
       "LoginInput": {
         "required": [
           "username",
@@ -5859,6 +7601,47 @@
           }
         },
         "description": "The signed-in user."
+      },
+      "MyAgentsDto": {
+        "required": [
+          "connections",
+          "drafts",
+          "proposals",
+          "settings"
+        ],
+        "type": "object",
+        "properties": {
+          "connections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentConnectionDto"
+            }
+          },
+          "drafts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalDto"
+            },
+            "description": "Drafts of the reader's agents (seen by nobody else but administrators)."
+          },
+          "proposals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalDto"
+            },
+            "description": "Proposals the reader's agents submitted, newest first."
+          },
+          "settings": {
+            "$ref": "#/components/schemas/AgentSettingsSummaryDto"
+          }
+        }
+      },
+      "OAuthClientKind": {
+        "enum": [
+          "metadataDocument",
+          "registered"
+        ],
+        "description": "`metadataDocument`: the client id is the https URL of its Client ID Metadata Document; `registered`: dynamic registration."
       },
       "PageDetailDto": {
         "required": [
@@ -6729,15 +8512,21 @@
             "$ref": "#/components/schemas/ProposalStatus"
           },
           "authorKind": {
+            "description": "`user`, or `agent` for a proposal written by an AI agent: `author` is then the person it acts for.",
             "$ref": "#/components/schemas/AuthorKind"
           },
           "author": {
             "$ref": "#/components/schemas/UserRefDto"
           },
           "onBehalfOf": {
-            "type": [
-              "null",
-              "string"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "For an agent's proposal: the person it acts for (the UI shows \"AI agent for &lt;person&gt;\").",
+                "$ref": "#/components/schemas/UserRefDto"
+              }
             ]
           },
           "createdAt": {
@@ -6798,13 +8587,28 @@
           },
           "canEdit": {
             "type": "boolean",
-            "description": "The reader is the author and may still edit, submit or withdraw it."
+            "description": "The reader is the author (for an agent's proposal: the person it acts for) and may still edit, submit or withdraw it."
           },
           "changes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProposalChangeDto"
             }
+          },
+          "agentName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For an agent's proposal: the name of the agent (its OAuth client name)."
+          },
+          "agentConnectionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For an agent's proposal: its connection.",
+            "format": "uuid"
           }
         },
         "description": "A change proposal."
@@ -7445,6 +9249,43 @@
           }
         }
       },
+      "StopAllInput": {
+        "required": [
+          "confirm"
+        ],
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Must be true."
+          }
+        }
+      },
+      "StopAllResultDto": {
+        "required": [
+          "revokedConnections",
+          "revokedTokens",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "revokedConnections": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "revokedTokens": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "TeamAccessDto": {
         "required": [
           "id",
@@ -7971,10 +9812,16 @@
       "name": "Exchange"
     },
     {
+      "name": "AI agents"
+    },
+    {
       "name": "History"
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "Demo"
     }
   ]
 }
