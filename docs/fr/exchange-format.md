@@ -16,7 +16,7 @@ source:
   exportedAt: 2026-10-30T09:00:00Z
 mode: full
 items:
-  - kind: Domain               # Domain, Team, Application, DataObject ou Flow
+  - kind: Domain               # Domain, Team, Application, DataObject, Flow ou Page
     id: finance                # kebab-case, unique par type
     metadata:
       name: Finance
@@ -37,8 +37,14 @@ n'importe quel ordre.
 | `Application` | `domainId` (obligatoire), `teamId`, `kind` (`app` par défaut, `bus`, `saas`, `data`, `file`, `external`), `tech`, `lifecycle` (`live` par défaut, `planned`, `retiring`, `retired`), `visibility` (`everyone` par défaut, `restricted`) |
 | `DataObject` | `sensitivity` (`internal` par défaut, `public`, `personal`, `sensitive`), `sourceApplicationId` |
 | `Flow` | `fromId`, `toId` (obligatoires), `type` (`api` par défaut, `event`, `batch`), `schedule`, `dataObjectIds` (liste), `ownerTeamId`, `status` (`live` par défaut, `planned`, `deprecated`), `volume`, `plannedChange` (`summary`, `date` au format AAAA-MM-JJ) |
+| `Page` | `body` (Markdown), `parentId` (une page), `order` (entier), `attachedTo` (`kind` : `application`, `flow`, `dataObject`, `domain` ou `team`, et `id`), `ownerTeamId`, `tags` (liste), `visibility` (`everyone` par défaut, `restricted`) |
 
-Les valeurs calculées (complétude, sensibilité des flux, `sourceOf`) ne figurent pas dans le fichier.
+Pour une `Page`, `metadata.name` est le titre et il n'y a pas de `metadata.description` : le texte est dans
+`spec.body`. Les liens wiki du texte (`[[application:billing]]`) sont gardés tels quels ; un lien vers un
+enregistrement absent est importé et affiché comme cassé. Les images ne font pas encore partie du format.
+
+Les valeurs calculées (complétude, sensibilité des flux, `sourceOf`, liens des pages) ne figurent pas dans le
+fichier, pas plus que l'historique, les propositions, les comptes et les appartenances aux équipes.
 
 ## Exemple
 
@@ -63,6 +69,25 @@ Les valeurs calculées (complétude, sensibilité des flux, `sourceOf`) ne figur
 
 La démonstration « Alizé » est un exemple complet : exportez-la depuis une instance de démonstration.
 
+Une page :
+
+```yaml
+  - kind: Page
+    id: replay-nightly-import
+    metadata:
+      name: Replay the nightly customer import
+    spec:
+      body: |
+        Use this runbook when [[flow:crm-to-billing-customers]] did not run.
+      parentId: operations
+      order: 1
+      attachedTo: { kind: flow, id: crm-to-billing-customers }
+      tags: [runbook, billing]
+      visibility: everyone
+```
+
+Les pages sont exportées après leur parente, pour que le fichier se lise de haut en bas.
+
 ## Règles d'import
 
 1. Tout le fichier est d'abord vérifié : l'enveloppe, chaque élément (type, identifiant, clés connues, valeurs) et
@@ -70,7 +95,8 @@ La démonstration « Alizé » est un exemple complet : exportez-la depuis une i
    s'arrête et rien n'est écrit. Chaque erreur porte `index`, `kind`, `id`, `path` (comme `items[3].spec.fromId`) et
    `message`.
 2. Ensuite chaque élément est créé, ou mis à jour si un enregistrement de ce type et de cet identifiant existe (sa
-   `version` augmente). Les éléments identiques à l'enregistrement comptent comme `unchanged`.
+   `version` augmente). Les éléments identiques à l'enregistrement comptent comme `unchanged`. Chaque enregistrement
+   créé ou modifié reçoit une révision (« Imported », au nom de l'administrateur qui importe).
 3. Un import ne supprime jamais rien.
 
 `dryRun=true` (API) ou `--dry-run` (ligne de commande) ne fait que les vérifications et les comptes. Seuls les

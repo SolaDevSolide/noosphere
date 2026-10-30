@@ -8,13 +8,13 @@ Every setting is an environment variable starting with `NOOSPHERE_`. With Docker
 | Variable                     | Default                                   | Description |
 | ---------------------------- | ----------------------------------------- | ----------- |
 | `NOOSPHERE_DATABASE`         | (required)                                | PostgreSQL connection string, e.g. `Host=db;Port=5432;Database=noosphere;Username=noosphere;Password=...`. |
-| `NOOSPHERE_DEMO`             | `false`                                   | `true` loads the "Alizé" demo landscape when the database is empty and creates the accounts `alice` (admin), `bob` (member) and `claire` (guest) with the password `demo`. |
+| `NOOSPHERE_DEMO`             | `false`                                   | `true` loads the "Alizé" demo landscape when the database is empty (with pages, history and proposals) and creates the accounts `alice` (admin), `bob` (member of Team Finance and Team Payments), `claire` (guest) and `david` (member of Team CRM) with the password `demo`. |
 | `NOOSPHERE_ADMIN_USERNAME`   | `admin`                                   | Username of the first administrator, created at startup when there is no account at all (outside demo mode). |
 | `NOOSPHERE_ADMIN_PASSWORD`   | (empty)                                   | Its password, at least 8 characters. Empty: a random password is written once to the log. Change it after the first sign-in. |
 | `NOOSPHERE_LOGIN_RATE_LIMIT` | `10`                                      | Sign-in attempts allowed per minute and per client address; beyond, 429. |
 | `NOOSPHERE_KEYS_DIR`         | `/data/keys` in the image                 | Where the keys that protect session cookies are stored. Without it, sessions end at each restart of a container. |
 | `NOOSPHERE_BACKUPS_DIR`      | `/data/backups` in the image              | Before migrating a database that holds data, every table is copied there as JSON. Empty: no backup (a warning is logged). |
-| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`                               | Written as `source.name` in exports. |
+| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`                               | Instance name until an administrator sets one in the settings (`PUT /api/settings`); shown in the header and written as `source.name` in exports. |
 | `NOOSPHERE_PUBLIC_URL`       | (address of the request)                  | Written as `source.url` in exports, e.g. `https://noosphere.example.com`. |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (none; `172.16.0.0/12` in the compose file) | Networks (CIDR) or addresses of the reverse proxy allowed to send `X-Forwarded-For` and `X-Forwarded-Proto`. |
 
@@ -23,11 +23,20 @@ Standard ASP.NET Core variables also apply, for example `ASPNETCORE_URLS` (the i
 
 ## Roles
 
-| Role     | Read | Create and edit | Delete, import, manage users | See restricted applications |
-| -------- | ---- | --------------- | ---------------------------- | --------------------------- |
-| `admin`  | yes  | yes             | yes                          | yes                         |
-| `member` | yes  | yes             | no                           | no                          |
-| `guest`  | yes  | no              | no                           | no                          |
+| Role     | Read | Publish changes | Propose changes | Domains, teams, import, users, settings, trash | See restricted records |
+| -------- | ---- | --------------- | --------------- | ---------------------------------------------- | ---------------------- |
+| `admin`  | yes  | yes             | yes             | yes                                            | yes                    |
+| `member` | yes  | records owned by their teams | yes | no                                       | no                     |
+| `guest`  | yes  | no              | no              | no                                             | no                     |
+
+Members publish (create, edit, delete, restore) the records owned by one of their teams and send proposals for the
+others: see [proposals and validation](proposals.md). Administrators manage team memberships.
 
 Readers who may not see a restricted application get only its id and domain, and the flows touching it only with
-their id, ends and type.
+their id, ends and type. Restricted pages are shown as `{id, restricted: true, parentId, order}`.
+
+## Instance settings
+
+Administrators set the instance name (default "Noosphere"), the organisation name and the default language of new
+accounts in the settings (`GET/PUT /api/settings`). The header shows the instance name with the organisation name
+under it, and the browser tab uses the instance name. The technical name `noosphere` does not change.

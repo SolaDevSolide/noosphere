@@ -42,7 +42,7 @@ public class ExchangeTests : IDisposable
         Assert.Equal(("noosphere/v1", "full"), (envelope.Str("formatVersion"), envelope.Str("mode")));
         Assert.Equal("Noosphere", envelope.GetProperty("source").Str("name"));
         var kinds = envelope.GetProperty("items").EnumerateArray().GroupBy(i => i.Str("kind")).ToDictionary(g => g.Key, g => g.Count());
-        Assert.Equal(new Dictionary<string, int> { ["Domain"] = 6, ["Team"] = 11, ["Application"] = 20, ["DataObject"] = 5, ["Flow"] = 36 }, kinds);
+        Assert.Equal(new Dictionary<string, int> { ["Domain"] = 6, ["Team"] = 11, ["Application"] = 20, ["DataObject"] = 5, ["Flow"] = 36, ["Page"] = 7 }, kinds);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class ExchangeTests : IDisposable
         var yaml = await response.Content.ReadAsStringAsync();
         Assert.Contains("formatVersion: noosphere/v1", yaml, StringComparison.Ordinal);
         var result = await (await alice.PostAsync("/api/import", Body(yaml, "application/yaml"))).Read();
-        Assert.Equal((0, 0, 78, true), (result.GetProperty("created").GetInt32(), result.GetProperty("updated").GetInt32(),
+        Assert.Equal((0, 0, 85, true), (result.GetProperty("created").GetInt32(), result.GetProperty("updated").GetInt32(),
             result.GetProperty("unchanged").GetInt32(), result.GetProperty("applied").GetBoolean()));
     }
 

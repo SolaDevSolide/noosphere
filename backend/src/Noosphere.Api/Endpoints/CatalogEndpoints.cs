@@ -35,8 +35,9 @@ public sealed record FilterQuery(
 }
 
 /// <summary>
-/// CRUD of domains, teams, applications, data objects and flows. Everyone signed in reads; members and administrators
-/// create and edit; administrators delete.
+/// CRUD of domains, teams, applications, data objects and flows. Everyone signed in reads. Administrators and members of
+/// the owning team create, edit and delete (each change adds a revision); other members send proposals instead (403 here).
+/// Domains and teams are changed by administrators only.
 /// </summary>
 public static class CatalogEndpoints
 {
@@ -48,10 +49,20 @@ public static class CatalogEndpoints
             var filter = query.ToFilter();
             return (await db.Domains.AsNoTracking().OrderBy(d => d.Order).ThenBy(d => d.Id).ToListAsync()).Where(filter.Matches).Select(Snapshot.Dto).ToList();
         });
-        domains.MapGet("/{id}", async (string id, NoosphereDbContext db) => Snapshot.Dto(await Find(db.Domains, id, "domain")));
-        domains.MapPost("", CreateDomain).RequireEditor().Produces<DomainDto>(StatusCodes.Status201Created);
-        domains.MapPut("/{id}", UpdateDomain).RequireEditor();
-        domains.MapDelete("/{id}", DeleteDomain).RequireAdmin();
+        domains.MapGet("/{id}", async (string id, ClaimsPrincipal user, NoosphereDbContext db) =>
+        {
+            var e = (BusinessDomain)await Find(db, Records.Domain, id);
+            var access = await Access.Load(db, user);
+            return new DomainDetailDto(Snapshot.Dto(e), await RecordContext.Of(db, access, Records.Domain, e));
+        });
+        domains.MapPost("", (DomainInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Create(Records.Domain, input, user, db, clock, e => Task.FromResult<object>(Snapshot.Dto((BusinessDomain)e))))
+            .RequireEditor().Produces<DomainDto>(StatusCodes.Status201Created);
+        domains.MapPut("/{id}", async (string id, DomainInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Snapshot.Dto((BusinessDomain)await Update(Records.Domain, id, input, input.Id, input.Version, user, db, clock)))
+            .RequireEditor();
+        domains.MapDelete("/{id}", (string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) => Delete(Records.Domain, id, user, db, clock))
+            .RequireEditor();
 
         var teams = api.MapGroup("/teams").WithTags("Teams");
         teams.MapGet("", async ([AsParameters] FilterQuery query, NoosphereDbContext db) =>
@@ -59,10 +70,40 @@ public static class CatalogEndpoints
             var filter = query.ToFilter();
             return (await db.Teams.AsNoTracking().OrderBy(t => t.Id).ToListAsync()).Where(filter.Matches).Select(Snapshot.Dto).ToList();
         });
-        teams.MapGet("/{id}", async (string id, NoosphereDbContext db) => Snapshot.Dto(await Find(db.Teams, id, "team")));
-        teams.MapPost("", CreateTeam).RequireEditor().Produces<TeamDto>(StatusCodes.Status201Created);
-        teams.MapPut("/{id}", UpdateTeam).RequireEditor();
-        teams.MapDelete("/{id}", DeleteTeam).RequireAdmin();
+        teams.MapGet("/{id}", async (string id, ClaimsPrincipal user, NoosphereDbContext db) =>
+        {
+            var e = (Team)await Find(db, Records.Team, id);
+            var access = await Access.Load(db, user);
+            return new TeamDetailDto(Snapshot.Dto(e), await RecordContext.Of(db, access, Records.Team, e), await Members(db, id));
+        });
+        teams.MapPost("", (TeamInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Create(Records.Team, input, user, db, clock, e => Task.FromResult<object>(Snapshot.Dto((Team)e))))
+            .RequireEditor().Produces<TeamDto>(StatusCodes.Status201Created);
+        teams.MapPut("/{id}", async (string id, TeamInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Snapshot.Dto((Team)await Update(Records.Team, id, input, input.Id, input.Version, user, db, clock)))
+            .RequireEditor();
+        teams.MapDelete("/{id}", (string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) => Delete(Records.Team, id, user, db, clock))
+            .RequireEditor();
+        teams.MapGet("/{id}/members", async (string id, NoosphereDbContext db) =>
+        {
+            await Find(db, Records.Team, id);
+            return await Members(db, id);
+        });
+        teams.MapPut("/{id}/members", async (string id, TeamMembersInput input, NoosphereDbContext db) =>
+        {
+            await Find(db, Records.Team, id);
+            var names = (input.Usernames ?? []).Select(Accounts.NormalizeUsername).Where(n => n.Length > 0).Distinct().ToList();
+            var users = await db.Users.Where(u => names.Contains(u.Username)).Select(u => new { u.Id, u.Username }).ToListAsync();
+            var errors = new FieldErrors();
+            foreach (var unknown in names.Where(n => users.All(u => u.Username != n))) errors.Add("usernames", $"No user named '{unknown}'.");
+            errors.ThrowIfAny();
+            var ids = users.Select(u => u.Id).ToHashSet();
+            var current = await db.TeamMembers.Where(m => m.TeamId == id).ToListAsync();
+            db.TeamMembers.RemoveRange(current.Where(m => !ids.Contains(m.UserId)));
+            foreach (var user in ids.Where(u => current.All(m => m.UserId != u))) db.TeamMembers.Add(new TeamMember { UserId = user, TeamId = id });
+            await db.SaveChangesAsync();
+            return await Members(db, id);
+        }).RequireAdmin();
 
         var apps = api.MapGroup("/applications").WithTags("Applications");
         apps.MapGet("", async ([AsParameters] FilterQuery query, ClaimsPrincipal user, NoosphereDbContext db) =>
@@ -75,12 +116,21 @@ public static class CatalogEndpoints
         apps.MapGet("/{id}", async (string id, ClaimsPrincipal user, NoosphereDbContext db) =>
         {
             var s = await Snapshot.Load(db);
-            var app = s.AppsById.GetValueOrDefault(id) ?? throw NotFound("application", id);
-            return Results.Ok(s.View(app, Viewer.From(user)));
-        }).Produces<ApplicationDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
-        apps.MapPost("", CreateApplication).RequireEditor().Produces<ApplicationDto>(StatusCodes.Status201Created);
-        apps.MapPut("/{id}", UpdateApplication).RequireEditor();
-        apps.MapDelete("/{id}", DeleteApplication).RequireAdmin();
+            var app = s.AppsById.GetValueOrDefault(id) ?? throw NotFound(Records.Application, id);
+            var access = await Access.Load(db, user);
+            if (s.Hidden(app, access.Viewer)) return Results.Ok(s.View(app, access.Viewer));
+            return Results.Ok(new ApplicationDetailDto(s.Dto(app), await RecordContext.Of(db, access, Records.Application, app)));
+        }).Produces<ApplicationDetailDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
+        apps.MapPost("", (ApplicationInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Create(Records.Application, input, user, db, clock, async e => (await Snapshot.Load(db)).Dto((Application)e)))
+            .RequireEditor().Produces<ApplicationDto>(StatusCodes.Status201Created);
+        apps.MapPut("/{id}", async (string id, ApplicationInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+        {
+            var e = await Update(Records.Application, id, input, input.Id, input.Version, user, db, clock);
+            return (await Snapshot.Load(db)).Dto((Application)e);
+        }).RequireEditor();
+        apps.MapDelete("/{id}", (string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) => Delete(Records.Application, id, user, db, clock))
+            .RequireEditor();
 
         var objects = api.MapGroup("/data-objects").WithTags("Data objects");
         objects.MapGet("", async ([AsParameters] FilterQuery query, NoosphereDbContext db) =>
@@ -88,10 +138,20 @@ public static class CatalogEndpoints
             var filter = query.ToFilter();
             return (await db.DataObjects.AsNoTracking().OrderBy(o => o.Id).ToListAsync()).Where(filter.Matches).Select(Snapshot.Dto).ToList();
         });
-        objects.MapGet("/{id}", async (string id, NoosphereDbContext db) => Snapshot.Dto(await Find(db.DataObjects, id, "data object")));
-        objects.MapPost("", CreateDataObject).RequireEditor().Produces<DataObjectDto>(StatusCodes.Status201Created);
-        objects.MapPut("/{id}", UpdateDataObject).RequireEditor();
-        objects.MapDelete("/{id}", DeleteDataObject).RequireAdmin();
+        objects.MapGet("/{id}", async (string id, ClaimsPrincipal user, NoosphereDbContext db) =>
+        {
+            var e = (DataObject)await Find(db, Records.DataObject, id);
+            var access = await Access.Load(db, user);
+            return new DataObjectDetailDto(Snapshot.Dto(e), await RecordContext.Of(db, access, Records.DataObject, e));
+        });
+        objects.MapPost("", (DataObjectInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Create(Records.DataObject, input, user, db, clock, e => Task.FromResult<object>(Snapshot.Dto((DataObject)e))))
+            .RequireEditor().Produces<DataObjectDto>(StatusCodes.Status201Created);
+        objects.MapPut("/{id}", async (string id, DataObjectInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Snapshot.Dto((DataObject)await Update(Records.DataObject, id, input, input.Id, input.Version, user, db, clock)))
+            .RequireEditor();
+        objects.MapDelete("/{id}", (string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) => Delete(Records.DataObject, id, user, db, clock))
+            .RequireEditor();
 
         var flows = api.MapGroup("/flows").WithTags("Flows");
         flows.MapGet("", async ([AsParameters] FilterQuery query, ClaimsPrincipal user, NoosphereDbContext db) =>
@@ -104,241 +164,77 @@ public static class CatalogEndpoints
         flows.MapGet("/{id}", async (string id, ClaimsPrincipal user, NoosphereDbContext db) =>
         {
             var s = await Snapshot.Load(db);
-            var flow = s.Flows.FirstOrDefault(f => f.Id == id) ?? throw NotFound("flow", id);
-            return Results.Ok(s.View(flow, Viewer.From(user)));
-        }).Produces<FlowDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
-        flows.MapPost("", CreateFlow).RequireEditor().Produces<FlowDto>(StatusCodes.Status201Created);
-        flows.MapPut("/{id}", UpdateFlow).RequireEditor();
-        flows.MapDelete("/{id}", DeleteFlow).RequireAdmin();
+            var flow = s.Flows.FirstOrDefault(f => f.Id == id) ?? throw NotFound(Records.Flow, id);
+            var access = await Access.Load(db, user);
+            if (s.Hidden(flow, access.Viewer)) return Results.Ok(s.View(flow, access.Viewer));
+            return Results.Ok(new FlowDetailDto(s.Dto(flow), await RecordContext.Of(db, access, Records.Flow, flow)));
+        }).Produces<FlowDetailDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
+        flows.MapPost("", (FlowInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+            Create(Records.Flow, input, user, db, clock, async e => (await Snapshot.Load(db)).Dto((Flow)e)))
+            .RequireEditor().Produces<FlowDto>(StatusCodes.Status201Created);
+        flows.MapPut("/{id}", async (string id, FlowInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+        {
+            var e = await Update(Records.Flow, id, input, input.Id, input.Version, user, db, clock);
+            return (await Snapshot.Load(db)).Dto((Flow)e);
+        }).RequireEditor();
+        flows.MapDelete("/{id}", (string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) => Delete(Records.Flow, id, user, db, clock))
+            .RequireEditor();
     }
 
-    // ---------- Domains ----------
+    private static async Task<List<TeamMemberDto>> Members(NoosphereDbContext db, string teamId) =>
+        await db.TeamMembers.Where(m => m.TeamId == teamId)
+            .Join(db.Users, m => m.UserId, u => u.Id, (_, u) => u)
+            .OrderBy(u => u.Username).Select(u => new TeamMemberDto(u.Username, u.DisplayName, u.Role)).ToListAsync();
 
-    private static async Task<IResult> CreateDomain(DomainInput input, NoosphereDbContext db, TimeProvider clock)
+    // ---------- Shared write paths (also used by pages) ----------
+
+    public static ApiProblem NotFound(RecordType type, string id) => ApiProblem.NotFound($"No {type.Noun} with the id '{id}'.");
+
+    public static async Task<VersionedEntity> Find(NoosphereDbContext db, RecordType type, string id, bool tracked = false) =>
+        await type.Find(db, id, tracked) ?? throw NotFound(type, id);
+
+    /// <summary>Creates a record when the reader may publish it (the owner is that of the new record).</summary>
+    public static async Task<IResult> Create<TInput>(RecordType type, TInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock,
+        Func<VersionedEntity, Task<object>> dto)
     {
-        var errors = new FieldErrors();
-        var e = new BusinessDomain();
-        Catalog.Apply(e, input, errors);
-        e.Id = Catalog.NewId(input.Id, e.Name, await Ids(db.Domains), errors);
-        errors.ThrowIfAny();
-        Created(e, clock);
-        db.Domains.Add(e);
+        var access = await Access.Load(db, user);
+        var publisher = new Publisher(db, clock.GetUtcNow());
+        var e = await publisher.Create(type, Records.ToSnapshot(input), Author.Of(access.Viewer), await References.Load(db));
+        access.RequirePublish(type.Kind, e);
         await db.SaveChangesAsync();
-        return Results.Created($"/api/domains/{e.Id}", Snapshot.Dto(e));
+        return Results.Created($"/api/{type.Plural}/{e.Id}", await dto(e));
     }
 
-    private static async Task<DomainDto> UpdateDomain(string id, DomainInput input, NoosphereDbContext db, TimeProvider clock)
+    /// <summary>
+    /// Replaces a record when the reader may publish changes to it (the owner is that of the current record). The body
+    /// carries the version that was read (400 without it, 409 when someone saved in between).
+    /// </summary>
+    public static async Task<VersionedEntity> Update<TInput>(RecordType type, string id, TInput input, string? bodyId, int? version,
+        ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock)
     {
-        var e = await Find(db.Domains, id, "domain", tracked: true);
-        CheckVersion(e, input.Id, input.Version);
-        var errors = new FieldErrors();
-        Catalog.Apply(e, input, errors);
-        errors.ThrowIfAny();
-        Updated(e, clock);
-        await db.SaveChangesAsync();
-        return Snapshot.Dto(e);
-    }
-
-    private static async Task<IResult> DeleteDomain(string id, NoosphereDbContext db)
-    {
-        var e = await Find(db.Domains, id, "domain", tracked: true);
-        var apps = await db.Applications.CountAsync(a => a.DomainId == id);
-        if (apps > 0) throw ApiProblem.Conflict($"This domain still holds {apps} application(s). Move or delete them first.");
-        db.Domains.Remove(e);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    // ---------- Teams ----------
-
-    private static async Task<IResult> CreateTeam(TeamInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var errors = new FieldErrors();
-        var e = new Team();
-        Catalog.Apply(e, input, errors);
-        e.Id = Catalog.NewId(input.Id, e.Name, await Ids(db.Teams), errors);
-        errors.ThrowIfAny();
-        Created(e, clock);
-        db.Teams.Add(e);
-        await db.SaveChangesAsync();
-        return Results.Created($"/api/teams/{e.Id}", Snapshot.Dto(e));
-    }
-
-    private static async Task<TeamDto> UpdateTeam(string id, TeamInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var e = await Find(db.Teams, id, "team", tracked: true);
-        CheckVersion(e, input.Id, input.Version);
-        var errors = new FieldErrors();
-        Catalog.Apply(e, input, errors);
-        errors.ThrowIfAny();
-        Updated(e, clock);
-        await db.SaveChangesAsync();
-        return Snapshot.Dto(e);
-    }
-
-    private static async Task<IResult> DeleteTeam(string id, NoosphereDbContext db)
-    {
-        var e = await Find(db.Teams, id, "team", tracked: true);
-        var apps = await db.Applications.CountAsync(a => a.TeamId == id);
-        var flows = await db.Flows.CountAsync(f => f.OwnerTeamId == id);
-        if (apps + flows > 0)
-            throw ApiProblem.Conflict($"This team still owns {apps} application(s) and {flows} flow(s). Reassign them first.");
-        db.Teams.Remove(e);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    // ---------- Applications ----------
-
-    private static async Task<IResult> CreateApplication(ApplicationInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var errors = new FieldErrors();
-        var refs = await References.Load(db);
-        var e = new Application();
-        Catalog.Apply(e, input, errors, refs);
-        e.Id = Catalog.NewId(input.Id, e.Name, refs.Applications, errors);
-        errors.ThrowIfAny();
-        Created(e, clock);
-        db.Applications.Add(e);
-        await db.SaveChangesAsync();
-        return Results.Created($"/api/applications/{e.Id}", (await Snapshot.Load(db)).Dto(e));
-    }
-
-    private static async Task<ApplicationDto> UpdateApplication(string id, ApplicationInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock)
-    {
-        var e = await Find(db.Applications, id, "application", tracked: true);
-        ForbidRestricted(e, user);
-        CheckVersion(e, input.Id, input.Version);
-        var errors = new FieldErrors();
-        Catalog.Apply(e, input, errors, await References.Load(db));
-        errors.ThrowIfAny();
-        Updated(e, clock);
-        await db.SaveChangesAsync();
-        return (await Snapshot.Load(db)).Dto(e);
-    }
-
-    private static async Task<IResult> DeleteApplication(string id, NoosphereDbContext db)
-    {
-        var e = await Find(db.Applications, id, "application", tracked: true);
-        var flows = await db.Flows.CountAsync(f => f.FromId == id || f.ToId == id);
-        var objects = await db.DataObjects.CountAsync(o => o.SourceApplicationId == id);
-        if (flows + objects > 0)
-            throw ApiProblem.Conflict($"This application still has {flows} flow(s) and is the source of {objects} data object(s). Remove them first.");
-        db.Applications.Remove(e);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    // ---------- Data objects ----------
-
-    private static async Task<IResult> CreateDataObject(DataObjectInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var errors = new FieldErrors();
-        var refs = await References.Load(db);
-        var e = new DataObject();
-        Catalog.Apply(e, input, errors, refs);
-        e.Id = Catalog.NewId(input.Id, e.Name, refs.DataObjects, errors);
-        errors.ThrowIfAny();
-        Created(e, clock);
-        db.DataObjects.Add(e);
-        await db.SaveChangesAsync();
-        return Results.Created($"/api/data-objects/{e.Id}", Snapshot.Dto(e));
-    }
-
-    private static async Task<DataObjectDto> UpdateDataObject(string id, DataObjectInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var e = await Find(db.DataObjects, id, "data object", tracked: true);
-        CheckVersion(e, input.Id, input.Version);
-        var errors = new FieldErrors();
-        Catalog.Apply(e, input, errors, await References.Load(db));
-        errors.ThrowIfAny();
-        Updated(e, clock);
-        await db.SaveChangesAsync();
-        return Snapshot.Dto(e);
-    }
-
-    private static async Task<IResult> DeleteDataObject(string id, NoosphereDbContext db)
-    {
-        var e = await Find(db.DataObjects, id, "data object", tracked: true);
-        var flows = await db.Flows.CountAsync(f => f.DataObjectIds.Contains(id));
-        if (flows > 0) throw ApiProblem.Conflict($"{flows} flow(s) still carry this data object. Remove it from them first.");
-        db.DataObjects.Remove(e);
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    // ---------- Flows ----------
-
-    private static async Task<IResult> CreateFlow(FlowInput input, NoosphereDbContext db, TimeProvider clock)
-    {
-        var errors = new FieldErrors();
-        var e = new Flow();
-        Catalog.Apply(e, input, errors, await References.Load(db));
-        e.Id = Catalog.NewId(input.Id, e.Name, await Ids(db.Flows), errors);
-        errors.ThrowIfAny();
-        Created(e, clock);
-        db.Flows.Add(e);
-        await db.SaveChangesAsync();
-        return Results.Created($"/api/flows/{e.Id}", (await Snapshot.Load(db)).Dto(e));
-    }
-
-    private static async Task<FlowDto> UpdateFlow(string id, FlowInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock)
-    {
-        var e = await Find(db.Flows, id, "flow", tracked: true);
-        var viewer = Viewer.From(user);
-        if (!viewer.SeesRestricted && await db.Applications.AnyAsync(a => (a.Id == e.FromId || a.Id == e.ToId) && a.Visibility == Visibility.Restricted))
-            throw ApiProblem.Forbidden("This flow touches a restricted application: only administrators can change it.");
-        CheckVersion(e, input.Id, input.Version);
-        var errors = new FieldErrors();
-        Catalog.Apply(e, input, errors, await References.Load(db));
-        errors.ThrowIfAny();
-        Updated(e, clock);
-        await db.SaveChangesAsync();
-        return (await Snapshot.Load(db)).Dto(e);
-    }
-
-    private static async Task<IResult> DeleteFlow(string id, NoosphereDbContext db)
-    {
-        db.Flows.Remove(await Find(db.Flows, id, "flow", tracked: true));
-        await db.SaveChangesAsync();
-        return Results.NoContent();
-    }
-
-    // ---------- Helpers ----------
-
-    private static ApiProblem NotFound(string what, string id) => ApiProblem.NotFound($"No {what} with the id '{id}'.");
-
-    private static async Task<T> Find<T>(DbSet<T> set, string id, string what, bool tracked = false) where T : LandscapeEntity =>
-        await (tracked ? set : set.AsNoTracking()).FirstOrDefaultAsync(e => e.Id == id) ?? throw NotFound(what, id);
-
-    private static async Task<HashSet<string>> Ids<T>(DbSet<T> set) where T : LandscapeEntity =>
-        (await set.Select(e => e.Id).ToListAsync()).ToHashSet();
-
-    private static void ForbidRestricted(Application app, ClaimsPrincipal user)
-    {
-        if (app.Visibility == Visibility.Restricted && !Viewer.From(user).SeesRestricted)
-            throw ApiProblem.Forbidden("This application is restricted: only administrators can change it.");
-    }
-
-    /// <summary>A PUT carries the version that was read (400 without it, 409 when someone saved in between).</summary>
-    private static void CheckVersion(LandscapeEntity e, string? bodyId, int? version)
-    {
+        var e = await Find(db, type, id, tracked: true);
+        var access = await Access.Load(db, user);
+        access.RequirePublish(type.Kind, e);
         var errors = new FieldErrors();
         if (bodyId is { Length: > 0 } && bodyId != e.Id) errors.Add("id", "Ids cannot be changed.");
         if (version is null) errors.Add("version", "This field is required.");
         errors.ThrowIfAny();
         if (version != e.Version) throw ApiProblem.Stale();
+        new Publisher(db, clock.GetUtcNow()).Update(type, e, Records.ToSnapshot(input), Author.Of(access.Viewer), await References.Load(db));
+        if (!access.Viewer.SeesRestricted && access.Facts.Restricted(type.Kind, e))
+            throw ApiProblem.Forbidden($"Only administrators make a {type.Noun} restricted.");
+        await db.SaveChangesAsync();
+        return e;
     }
 
-    private static void Created(LandscapeEntity e, TimeProvider clock)
+    /// <summary>Deletes a record when the reader may publish changes to it. Its history is kept (trash).</summary>
+    public static async Task<IResult> Delete(RecordType type, string id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock)
     {
-        e.CreatedAt = e.UpdatedAt = clock.GetUtcNow();
-        e.Version = 1;
-    }
-
-    private static void Updated(LandscapeEntity e, TimeProvider clock)
-    {
-        e.UpdatedAt = clock.GetUtcNow();
-        e.Version++;
+        var e = await Find(db, type, id, tracked: true);
+        var access = await Access.Load(db, user);
+        access.RequirePublish(type.Kind, e);
+        await new Publisher(db, clock.GetUtcNow()).Delete(type, e, Author.Of(access.Viewer));
+        await db.SaveChangesAsync();
+        return Results.NoContent();
     }
 }

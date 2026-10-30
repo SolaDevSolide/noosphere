@@ -2776,7 +2776,7 @@ export interface components {
             items: components["schemas"]["ExchangeItemDto"][];
         };
         ExchangeItemDto: {
-            /** @description `Domain`, `Team`, `Application`, `DataObject` or `Flow`. */
+            /** @description `Domain`, `Team`, `Application`, `DataObject`, `Flow` or `Page`. */
             kind: string;
             id: string;
             metadata: components["schemas"]["ExchangeMetadataDto"];

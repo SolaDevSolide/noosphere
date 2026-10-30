@@ -4038,7 +4038,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "description": "`Domain`, `Team`, `Application`, `DataObject` or `Flow`."
+            "description": "`Domain`, `Team`, `Application`, `DataObject`, `Flow` or `Page`."
           },
           "id": {
             "type": "string"

@@ -228,7 +228,7 @@ public static class CommandLine
             case "users" when p.Count >= 2 && p[1] == "list":
                 Expect(p, 2);
                 var users = await db.Users.AsNoTracking().OrderBy(u => u.Username).ToListAsync();
-                if (output.Json) await output.Out.WriteLineAsync(JsonSerializer.Serialize(users.Select(Accounts.Dto), JsonOutput));
+                if (output.Json) await output.Out.WriteLineAsync(JsonSerializer.Serialize(await Accounts.Dtos(db, users), JsonOutput));
                 else
                 {
                     await output.Out.WriteLineAsync($"{"USERNAME",-20} {"ROLE",-8} {"LANGUAGE",-8} DISPLAY NAME");
@@ -256,8 +256,8 @@ public static class CommandLine
                 await using (var transaction = await db.Database.BeginTransactionAsync())
                 {
                     await Bootstrap.ClearLandscape(db);
-                    await Bootstrap.LoadDemoLandscape(db, now);
                     await Bootstrap.EnsureDemoUsers(db, sp.GetRequiredService<IPasswordHasher<User>>(), now, resetPasswords: true);
+                    await Bootstrap.LoadDemo(db, now);
                     await transaction.CommitAsync();
                 }
                 await Done(output, "Demo landscape and demo accounts reset.", null);
@@ -298,7 +298,7 @@ public static class CommandLine
         db.Users.Add(user);
         await db.SaveChangesAsync();
         await Done(output, $"User {username} created ({role.ToString().ToLowerInvariant()})." + (generated ? $" Password: {password}" : ""),
-            new { user = Accounts.Dto(user), password = generated ? password : null });
+            new { user = Accounts.Dto(user, []), password = generated ? password : null });
         return ExitCodes.Success;
     }
 
@@ -332,8 +332,8 @@ public static class CommandLine
         var format = (o["--format"] ?? (o["--output"] is { } f && (f.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".yml", StringComparison.OrdinalIgnoreCase)) ? "yaml" : "json")).ToLowerInvariant();
         if (format is not ("json" or "yaml")) throw new UsageException("--format expects json or yaml.");
         var settings = sp.GetRequiredService<Settings>();
-        var envelope = ExchangeFormat.Export(await Snapshot.Load(db), Viewer.System,
-            new Contracts.ExchangeSourceDto(settings.InstanceName, settings.PublicUrl, sp.GetRequiredService<TimeProvider>().GetUtcNow()));
+        var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), Viewer.System,
+            new Contracts.ExchangeSourceDto((await Endpoints.InstanceSettingsStore.Get(db, settings)).InstanceName, settings.PublicUrl, sp.GetRequiredService<TimeProvider>().GetUtcNow()));
         var text = format == "yaml" ? ExchangeFormat.ToYaml(envelope) : ExchangeFormat.ToJson(envelope);
         if (o["--output"] is { } file)
         {

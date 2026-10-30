@@ -18,9 +18,9 @@ Hors Docker : `dotnet Noosphere.dll <commande>`.
 | `noosphere users list` | Liste les comptes. |
 | `noosphere users create <username> [--role admin\|member\|guest] [--display-name <nom>] [--language en\|fr] [--password <p>]` | Crée un compte (`member` par défaut). Sans `--password`, un mot de passe aléatoire est généré et affiché une seule fois. |
 | `noosphere users reset-password <username> [--password <p>]` | Pose un nouveau mot de passe (généré s'il n'est pas donné) et ferme les sessions du compte. |
-| `noosphere export [--format json\|yaml] [--output <fichier>]` | Écrit tout le paysage, applications restreintes comprises, sur la sortie standard ou dans un fichier. |
+| `noosphere export [--format json\|yaml] [--output <fichier>]` | Écrit tout le paysage et ses pages, enregistrements restreints compris, sur la sortie standard ou dans un fichier. |
 | `noosphere import <fichier\|-> [--dry-run] [--format json\|yaml]` | Vérifie un fichier, puis crée ou met à jour ses éléments. `-` lit l'entrée standard. Le format vient de l'extension, ou est deviné. |
-| `noosphere demo reset --yes` | Remplace tout le paysage par la démonstration « Alizé » et réinitialise les comptes de démonstration. Mode démonstration seulement. |
+| `noosphere demo reset --yes` | Remplace tout le paysage, ses pages, son historique et ses propositions par la démonstration « Alizé » et réinitialise les comptes de démonstration. Mode démonstration seulement. |
 | `noosphere health [--url <url>]` | Renvoie 0 quand le serveur en marche est prêt. Sert au `HEALTHCHECK` de l'image. |
 | `noosphere version` | Affiche la version. |
 

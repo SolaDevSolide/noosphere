@@ -10,7 +10,7 @@ public sealed record ExchangeEnvelopeDto(string FormatVersion, ExchangeSourceDto
 
 public sealed record ExchangeSourceDto(string Name, string? Url, DateTimeOffset ExportedAt);
 
-/// <param name="Kind"><c>Domain</c>, <c>Team</c>, <c>Application</c>, <c>DataObject</c> or <c>Flow</c>.</param>
+/// <param name="Kind"><c>Domain</c>, <c>Team</c>, <c>Application</c>, <c>DataObject</c>, <c>Flow</c> or <c>Page</c>.</param>
 /// <param name="Spec">Kind-specific fields (see the JSON Schema).</param>
 public sealed record ExchangeItemDto(string Kind, string Id, ExchangeMetadataDto Metadata, JsonObject Spec);
 
