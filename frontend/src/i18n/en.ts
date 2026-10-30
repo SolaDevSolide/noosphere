@@ -493,10 +493,6 @@ export const en = {
     title: 'Import and export',
     intro: 'Move a whole landscape in or out of Noosphere with the noosphere/v1 exchange format.',
     exportH: 'Export',
-    exportText:
-      'Download every domain, team, application, data object and flow. The file can be versioned, reviewed and imported again.',
-    exportJson: 'Download JSON',
-    exportYaml: 'Download YAML',
     importH: 'Import',
     importText:
       'Records are matched by id: new ids are created, existing ones are updated. Nothing is deleted. Start with a dry run to see what would change.',

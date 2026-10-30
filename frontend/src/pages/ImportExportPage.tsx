@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { api, ApiError } from '../api/client';
+import { ExportDialog } from '../access/ExportDialog';
+import { isFieldRefusal, translateMessage } from '../access/secret';
 import type { ImportError, ImportResult } from '../api/types';
 import { useAuth } from '../auth/auth';
 import { useLandscape } from '../explorer/landscape';
@@ -29,6 +31,7 @@ export function ImportExportPage() {
   const [busy, setBusy] = useState<'dry' | 'apply' | null>(null);
   const [result, setResult] = useState<{ r: ImportResult; dry: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const pick = async (f: File | undefined) => {
     if (!f) return;
@@ -63,7 +66,7 @@ export function ImportExportPage() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 422 && isImportResult(e.body)) {
         setResult({ r: e.body, dry });
-      } else if (e instanceof ApiError && e.status === 400) {
+      } else if (e instanceof ApiError && (e.status === 400 || isFieldRefusal(e))) {
         const errs = Object.entries(e.fieldErrors).flatMap(([path, msgs]) =>
           (Array.isArray(msgs) ? msgs : [String(msgs)]).map((message): ImportError => ({
             index: null,
@@ -112,18 +115,15 @@ export function ImportExportPage() {
           {t.io.exportH}
         </h2>
         <p className="muted" style={{ marginTop: 0 }}>
-          {t.io.exportText}
+          {t.access.exportVisibleText}
         </p>
         <div className="page-actions">
-          <a className="btn primary" href={api.exportUrl('json')} download="noosphere-landscape.json">
+          <button type="button" className="btn primary" onClick={() => setExporting(true)}>
             <IconDownload />
-            {t.io.exportJson}
-          </a>
-          <a className="btn" href={api.exportUrl('yaml')} download="noosphere-landscape.yaml">
-            <IconDownload />
-            {t.io.exportYaml}
-          </a>
+            {t.access.exportTitle}
+          </button>
         </div>
+        {exporting && <ExportDialog onClose={() => setExporting(false)} />}
       </section>
       <section className="box" aria-labelledby="imp-h">
         <h2 className="big" id="imp-h">
@@ -216,7 +216,7 @@ export function ImportExportPage() {
                       {result.r.errors.map((e, i) => (
                         <li key={i}>
                           {(e.path || e.id) && <code>{e.path || `${e.kind ?? ''} ${e.id ?? ''}`.trim()}</code>}{' '}
-                          {e.message}
+                          {translateMessage(t, e.message)}
                         </li>
                       ))}
                     </ul>

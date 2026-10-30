@@ -511,10 +511,6 @@ export const fr: Dict = {
     title: 'Import et export',
     intro: "Faites entrer ou sortir toute une cartographie de Noosphere avec le format d'échange noosphere/v1.",
     exportH: 'Export',
-    exportText:
-      'Téléchargez tous les domaines, équipes, applications, données et flux. Le fichier peut être versionné, relu et réimporté.',
-    exportJson: 'Télécharger en JSON',
-    exportYaml: 'Télécharger en YAML',
     importH: 'Import',
     importText:
       "Les fiches sont rapprochées par identifiant : les nouveaux sont créés, les existants mis à jour. Rien n'est supprimé. Commencez par une simulation pour voir ce qui changerait.",

@@ -39,6 +39,7 @@ export function HistoryPanel({
   name,
   canPublish,
   canPropose,
+  notesOwner,
   onClose,
   onRestored,
 }: {
@@ -47,6 +48,8 @@ export function HistoryPanel({
   name: string;
   canPublish: boolean;
   canPropose: boolean;
+  /** The team that reads the protected notes, named under a masked change. */
+  notesOwner?: string | null;
   onClose: () => void;
   onRestored: () => void;
 }) {
@@ -200,6 +203,7 @@ export function HistoryPanel({
                     m={m}
                     leftTitle={t.history.versionN(view.from)}
                     rightTitle={t.history.versionN(view.to)}
+                    notesOwner={notesOwner ?? undefined}
                   />
                 )
               )}

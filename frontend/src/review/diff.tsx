@@ -1,9 +1,10 @@
 import { diffWordsWithSpace } from 'diff';
 import type { ReactNode } from 'react';
-import type { FieldDiff } from '../api/types';
+import { PROTECTED_MASK, type FieldDiff } from '../api/types';
 import type { Model } from '../domain/model';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
+import { IconInfo, IconLock } from '../ui/icons';
 
 /** One piece of an inline word diff. */
 export interface Segment {
@@ -76,6 +77,11 @@ export function displayValue(t: Dict, m: Model | null, field: string, v: unknown
     sensitivity: t.sens,
   };
   if (enums[field]) return enums[field][s] ?? s;
+  if (field === 'access') {
+    // access lists come as "team:<id>" and "user:<username>"
+    if (s.startsWith('team:')) return m?.teams.get(s.slice(5))?.name ?? s.slice(5);
+    if (s.startsWith('user:')) return s.slice(5);
+  }
   if (!m) return s;
   if (field === 'domainId') return m.domain.get(s)?.name ?? s;
   if (field === 'teamId' || field === 'ownerTeamId') return m.teams.get(s)?.name ?? s;
@@ -118,6 +124,20 @@ export function WordDiff({ before, after }: { before: string; after: string }) {
   );
 }
 
+/** True for a value the reader may not see: protected notes they cannot read. */
+export const isMasked = (v: unknown) => v === PROTECTED_MASK;
+
+/** "••• protected", for a protected value the reader may not read. */
+export function Masked() {
+  const { t } = useI18n();
+  return (
+    <span className="masked">
+      <IconLock size={11} />
+      ••• {t.access.maskedValue}
+    </span>
+  );
+}
+
 function Empty() {
   return (
     <span className="muted" aria-label="—">
@@ -131,6 +151,7 @@ function Side({ d, side, m }: { d: FieldDiff; side: 'before' | 'after'; m: Model
   const { t } = useI18n();
   const v = side === 'before' ? d.before : d.after;
   const Mark = side === 'before' ? Del : Ins;
+  if (isMasked(v)) return <Masked />;
   if (d.kind === 'list') {
     const c = listChanges(d.before, d.after);
     const items = side === 'before' ? c.before : c.after;
@@ -164,6 +185,7 @@ export function DiffView({
   rightTitle,
   conflicts = [],
   afterOnly = false,
+  notesOwner,
 }: {
   diff: FieldDiff[];
   m: Model | null;
@@ -172,11 +194,15 @@ export function DiffView({
   conflicts?: string[];
   /** A new record: only the proposed values, without an empty "before" column. */
   afterOnly?: boolean;
+  /** Who reads the protected notes, for the line under a masked change. */
+  notesOwner?: string;
 }) {
   const { t } = useI18n();
   if (!diff.length) return <p className="muted dempty">{t.review.noChange}</p>;
-  const short = diff.filter((d) => d.kind !== 'markdown');
-  const long = diff.filter((d) => d.kind === 'markdown');
+  const masked = (d: FieldDiff) => isMasked(d.before) || isMasked(d.after);
+  const short = diff.filter((d) => d.kind !== 'markdown' || masked(d));
+  const long = diff.filter((d) => d.kind === 'markdown' && !masked(d));
+  const maskedChange = diff.some(masked);
   const flag = (d: FieldDiff) =>
     conflicts.includes(d.field) ? (
       <span className="tg warn" title={t.review.conflictHint}>
@@ -218,6 +244,12 @@ export function DiffView({
           )}
         </div>
       ))}
+      {maskedChange && (
+        <p className="masked-note">
+          <IconInfo size={14} />
+          {t.access.maskedNote(notesOwner ?? null)}
+        </p>
+      )}
     </div>
   );
 }

@@ -564,6 +564,7 @@ export function FlowRecord() {
           name={f.name}
           canPublish={perm.publish}
           canPropose={perm.propose}
+          notesOwner={ownerName}
           onClose={() => setHistoryOpen(false)}
           onRestored={() => {
             reload();

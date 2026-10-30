@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import type { Proposal, ProposalChange, RecordKind } from '../api/types';
+import { isRestrictedApp, isRestrictedFlow, type Proposal, type ProposalChange, type RecordKind } from '../api/types';
+import type { Model } from '../domain/model';
 import { useDocumentTitle } from '../app/settings';
 import { useLandscape } from '../explorer/landscape';
 import { paths } from '../explorer/paths';
@@ -13,6 +14,7 @@ import { Markdown } from '../ui/Markdown';
 import { useToast } from '../ui/Toast';
 import { AuthorChip, StatusChip } from './bits';
 import { DiffView } from './diff';
+import { translateMessage } from '../access/secret';
 import { useInbox } from './inbox';
 
 export const REASON_MIN = 3;
@@ -35,12 +37,21 @@ const recordPath = (kind: RecordKind, id: string) =>
         ? paths.lineage(id)
         : null;
 
+/** The team that reads the protected notes of an application or flow. */
+function notesOwnerOf(m: Model, kind: RecordKind, id: string): string | null {
+  const a = kind === 'application' ? m.apps.get(id) : undefined;
+  const f = kind === 'flow' ? m.flow.get(id) : undefined;
+  const team = a && !isRestrictedApp(a) ? a.teamId : f && !isRestrictedFlow(f) ? f.ownerTeamId : null;
+  return team ? (m.teams.get(team)?.name ?? team) : null;
+}
+
 function ChangeBox({ c, n, total }: { c: ProposalChange; n: number; total: number }) {
   const { t } = useI18n();
   const { model: m } = useLandscape();
   const target = c.targetTitle || c.targetId || t.review.newRecord;
   const to = c.targetId && c.operation === 'update' ? recordPath(c.kind, c.targetId) : null;
   const diff = c.diff ?? [];
+  const notesOwner = m && c.targetId ? notesOwnerOf(m, c.kind, c.targetId) : null;
   return (
     <section className="box change" aria-labelledby={'ch-' + n}>
       <div className="change-h">
@@ -85,6 +96,7 @@ function ChangeBox({ c, n, total }: { c: ProposalChange; n: number; total: numbe
           rightTitle={c.operation === 'create' ? t.review.proposedNew : t.review.proposed}
           conflicts={c.conflicts}
           afterOnly={c.operation === 'create'}
+          notesOwner={notesOwner ?? undefined}
         />
       )}
     </section>
@@ -133,7 +145,8 @@ export function ProposalPage() {
       if (e instanceof ApiError && e.isConflict && kind === 'accept') {
         setStaleOnAccept(true);
         reload();
-      } else if (e instanceof ApiError && e.fieldErrors.reason) setReasonErr(e.fieldErrors.reason.join(' '));
+      } else if (e instanceof ApiError && e.fieldErrors.reason)
+        setReasonErr(e.fieldErrors.reason.map((x) => translateMessage(t, x)).join(' '));
       else
         setFailure(
           e instanceof ApiError

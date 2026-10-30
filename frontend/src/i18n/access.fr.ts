@@ -93,6 +93,9 @@ export const accessFr: AccessDict = {
   detailsYes: (who: string) => `Oui · ${who}`,
   detailsHidden: (who: string) => `Masquées · ${who}`,
   administrators: 'les administrateurs',
+  maskedValue: 'protégées',
+  maskedNote: (who: string | null) =>
+    `Les notes protégées ont changé dans cette version. Seuls ${who ? who + ' et les administrateurs' : 'les administrateurs'} voient ce qui a changé.`,
   notesHint: 'Markdown, 20 000 caractères au plus. Les marqueurs sont acceptés :',
   notesHiddenEdit:
     'Des notes protégées existent, mais vous ne pouvez pas les lire. Laissez ce champ vide pour les garder ; ce que vous écrivez les remplace.',

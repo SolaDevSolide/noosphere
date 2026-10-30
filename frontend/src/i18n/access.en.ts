@@ -90,6 +90,9 @@ export const accessEn = {
   detailsYes: (who: string) => `Yes · ${who}`,
   detailsHidden: (who: string) => `Hidden · ${who}`,
   administrators: 'administrators',
+  maskedValue: 'protected',
+  maskedNote: (who: string | null) =>
+    `Protected notes changed in this version. Only ${who ? who + ' and administrators' : 'administrators'} can see what changed.`,
   notesHint: 'Markdown, up to 20,000 characters. Placeholders are fine:',
   notesHiddenEdit:
     "Protected notes exist, but you can't read them. Leave this field empty to keep them; anything you write replaces them.",

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../api/client';
+import { isFieldRefusal } from '../access/secret';
 import type { Language, Settings } from '../api/types';
 import { documentTitle, useSettings } from '../app/settings';
 import { useAuth } from '../auth/auth';
@@ -76,8 +77,7 @@ export function SettingsPage() {
       setSettings(saved);
       toast(t.settings.saved);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 400 && Object.keys(err.fieldErrors).length)
-        setErrors(serverErrors(err));
+      if (isFieldRefusal(err)) setErrors(serverErrors(err, t));
       else if (err instanceof ApiError && err.isConflict) setFailure(t.record.conflictText);
       else setFailure(err instanceof ApiError ? err.detail || err.message : t.common.genericError);
     } finally {

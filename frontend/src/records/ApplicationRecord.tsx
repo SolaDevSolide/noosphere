@@ -535,6 +535,7 @@ export function ApplicationRecord() {
           name={a.name}
           canPublish={perm.publish}
           canPropose={perm.propose}
+          notesOwner={ownerName}
           onClose={() => setHistoryOpen(false)}
           onRestored={() => {
             reload();
