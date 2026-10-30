@@ -27,13 +27,19 @@ export type Team = S['TeamDto'];
 export type Application = S['ApplicationDto'];
 /** What a user without access receives for a restricted application. */
 export type RestrictedApplication = S['RestrictedApplicationDto'];
-export type LandscapeApplication = Application | RestrictedApplication;
+/** What a guest receives for an application not shared with them: its name and place only. */
+export type GuestApplication = S['GuestApplicationDto'];
+/** A record the reader does not see in full: a restricted stub, or a guest outline. */
+export type HiddenApplication = RestrictedApplication | GuestApplication;
+export type LandscapeApplication = Application | HiddenApplication;
 export type DataObject = S['DataObjectDto'];
 export type PlannedChange = S['PlannedChangeDto'];
 export type Flow = S['FlowDto'];
 /** A flow touching a restricted application, as seen by a user without access. */
 export type RestrictedFlow = S['RestrictedFlowDto'];
-export type LandscapeFlow = Flow | RestrictedFlow;
+export type GuestFlow = S['GuestFlowDto'];
+export type HiddenFlow = RestrictedFlow | GuestFlow;
+export type LandscapeFlow = Flow | HiddenFlow;
 export type Landscape = S['LandscapeDto'];
 
 export type Me = Omit<S['MeDto'], 'language'> & { language: Language };
@@ -52,8 +58,9 @@ export type Problem = S['ProblemDto'];
 export type ApplicationInput = S['ApplicationInput'];
 export type FlowInput = S['FlowInput'];
 
-export const isRestrictedApp = (a: LandscapeApplication): a is RestrictedApplication => a.restricted;
-export const isRestrictedFlow = (f: LandscapeFlow): f is RestrictedFlow => f.restricted;
+/** True for a record the reader does not see in full (restricted, or a guest outline). */
+export const isRestrictedApp = (a: LandscapeApplication): a is HiddenApplication => a.restricted || 'shared' in a;
+export const isRestrictedFlow = (f: LandscapeFlow): f is HiddenFlow => f.restricted || 'shared' in f;
 
 /* ---- Milestone 2: teams, proposals, history, settings ---- */
 

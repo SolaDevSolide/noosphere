@@ -216,6 +216,7 @@ function exportEnvelope(): ExchangeEnvelope {
     formatVersion: 'noosphere/v1',
     source: { name: 'Alizé (mock)', url: location.origin, exportedAt: now() },
     mode: 'full',
+    scope: 'visible',
     items: [
       ...db.domains.map((d) => ({ kind: 'Domain' as const, ...strip(d) })),
       ...db.teams.map((d) => ({ kind: 'Team' as const, ...strip(d) })),
