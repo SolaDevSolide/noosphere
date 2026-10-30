@@ -27,16 +27,21 @@ public static class HistoryEndpoints
                     r.CreatedAt, r.Summary, r.ProposalId)).ToList();
             }).WithName($"History{type.Kind}").Produces<ProblemDto>(StatusCodes.Status404NotFound);
 
-            group.MapGet("/{version:int}", async (string id, int version, ClaimsPrincipal user, NoosphereDbContext db) =>
+            group.MapGet("/{version:int}", async (string id, int version, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             {
                 var access = await Access.Load(db, user);
-                var r = Pick(await Readable(db, type, id, access), version, type);
+                var revisions = await Readable(db, type, id, access);
+                var r = Pick(revisions, version, type);
                 var people = await People.Load(db);
+                var snapshot = Records.ParseObject(r.Snapshot)!;
+                var readable = ReadsNotes(access, type, id, revisions);
+                var shown = readable && Diffs.Value(snapshot, ProtectedNotesMask.Field) is not null;
+                await LogRead(db, access, type, id, revisions, shown, clock.GetUtcNow(), $"history v{version}");
                 return new RevisionDto(r.Kind, r.EntityId, r.Version, r.Operation, people.Ref(r.AuthorId, r.AuthorName), r.AuthorKind,
-                    r.CreatedAt, r.Summary, r.ProposalId, Records.ParseObject(r.Snapshot)!);
+                    r.CreatedAt, r.Summary, r.ProposalId, readable ? snapshot : ProtectedNotesMask.Mask(snapshot)!);
             }).WithName($"Revision{type.Kind}");
 
-            group.MapGet("/compare", async (string id, [FromQuery] int? from, [FromQuery] int? to, ClaimsPrincipal user, NoosphereDbContext db) =>
+            group.MapGet("/compare", async (string id, [FromQuery] int? from, [FromQuery] int? to, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             {
                 var errors = new FieldErrors();
                 if (from is null) errors.Add("from", "This field is required.");
@@ -46,8 +51,12 @@ public static class HistoryEndpoints
                 var revisions = await Readable(db, type, id, access);
                 var a = Pick(revisions, from!.Value, type);
                 var b = Pick(revisions, to!.Value, type);
-                return new CompareDto(a.Version, b.Version,
-                    Diffs.Compare(type, Records.ParseObject(a.Snapshot), Records.ParseObject(b.Snapshot), access.Facts, access));
+                var diff = Diffs.Compare(type, Records.ParseObject(a.Snapshot), Records.ParseObject(b.Snapshot), access.Facts, access);
+                // Protected notes count in the diff, masked for those who may not read them.
+                var readable = ReadsNotes(access, type, id, revisions);
+                await LogRead(db, access, type, id, revisions, readable && diff.Any(d => d.Field == ProtectedNotesMask.Field),
+                    clock.GetUtcNow(), $"compare v{a.Version}-v{b.Version}");
+                return new CompareDto(a.Version, b.Version, readable ? diff : ProtectedNotesMask.Mask(diff, true, true));
             }).WithName($"Compare{type.Kind}");
 
             group.MapPost("/{version:int}/restore", async (string id, int version, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
@@ -64,6 +73,7 @@ public static class HistoryEndpoints
                 {
                     new Publisher(db, now).Update(type, current, snapshot, Author.Of(access.Viewer), await References.Load(db),
                         summary: $"Restored version {version}", operation: RevisionOperation.Restore);
+                    access.RequireStillVisible(type, current);
                     await db.SaveChangesAsync();
                     return new RestoreResultDto("published", current.Version, null);
                 }
@@ -108,6 +118,7 @@ public static class HistoryEndpoints
         {
             var current = await InstanceSettingsStore.Get(db, config);
             var errors = new FieldErrors();
+            // Required and Optional also refuse secrets (422).
             var name = errors.Required("instanceName", input.InstanceName);
             var organisation = errors.Optional("organisationName", input.OrganisationName, Rules.MaxNameLength) ?? "";
             var language = input.DefaultLanguage?.Trim().ToLowerInvariant() ?? current.DefaultLanguage;
@@ -128,16 +139,34 @@ public static class HistoryEndpoints
         db.Revisions.AsNoTracking().Where(r => r.Operation == RevisionOperation.Delete
             && !db.Revisions.Any(o => o.Kind == r.Kind && o.EntityId == r.EntityId && o.Version > r.Version));
 
-    /// <summary>Revisions of a record, newest first, when the reader may see it (404 when none, 403 when restricted).</summary>
+    /// <summary>
+    /// Revisions of a record, newest first, when the reader sees it in full (404 when none, 403 when restricted or, for a
+    /// guest, not shared). A deleted record is judged by its last state.
+    /// </summary>
     private static async Task<List<Revision>> Readable(NoosphereDbContext db, RecordType type, string id, Access access)
     {
         var revisions = await db.Revisions.AsNoTracking().Where(r => r.Kind == type.Kind && r.EntityId == id).OrderByDescending(r => r.Version).ToListAsync();
         if (revisions.Count == 0) throw CatalogEndpoints.NotFound(type, id);
-        var restricted = access.Facts.Exists(type.Kind, id)
-            ? access.Facts.Restricted(type.Kind, id)
-            : access.Facts.Restricted(type.Kind, Records.ParseObject(revisions[0].Snapshot)!);
-        if (restricted && !access.Viewer.SeesRestricted) throw ApiProblem.Forbidden($"This {type.Noun} is restricted: only administrators can see its history.");
+        var sight = access.Facts.Exists(type.Kind, id)
+            ? access.Sight(type.Kind, id)
+            : access.Sight(type.Kind, Records.ParseObject(revisions[0].Snapshot)!);
+        if (sight == Sight.Hidden) throw ApiProblem.Forbidden($"This {type.Noun} is restricted: you are not on its access list.");
+        if (sight == Sight.Outline) throw ApiProblem.Forbidden($"This {type.Noun} is not shared with you.");
         return revisions;
+    }
+
+    /// <summary>The reader may read the protected notes of the record (as it is now, or as it was last for a deleted one).</summary>
+    private static bool ReadsNotes(Access access, RecordType type, string id, List<Revision> revisions) =>
+        access.Facts.Exists(type.Kind, id) ? access.ReadsProtected(type.Kind, id) : access.ReadsProtected(type.Kind, Records.ParseObject(revisions[0].Snapshot)!);
+
+    private static Task LogRead(NoosphereDbContext db, Access access, RecordType type, string id, List<Revision> revisions, bool notesShown,
+        DateTimeOffset now, string detail)
+    {
+        var exists = access.Facts.Exists(type.Kind, id);
+        var last = exists ? null : Records.ParseObject(revisions[0].Snapshot)!;
+        var owner = exists ? access.Facts.Owner(type.Kind, id) : access.Facts.Owner(type.Kind, last!);
+        var restricted = exists ? access.Facts.Restricted(type.Kind, id) : access.Facts.Restricted(type.Kind, last!);
+        return AccessLogs.RecordRead(db, access, type.Kind, id, owner, restricted, notesShown, now, detail);
     }
 
     private static Revision Pick(List<Revision> revisions, int version, RecordType type) =>

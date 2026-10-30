@@ -11,7 +11,7 @@ namespace Noosphere.Api.Services;
 /// </summary>
 public sealed record References(
     ISet<string> Domains, ISet<string> Teams, ISet<string> Applications, ISet<string> DataObjects, ISet<string> Flows,
-    ISet<string> Pages, IDictionary<string, string?> PageParents)
+    ISet<string> Pages, IDictionary<string, string?> PageParents, ISet<string> Users)
 {
     public static async Task<References> Load(NoosphereDbContext db, CancellationToken cancel = default)
     {
@@ -23,7 +23,8 @@ public sealed record References(
             (await db.DataObjects.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
             (await db.Flows.Select(x => x.Id).ToListAsync(cancel)).ToHashSet(),
             pages.Select(p => p.Id).ToHashSet(),
-            pages.ToDictionary(p => p.Id, p => p.ParentId));
+            pages.ToDictionary(p => p.Id, p => p.ParentId),
+            (await db.Users.Select(u => u.Username).ToListAsync(cancel)).ToHashSet());
     }
 
     public ISet<string> Of(RecordKind kind) => kind switch
@@ -71,6 +72,26 @@ public static class Catalog
         e.Tech = errors.Optional("tech", i.Tech);
         e.Lifecycle = i.Lifecycle ?? Lifecycle.Live;
         e.Visibility = i.Visibility ?? Visibility.Everyone;
+        if (i.Access is { } access) (e.AccessTeamIds, e.AccessUsernames) = AccessList(errors, access, refs);
+        e.ProtectedNotes = ProtectedNotes(errors, i.ProtectedNotes, e.ProtectedNotes);
+    }
+
+    /// <summary>
+    /// Protected notes: left out (or sent masked, as read by someone who may not read them), the current ones are kept;
+    /// an empty text clears them.
+    /// </summary>
+    private static string? ProtectedNotes(FieldErrors errors, string? input, string? current) =>
+        input is null || input.Trim() == Rules.ProtectedMask ? current : errors.Optional("protectedNotes", input, Rules.MaxTextLength);
+
+    /// <summary>An access list: known teams and users (lower case), without duplicates.</summary>
+    private static (List<string> Teams, List<string> Users) AccessList(FieldErrors errors, AccessListInput input, References refs)
+    {
+        var teams = (input.TeamIds ?? []).Select(t => t?.Trim() ?? "").Where(t => t.Length > 0).Distinct(StringComparer.Ordinal).ToList();
+        var users = (input.Usernames ?? []).Select(u => (u ?? "").Trim().ToLowerInvariant()).Where(u => u.Length > 0).Distinct(StringComparer.Ordinal).ToList();
+        foreach (var unknown in teams.Where(t => !refs.Teams.Contains(t))) errors.Add("access.teamIds", $"Unknown team '{unknown}'.");
+        foreach (var unknown in users.Where(u => !refs.Users.Contains(u))) errors.Add("access.usernames", $"No user named '{unknown}'.");
+        if (teams.Count + users.Count > Rules.MaxAccessEntries) errors.Add("access", $"At most {Rules.MaxAccessEntries} teams and users.");
+        return (teams, users);
     }
 
     public static void Apply(DataObject e, DataObjectInput i, FieldErrors errors, References refs)
@@ -109,6 +130,7 @@ public static class Catalog
             e.PlannedChangeSummary = null;
             e.PlannedChangeDate = null;
         }
+        e.ProtectedNotes = ProtectedNotes(errors, i.ProtectedNotes, e.ProtectedNotes);
     }
 
     public static void Apply(Page e, PageInput i, FieldErrors errors, References refs)
@@ -116,6 +138,7 @@ public static class Catalog
         e.Title = errors.Required("title", i.Title);
         var body = i.Body ?? "";
         if (body.Length > Rules.MaxBodyLength) errors.Add("body", $"At most {Rules.MaxBodyLength} characters.");
+        else errors.CheckSecret("body", body);
         e.Body = body;
         e.Order = i.Order ?? 0;
         e.ParentId = Reference(errors, "parentId", i.ParentId, refs.Pages, "page");
@@ -143,8 +166,10 @@ public static class Catalog
         var tags = (i.Tags ?? []).Select(t => t?.Trim() ?? "").Where(t => t.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (tags.Count > Rules.MaxTags) errors.Add("tags", $"At most {Rules.MaxTags} tags.");
         if (tags.Any(t => t.Length > Rules.MaxTagLength)) errors.Add("tags", $"A tag has at most {Rules.MaxTagLength} characters.");
+        else errors.CheckSecret("tags", string.Join("\n", tags));
         e.Tags = tags;
         e.Visibility = i.Visibility ?? Visibility.Everyone;
+        if (i.Access is { } access) (e.AccessTeamIds, e.AccessUsernames) = AccessList(errors, access, refs);
         e.Links = [.. Rules.WikiLinks(e.Body).Select(l => l.Key)];
     }
 

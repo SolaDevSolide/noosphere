@@ -13,30 +13,57 @@ namespace Noosphere.Api.Endpoints;
 public static class ExplorerEndpoints
 {
     public const long ImportMaxBytes = 20 * 1024 * 1024;
+    /// <summary>Longest reason given for an export (kept in the access log).</summary>
+    public const int MaxReasonLength = 200;
 
     public static void MapExplorer(this RouteGroupBuilder api, Settings settings)
     {
         api.MapGet("/landscape", async ([AsParameters] FilterQuery query, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
-            LandscapeQueries.Landscape(await Snapshot.Load(db), Viewer.From(user), query.ToFilter(), clock.GetUtcNow()))
-            .WithTags("Explorer");
+        {
+            var filter = query.ToFilter();
+            return LandscapeQueries.Landscape(await Snapshot.Load(db), await Access.Load(db, user), filter, clock.GetUtcNow());
+        }).WithTags("Explorer");
 
         api.MapGet("/search", async ([FromQuery] string? q, ClaimsPrincipal user, NoosphereDbContext db) =>
-            LandscapeQueries.Search(await Snapshot.Load(db), Viewer.From(user), q, await db.Pages.AsNoTracking().ToListAsync()))
+            LandscapeQueries.Search(await Snapshot.Load(db), await Access.Load(db, user), q, await db.Pages.AsNoTracking().ToListAsync()))
             .WithTags("Explorer");
 
-        api.MapGet("/export", async ([FromQuery] string? format, HttpContext ctx, NoosphereDbContext db, TimeProvider clock) =>
+        api.MapGet("/export", async ([FromQuery] string? format, [FromQuery] string? scope, [FromQuery] string? reason, HttpContext ctx, NoosphereDbContext db, TimeProvider clock) =>
         {
+            var errors = new FieldErrors();
             var yaml = (format ?? "json").Trim().ToLowerInvariant() switch
             {
                 "json" => false,
                 "yaml" or "yml" => true,
-                _ => throw ApiProblem.Invalid(new Dictionary<string, string[]> { ["format"] = ["Expected json or yaml."] }),
+                _ => Error(errors, "format", "Expected json or yaml."),
             };
+            var full = (scope ?? ExchangeFormat.VisibleScope).Trim().ToLowerInvariant() switch
+            {
+                ExchangeFormat.VisibleScope => false,
+                ExchangeFormat.FullScope => true,
+                _ => Error(errors, "scope", "Expected visible or full."),
+            };
+            var why = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+            if (why is { Length: > MaxReasonLength }) errors.Add("reason", $"At most {MaxReasonLength} characters.");
+            else errors.CheckSecret("reason", why);
+            errors.ThrowIfAny();
+            var access = await Access.Load(db, ctx.User);
+            if (full && !access.IsAdmin) throw ApiProblem.Forbidden("Only administrators export the full landscape.");
             var now = clock.GetUtcNow();
             var url = settings.PublicUrl ?? $"{ctx.Request.Scheme}://{ctx.Request.Host}{ctx.Request.PathBase}";
             var name = (await InstanceSettingsStore.Get(db, settings)).InstanceName;
-            var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), Viewer.From(ctx.User),
-                new ExchangeSourceDto(name, url, now));
+            var reads = new List<(Domain.RecordKind Kind, string Id)>();
+            var envelope = ExchangeFormat.Export(await Snapshot.Load(db), await db.Pages.AsNoTracking().ToListAsync(), access,
+                new ExchangeSourceDto(name, url, now), full ? ExchangeFormat.FullScope : ExchangeFormat.VisibleScope, reads);
+            // A full export is always logged; a visible one when it holds restricted records or protected notes of other teams.
+            if (full || reads.Count > 0)
+            {
+                // The reason, when given, is the detail of the line; otherwise what was exported.
+                AccessLogs.Add(db, access, now, Domain.AccessLogWhat.Export, null, null, why
+                    ?? $"scope {(full ? ExchangeFormat.FullScope : ExchangeFormat.VisibleScope)}, {(yaml ? "yaml" : "json")}, {envelope.Items.Count} items"
+                    + (reads.Count > 0 ? $", {reads.Count} restricted or protected" : ""));
+                await db.SaveChangesAsync();
+            }
             var file = $"noosphere-{now:yyyyMMdd-HHmmss}.{(yaml ? "yaml" : "json")}";
             ctx.Response.Headers.ContentDisposition = $"attachment; filename=\"{file}\"";
             return yaml
@@ -44,7 +71,8 @@ public static class ExplorerEndpoints
                 : Results.Text(ExchangeFormat.ToJson(envelope), "application/json; charset=utf-8");
         })
             .WithTags("Exchange")
-            .Produces<ExchangeEnvelopeDto>(contentType: "application/json", additionalContentTypes: ["application/yaml"]);
+            .Produces<ExchangeEnvelopeDto>(contentType: "application/json", additionalContentTypes: ["application/yaml"])
+            .Produces<ProblemDto>(StatusCodes.Status403Forbidden);
 
         api.MapPost("/import", async ([FromQuery] bool? dryRun, [FromQuery] string? format, HttpRequest request, NoosphereDbContext db, TimeProvider clock) =>
         {
@@ -91,6 +119,12 @@ public static class ExplorerEndpoints
             .Produces<ImportResultDto>()
             .Produces<ImportResultDto>(StatusCodes.Status422UnprocessableEntity)
             .Produces<ProblemDto>(StatusCodes.Status400BadRequest);
+    }
+
+    private static bool Error(FieldErrors errors, string field, string message)
+    {
+        errors.Add(field, message);
+        return false;
     }
 
     public static void MapHealth(this WebApplication app)

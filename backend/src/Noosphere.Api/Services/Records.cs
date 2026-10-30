@@ -66,9 +66,11 @@ public static class Records
     public static readonly RecordType Application = new Type<Application, ApplicationInput>(
         RecordKind.Application, "applications", "application",
         [Text("name", "Name"), Ref("domainId", "Domain", RecordKind.Domain), Ref("teamId", "Team", RecordKind.Team), Text("kind", "Kind"),
-            Text("tech", "Technology"), Text("lifecycle", "Lifecycle"), Text("visibility", "Visibility"), Markdown("description", "Description")],
+            Text("tech", "Technology"), Text("lifecycle", "Lifecycle"), Text("visibility", "Visibility"), List("access", "Access list"),
+            Markdown("description", "Description"), Markdown("protectedNotes", "Protected notes")],
         db => db.Applications,
-        a => new ApplicationInput(a.Id, a.Name, a.DomainId, a.TeamId, a.Kind, a.Tech, a.Description, a.Lifecycle, a.Visibility, null),
+        a => new ApplicationInput(a.Id, a.Name, a.DomainId, a.TeamId, a.Kind, a.Tech, a.Description, a.Lifecycle, a.Visibility, null,
+            new AccessListInput(a.AccessTeamIds, a.AccessUsernames), a.ProtectedNotes ?? ""),
         (e, i, err, refs) => Catalog.Apply(e, i, err, refs),
         e => e.Name,
         async (db, e, cancel) =>
@@ -83,10 +85,11 @@ public static class Records
         RecordKind.Flow, "flows", "flow",
         [Text("name", "Name"), Ref("fromId", "From", RecordKind.Application), Ref("toId", "To", RecordKind.Application), Text("type", "Type"),
             Text("schedule", "Schedule"), List("dataObjectIds", "Data objects"), Ref("ownerTeamId", "Owner team", RecordKind.Team),
-            Text("status", "Status"), Text("volume", "Volume"), Text("plannedChange", "Planned change"), Markdown("description", "Description")],
+            Text("status", "Status"), Text("volume", "Volume"), Text("plannedChange", "Planned change"), Markdown("description", "Description"),
+            Markdown("protectedNotes", "Protected notes")],
         db => db.Flows,
         f => new FlowInput(f.Id, f.Name, f.FromId, f.ToId, f.Type, f.Schedule, f.DataObjectIds, f.OwnerTeamId, f.Status, f.Volume, f.Description,
-            f.PlannedChangeSummary is null ? null : new PlannedChangeDto(f.PlannedChangeSummary, f.PlannedChangeDate), null),
+            f.PlannedChangeSummary is null ? null : new PlannedChangeDto(f.PlannedChangeSummary, f.PlannedChangeDate), null, f.ProtectedNotes ?? ""),
         (e, i, err, refs) => Catalog.Apply(e, i, err, refs),
         e => e.Name,
         (_, _, _) => Task.CompletedTask);
@@ -108,10 +111,11 @@ public static class Records
     public static readonly RecordType Page = new Type<Page, PageInput>(
         RecordKind.Page, "pages", "page",
         [Text("title", "Title"), Ref("parentId", "Parent page", RecordKind.Page), Text("order", "Order"), Ref("attachedTo", "Attached to", null),
-            Ref("ownerTeamId", "Owner team", RecordKind.Team), List("tags", "Tags"), Text("visibility", "Visibility"), Markdown("body", "Body")],
+            Ref("ownerTeamId", "Owner team", RecordKind.Team), List("tags", "Tags"), Text("visibility", "Visibility"), List("access", "Access list"),
+            Markdown("body", "Body")],
         db => db.Pages,
         p => new PageInput(p.Id, p.Title, p.Body, p.ParentId, p.Order, p.AttachedKind is { } k && p.AttachedId is { } id ? new AttachedToDto(k, id) : null,
-            p.OwnerTeamId, p.Tags, p.Visibility, null),
+            p.OwnerTeamId, p.Tags, p.Visibility, null, new AccessListInput(p.AccessTeamIds, p.AccessUsernames)),
         (e, i, err, refs) => Catalog.Apply(e, i, err, refs),
         e => e.Title,
         async (db, e, cancel) =>
@@ -147,6 +151,9 @@ public static class Records
             var pages = await db.Pages.CountAsync(p => p.OwnerTeamId == e.Id, cancel);
             if (apps + flows + pages > 0)
                 throw ApiProblem.Conflict($"This team still owns {apps} application(s), {flows} flow(s) and {pages} page(s). Reassign them first.");
+            var lists = await db.Applications.CountAsync(a => a.AccessTeamIds.Contains(e.Id), cancel)
+                + await db.Pages.CountAsync(p => p.AccessTeamIds.Contains(e.Id), cancel);
+            if (lists > 0) throw ApiProblem.Conflict($"This team is still on {lists} access list(s). Remove it from them first.");
         });
 
     public static readonly IReadOnlyList<RecordType> All = [Application, Flow, DataObject, Page, Domain, Team];

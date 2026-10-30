@@ -13,21 +13,24 @@ public static class OpenApiSetup
 {
     public const string Path = "/openapi/{documentName}.json";
 
-    /// <summary>Response properties and operations that hold a full or a restricted record, discriminated by <c>restricted</c>.</summary>
-    private static readonly (string Schema, string Property, string Full, string Restricted)[] Unions =
+    /// <summary>
+    /// Response properties and operations that hold a full record, a restricted stub or a guest's stub, discriminated by
+    /// <c>restricted</c>, then <c>shared</c>.
+    /// </summary>
+    private static readonly (string Schema, string Property, string Full, string Restricted, string Guest)[] Unions =
     [
-        (nameof(LandscapeDto), "applications", nameof(ApplicationDto), nameof(RestrictedApplicationDto)),
-        (nameof(LandscapeDto), "flows", nameof(FlowDto), nameof(RestrictedFlowDto)),
+        (nameof(LandscapeDto), "applications", nameof(ApplicationDto), nameof(RestrictedApplicationDto), nameof(GuestApplicationDto)),
+        (nameof(LandscapeDto), "flows", nameof(FlowDto), nameof(RestrictedFlowDto), nameof(GuestFlowDto)),
     ];
 
-    private static readonly (string Path, bool List, string Full, string Restricted)[] UnionOperations =
+    private static readonly (string Path, bool List, string Full, string Restricted, string Guest)[] UnionOperations =
     [
-        ("/api/applications", true, nameof(ApplicationDto), nameof(RestrictedApplicationDto)),
-        ("/api/applications/{id}", false, nameof(ApplicationDetailDto), nameof(RestrictedApplicationDto)),
-        ("/api/flows", true, nameof(FlowDto), nameof(RestrictedFlowDto)),
-        ("/api/flows/{id}", false, nameof(FlowDetailDto), nameof(RestrictedFlowDto)),
-        ("/api/pages", true, nameof(PageSummaryDto), nameof(RestrictedPageDto)),
-        ("/api/pages/{id}", false, nameof(PageDetailDto), nameof(RestrictedPageDto)),
+        ("/api/applications", true, nameof(ApplicationDto), nameof(RestrictedApplicationDto), nameof(GuestApplicationDto)),
+        ("/api/applications/{id}", false, nameof(ApplicationDetailDto), nameof(RestrictedApplicationDto), nameof(GuestApplicationDto)),
+        ("/api/flows", true, nameof(FlowDto), nameof(RestrictedFlowDto), nameof(GuestFlowDto)),
+        ("/api/flows/{id}", false, nameof(FlowDetailDto), nameof(RestrictedFlowDto), nameof(GuestFlowDto)),
+        ("/api/pages", true, nameof(PageSummaryDto), nameof(RestrictedPageDto), nameof(GuestPageDto)),
+        ("/api/pages/{id}", false, nameof(PageDetailDto), nameof(RestrictedPageDto), nameof(GuestPageDto)),
     ];
 
     public static IServiceCollection AddNoosphereOpenApi(this IServiceCollection services) =>
@@ -39,7 +42,7 @@ public static class OpenApiSetup
                 {
                     Title = "Noosphere",
                     Version = "v1",
-                    Description = "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals and revision history. Guide: docs/en/api.md.",
+                    Description = "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals, revision history, access lists, protected notes and an access log. Guide: docs/en/api.md.",
                 };
                 document.Servers = [];
                 return Task.CompletedTask;
@@ -97,28 +100,37 @@ public static class OpenApiSetup
     {
         var schemas = document.Components?.Schemas;
         if (schemas is null) return Task.CompletedTask;
-        IOpenApiSchema Union(string full, string restricted) =>
-            new OpenApiSchema { OneOf = [new OpenApiSchemaReference(full, document), new OpenApiSchemaReference(restricted, document)] };
+        IOpenApiSchema Union(string full, string restricted, string guest) => new OpenApiSchema
+        {
+            OneOf = [new OpenApiSchemaReference(full, document), new OpenApiSchemaReference(restricted, document), new OpenApiSchemaReference(guest, document)],
+        };
 
+        static void Literal(IOpenApiSchema? s, string property, bool value)
+        {
+            if (s is OpenApiSchema schema && schema.Properties?.TryGetValue(property, out var p) == true && p is OpenApiSchema literal)
+                literal.Enum = [JsonValue.Create(value)];
+        }
         foreach (var (name, flag) in new[]
         {
             (nameof(ApplicationDto), false), (nameof(ApplicationDetailDto), false), (nameof(FlowDto), false), (nameof(FlowDetailDto), false),
             (nameof(PageDto), false), (nameof(PageDetailDto), false), (nameof(PageSummaryDto), false),
             (nameof(RestrictedApplicationDto), true), (nameof(RestrictedFlowDto), true), (nameof(RestrictedPageDto), true),
+            (nameof(GuestApplicationDto), false), (nameof(GuestFlowDto), false), (nameof(GuestPageDto), false),
         })
-            if (schemas.TryGetValue(name, out var s) && s is OpenApiSchema schema && schema.Properties?.TryGetValue("restricted", out var r) == true && r is OpenApiSchema restricted)
-                restricted.Enum = [JsonValue.Create(flag)];
+            Literal(schemas.TryGetValue(name, out var found) ? found : null, "restricted", flag);
+        foreach (var name in new[] { nameof(GuestApplicationDto), nameof(GuestFlowDto), nameof(GuestPageDto) })
+            Literal(schemas.TryGetValue(name, out var found) ? found : null, "shared", false);
 
-        foreach (var (schemaName, property, full, restricted) in Unions)
+        foreach (var (schemaName, property, full, restricted, guest) in Unions)
             if (schemas.TryGetValue(schemaName, out var s) && s is OpenApiSchema schema && schema.Properties is { } props)
-                props[property] = new OpenApiSchema { Type = JsonSchemaType.Array, Items = Union(full, restricted) };
+                props[property] = new OpenApiSchema { Type = JsonSchemaType.Array, Items = Union(full, restricted, guest) };
 
-        foreach (var (path, list, full, restricted) in UnionOperations)
+        foreach (var (path, list, full, restricted, guest) in UnionOperations)
         {
             if (document.Paths?.TryGetValue(path, out var item) != true || item!.Operations is null) continue;
             if (!item.Operations.TryGetValue(HttpMethod.Get, out var operation) || operation.Responses?.TryGetValue("200", out var response) != true) continue;
             if (response!.Content?.TryGetValue("application/json", out var media) != true || media is not OpenApiMediaType m) continue;
-            m.Schema = list ? new OpenApiSchema { Type = JsonSchemaType.Array, Items = Union(full, restricted) } : Union(full, restricted);
+            m.Schema = list ? new OpenApiSchema { Type = JsonSchemaType.Array, Items = Union(full, restricted, guest) } : Union(full, restricted, guest);
         }
         return Task.CompletedTask;
     }

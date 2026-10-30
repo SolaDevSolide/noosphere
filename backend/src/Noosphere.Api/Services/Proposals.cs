@@ -38,14 +38,14 @@ public static class Proposals
         return proposal;
     }
 
-    /// <summary>Drafts are seen by their author only; proposals on restricted records by administrators (and the author).</summary>
+    /// <summary>Drafts are seen by their author only; other proposals by those who see all their records in full (and the author).</summary>
     public static bool Visible(Proposal p, Access access) =>
         p.AuthorId == access.Viewer.Id
-        || (p.Status != ProposalStatus.Draft && (access.Viewer.SeesRestricted || !p.Changes.Any(c => Hidden(c, access))));
+        || (p.Status != ProposalStatus.Draft && !p.Changes.Any(c => Hidden(c, access)));
 
     private static bool Hidden(ProposalChange c, Access access) =>
-        (c.TargetId is { } id && access.Facts.Exists(c.Kind, id) && access.Facts.Restricted(c.Kind, id))
-        || (Records.ParseObject(c.After) is { } after && access.Facts.Restricted(c.Kind, after));
+        (c.TargetId is { } id && access.Facts.Exists(c.Kind, id) && access.Sight(c.Kind, id) != Sight.Full)
+        || (Records.ParseObject(c.After) is { } after && access.Sight(c.Kind, after) != Sight.Full);
 
     // ---------- Owners and validators ----------
 
@@ -84,8 +84,14 @@ public static class Proposals
                 ? (after is null ? null : type.Title(after))
                 : current is not null ? type.Title(current) : before is null ? null : type.Title(before);
             var outdated = c.Operation != ChangeOperation.Create && (current is null || current.Version != c.BaseVersion);
+            // Protected notes are masked for those who may not read them; the author still sees the notes they wrote.
+            var readable = current is not null ? access.ReadsProtected(c.Kind, current)
+                : (after ?? before) is { } state && access.ReadsProtected(c.Kind, state);
+            var ownNotes = p.AuthorId == access.Viewer.Id && !Diffs.Same(before, after, ProtectedNotesMask.Field);
+            var diff = ProtectedNotesMask.Mask(Diffs.Compare(type, before, after, access.Facts, access), !readable, !readable && !ownNotes);
             changes.Add(new ProposalChangeDto(c.Kind, c.TargetId ?? (after?["id"] as JsonValue)?.GetValue<string>(), title, c.Operation,
-                c.BaseVersion, current?.Version, outdated, before, after, Diffs.Compare(type, before, after, access.Facts, access), c.Conflicts));
+                c.BaseVersion, current?.Version, outdated, readable ? before : ProtectedNotesMask.Mask(before),
+                readable || ownNotes ? after : ProtectedNotesMask.Mask(after), diff, c.Conflicts));
         }
         var owners = Owners(p, access.Facts);
         var ownerTeams = owners.OfType<string>().Order(StringComparer.Ordinal).Select(t =>
@@ -129,7 +135,8 @@ public static class Proposals
                 if (string.IsNullOrEmpty(id)) { errors.Add(at + "targetId", "This field is required."); continue; }
                 current = await type.Find(db, id, tracked: false, cancel);
                 if (current is null) { errors.Add(at + "targetId", $"Unknown {type.Noun} '{id}'."); continue; }
-                if (!access.CanPropose(type, current)) throw ApiProblem.Forbidden($"This {type.Noun} is restricted: only administrators can change it.");
+                if (!access.CanPropose(type, current))
+                    throw ApiProblem.Forbidden(access.Viewer.CanEdit ? $"This {type.Noun} is restricted: you are not on its access list." : "Your role does not allow this action.");
                 if (!targets.Add((kind, id))) { errors.Add(at + "targetId", "The same record is changed twice in this proposal."); continue; }
                 if (input.BaseVersion is not { } baseVersion) { errors.Add(at + "baseVersion", "This field is required."); continue; }
                 var before = baseVersion == current.Version ? type.Snapshot(current)
@@ -157,11 +164,12 @@ public static class Proposals
                     }
                 }
                 else scratch.Id = change.TargetId!;
-                type.Apply(scratch, input.After, fieldErrors, refs);
-                foreach (var (field, message) in fieldErrors.All) errors.Add($"{at}after.{field}", message);
+                var after = input.After;
+                if (current is not null) after = ProtectedNotesMask.KeepHidden(type, current, after);
+                type.Apply(scratch, after, fieldErrors, refs);
+                fieldErrors.CopyTo(errors, $"{at}after.");
                 if (fieldErrors.Any) continue;
-                if (!access.Viewer.SeesRestricted && access.Facts.Restricted(kind, scratch))
-                    throw ApiProblem.Forbidden($"Only administrators make a {type.Noun} restricted.");
+                access.RequireStillVisible(type, scratch);
                 if (operation == ChangeOperation.Create) refs.Add(kind, scratch.Id);
                 change.After = Records.Serialize(type.Snapshot(scratch));
             }
@@ -239,6 +247,9 @@ public static class Proposals
         if (p.Status != ProposalStatus.Submitted) throw ApiProblem.Conflict("Only a proposal waiting for validation can be refused.");
         if (p.AuthorId == access.Viewer.Id) throw ApiProblem.Forbidden("You cannot refuse your own proposal: withdraw it instead.");
         if (!IsValidator(p, access)) throw ApiProblem.Forbidden("Only administrators and members of the owning teams validate this proposal.");
+        var errors = new FieldErrors();
+        errors.CheckSecret("reason", text);
+        errors.ThrowIfAny();
         p.Status = ProposalStatus.Refused;
         p.RefusalReason = text;
         (p.DecidedById, p.DecidedByName, p.DecidedAt) = (access.Viewer.Id, access.Viewer.Username, now);
@@ -280,7 +291,7 @@ public static class Proposals
                 scratch.Id = current.Id;
                 var fieldErrors = new FieldErrors();
                 type.Apply(scratch, merged, fieldErrors, refs);
-                foreach (var (field, message) in fieldErrors.All) errors.Add($"changes[{c.Position}].after.{field}", message);
+                fieldErrors.CopyTo(errors, $"changes[{c.Position}].after.");
                 c.After = Records.Serialize(type.Snapshot(scratch));
             }
             (c.Before, c.BaseVersion, c.Conflicts) = (Records.Serialize(latest), current.Version, conflicts);
@@ -309,5 +320,48 @@ public static class Proposals
         var mine = await db.Proposals.CountAsync(p => p.AuthorId == access.Viewer.Id && (p.Status == ProposalStatus.Draft || p.Status == ProposalStatus.Submitted), cancel);
         var submitted = await Query(db).AsNoTracking().Where(p => p.Status == ProposalStatus.Submitted && p.AuthorId != access.Viewer.Id).ToListAsync(cancel);
         return new InboxDto(submitted.Count(p => Visible(p, access) && CanDecide(p, access)), mine);
+    }
+}
+
+/// <summary>Protected notes as shown to those who may not read them: <c>••• protected</c> instead of the text.</summary>
+public static class ProtectedNotesMask
+{
+    public const string Field = "protectedNotes";
+
+    private static bool HasNotes(JsonObject? snapshot) => Diffs.Value(snapshot, Field) is not null;
+
+    /// <summary>A copy of the snapshot with its protected notes masked (the snapshot itself when it has none).</summary>
+    public static JsonObject? Mask(JsonObject? snapshot)
+    {
+        if (snapshot is null || !HasNotes(snapshot)) return snapshot;
+        var copy = (JsonObject)snapshot.DeepClone();
+        copy[Field] = Rules.ProtectedMask;
+        return copy;
+    }
+
+    /// <summary>The protected notes entry of a diff with its values masked: the reader learns that they changed, not how.</summary>
+    public static List<DiffEntryDto> Mask(List<DiffEntryDto> diff, bool before, bool after) =>
+        [.. diff.Select(d => d.Field != Field ? d : d with
+        {
+            Before = before && d.Before is not null ? JsonValue.Create(Rules.ProtectedMask) : d.Before,
+            After = after && d.After is not null ? JsonValue.Create(Rules.ProtectedMask) : d.After,
+        })];
+
+    /// <summary>
+    /// A proposed state written by someone who may not read the protected notes (or the access list) leaves them out:
+    /// they keep their current value. A value they do write replaces the notes.
+    /// </summary>
+    public static JsonObject KeepHidden(RecordType type, VersionedEntity current, JsonObject after)
+    {
+        var snapshot = type.Snapshot(current);
+        var copy = (JsonObject)after.DeepClone();
+        foreach (var field in new[] { Field, "access" })
+        {
+            if (!snapshot.ContainsKey(field)) continue;
+            var value = copy[field];
+            if (value is null || (value is JsonValue v && v.TryGetValue<string>(out var text) && text.Trim() == Rules.ProtectedMask))
+                copy[field] = snapshot[field]?.DeepClone();
+        }
+        return copy;
     }
 }

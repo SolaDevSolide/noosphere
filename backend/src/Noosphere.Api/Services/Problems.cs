@@ -18,6 +18,9 @@ public sealed class ApiProblem(int status, string detail, IReadOnlyDictionary<st
     public static ApiProblem BadRequest(string detail) => new(400, detail);
     public static ApiProblem Invalid(IReadOnlyDictionary<string, string[]> errors) =>
         new(400, "Some fields are invalid.", errors);
+    /// <summary>A text field holds what looks like a secret (422, with the field errors).</summary>
+    public static ApiProblem Secret(IReadOnlyDictionary<string, string[]> errors) =>
+        new(422, "Some fields look like secrets. Noosphere is documentation, not a vault.", errors);
     public static ApiProblem Forbidden(string detail) => new(403, detail);
     public static ApiProblem NotFound(string detail) => new(404, detail);
     public static ApiProblem Conflict(string detail) => new(409, detail);
@@ -26,7 +29,7 @@ public sealed class ApiProblem(int status, string detail, IReadOnlyDictionary<st
 }
 
 /// <summary>Body of every error response.</summary>
-/// <param name="Errors">Field errors (field name in camelCase, then messages), on 400 only.</param>
+/// <param name="Errors">Field errors (field name in camelCase, then messages), on 400, and on 422 when a field looks like a secret.</param>
 /// <param name="Outdated">true on the 409 answered when accepting a proposal whose records changed since it was written.</param>
 public sealed record ProblemDto(string Type, string Title, int Status, string Detail,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyDictionary<string, string[]>? Errors = null,
@@ -109,12 +112,18 @@ public static class Problems
     }
 }
 
-/// <summary>Collects field errors, then throws one 400 with all of them.</summary>
+/// <summary>
+/// Collects field errors, then throws one 400 with all of them, or one 422 when a field holds what looks like a secret.
+/// </summary>
 public sealed class FieldErrors
 {
     private readonly Dictionary<string, List<string>> _errors = [];
+    private readonly HashSet<string> _secrets = [];
 
     public bool Any => _errors.Count > 0;
+
+    /// <summary>A field holds what looks like a secret.</summary>
+    public bool HasSecret => _secrets.Count > 0;
 
     public IEnumerable<(string Field, string Message)> All => _errors.SelectMany(e => e.Value.Select(m => (e.Key, m)));
 
@@ -124,26 +133,46 @@ public sealed class FieldErrors
         list.Add(message);
     }
 
-    /// <summary>Required text, trimmed, at most <paramref name="max"/> characters.</summary>
+    /// <summary>Copies every error, field names prefixed (<c>changes[0].after.</c>), secrets kept as such.</summary>
+    public void CopyTo(FieldErrors target, string prefix = "")
+    {
+        foreach (var (field, message) in All) target.Add(prefix + field, message);
+        foreach (var field in _secrets) target._secrets.Add(prefix + field);
+    }
+
+    /// <summary>Records an error when <paramref name="text"/> looks like a secret; true when it does.</summary>
+    public bool CheckSecret(string field, string? text)
+    {
+        if (Domain.SecretScanner.Find(text) is not { } match) return false;
+        Add(field, Domain.SecretScanner.Message(match));
+        _secrets.Add(field);
+        return true;
+    }
+
+    /// <summary>Required text, trimmed, at most <paramref name="max"/> characters, without secrets.</summary>
     public string Required(string field, string? value, int max = Domain.Rules.MaxNameLength)
     {
         var text = value?.Trim() ?? "";
         if (text.Length == 0) Add(field, "This field is required.");
         else if (text.Length > max) Add(field, $"At most {max} characters.");
+        else CheckSecret(field, text);
         return text;
     }
 
-    /// <summary>Optional text: trimmed, null when empty, at most <paramref name="max"/> characters.</summary>
+    /// <summary>Optional text: trimmed, null when empty, at most <paramref name="max"/> characters, without secrets.</summary>
     public string? Optional(string field, string? value, int max = Domain.Rules.MaxShortTextLength)
     {
         var text = value?.Trim();
         if (string.IsNullOrEmpty(text)) return null;
         if (text.Length > max) Add(field, $"At most {max} characters.");
+        else CheckSecret(field, text);
         return text;
     }
 
     public void ThrowIfAny()
     {
-        if (Any) throw ApiProblem.Invalid(_errors.ToDictionary(e => e.Key, e => e.Value.ToArray()));
+        if (!Any) return;
+        var errors = _errors.ToDictionary(e => e.Key, e => e.Value.ToArray());
+        throw HasSecret ? ApiProblem.Secret(errors) : ApiProblem.Invalid(errors);
     }
 }
