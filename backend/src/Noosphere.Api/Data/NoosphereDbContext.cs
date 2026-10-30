@@ -19,6 +19,12 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<ProposalApproval> ProposalApprovals => Set<ProposalApproval>();
     public DbSet<InstanceSettings> InstanceSettings => Set<InstanceSettings>();
     public DbSet<AccessLog> AccessLogs => Set<AccessLog>();
+    public DbSet<AgentSettings> AgentSettings => Set<AgentSettings>();
+    public DbSet<AgentConnection> AgentConnections => Set<AgentConnection>();
+    public DbSet<AgentActivity> AgentActivities => Set<AgentActivity>();
+    public DbSet<AgentToken> AgentTokens => Set<AgentToken>();
+    public DbSet<OAuthClient> OAuthClients => Set<OAuthClient>();
+    public DbSet<OAuthRequest> OAuthRequests => Set<OAuthRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -118,6 +124,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.AuthorName).HasMaxLength(100);
             e.Property(x => x.AuthorKind).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.OnBehalfOf).HasMaxLength(100);
+            e.HasIndex(x => x.AgentConnectionId);
             e.Property(x => x.DecidedByName).HasMaxLength(100);
             e.Property(x => x.RefusalReason).HasMaxLength(Rules.MaxShortTextLength);
             e.Property(x => x.Version).IsConcurrencyToken();
@@ -163,6 +170,69 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.HasIndex(x => x.At);
             e.HasIndex(x => x.Username);
             e.HasIndex(x => new { x.Kind, x.EntityId });
+        });
+        ConfigureAgents(modelBuilder);
+    }
+
+    private static void ConfigureAgents(ModelBuilder modelBuilder)
+    {
+        const int Url = 2048;
+        modelBuilder.Entity<AgentSettings>(e =>
+        {
+            e.ToTable("AgentSettings");
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Ceiling).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.WhoConnects).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Version).IsConcurrencyToken();
+        });
+        modelBuilder.Entity<AgentConnection>(e =>
+        {
+            e.Property(x => x.ClientId).HasMaxLength(Url);
+            e.Property(x => x.ClientName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.ClientUri).HasMaxLength(Url);
+            e.Property(x => x.ApprovedBy).HasMaxLength(100);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.ClientId);
+        });
+        modelBuilder.Entity<AgentActivity>(e =>
+        {
+            e.ToTable("AgentActivity");
+            e.Property(x => x.Tool).HasMaxLength(50);
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Summary).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.RecordKind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.RecordId).HasMaxLength(Rules.MaxIdLength);
+            e.HasOne<AgentConnection>().WithMany().HasForeignKey(x => x.ConnectionId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.ConnectionId, x.At });
+            e.HasIndex(x => x.At);
+        });
+        modelBuilder.Entity<AgentToken>(e =>
+        {
+            e.Property(x => x.Hash).HasMaxLength(64);
+            e.HasIndex(x => x.Hash).IsUnique();
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.HasOne<AgentConnection>().WithMany().HasForeignKey(x => x.ConnectionId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.ConnectionId);
+        });
+        modelBuilder.Entity<OAuthClient>(e =>
+        {
+            e.HasKey(x => x.ClientId);
+            e.Property(x => x.ClientId).HasMaxLength(Url);
+            e.Property(x => x.ClientName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.ClientUri).HasMaxLength(Url);
+        });
+        modelBuilder.Entity<OAuthRequest>(e =>
+        {
+            e.Property(x => x.ClientId).HasMaxLength(Url);
+            e.Property(x => x.ClientName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.ClientUri).HasMaxLength(Url);
+            e.Property(x => x.RedirectUri).HasMaxLength(Url);
+            e.Property(x => x.State).HasMaxLength(Url);
+            e.Property(x => x.CodeChallenge).HasMaxLength(128);
+            e.Property(x => x.CodeHash).HasMaxLength(64);
+            e.HasIndex(x => x.CodeHash).IsUnique();
+            e.HasIndex(x => x.ExpiresAt);
         });
     }
 

@@ -15,15 +15,15 @@ export function StatusChip({ status }: { status: ProposalStatus }) {
   return <span className={'pchip st ' + STATUS_CLASS[status]}>{t.review.status[status]}</span>;
 }
 
-/** Who wrote a proposal; agents (a later milestone) get their own chip. */
-export function AuthorChip({ p }: { p: Pick<Proposal, 'author' | 'authorKind' | 'onBehalfOf'> }) {
+/** Who wrote a proposal; agents get their own chip, with the person they act for. */
+export function AuthorChip({ p }: { p: Pick<Proposal, 'author' | 'authorKind' | 'onBehalfOf' | 'agentName'> }) {
   const { t } = useI18n();
   const name = p.author?.displayName ?? t.history.system;
   if (p.authorKind === 'agent')
     return (
       <span className="pchip agent">
         <IconBot size={12} />
-        {p.onBehalfOf ? t.review.agentFor(name, p.onBehalfOf) : name}
+        {p.onBehalfOf ? t.review.agentFor(p.agentName ?? name, p.onBehalfOf.displayName) : name}
       </span>
     );
   return <span className="pchip">{t.review.by(name)}</span>;

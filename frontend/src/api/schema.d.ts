@@ -2280,6 +2280,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MyAgentsDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/applications/{id}/history": {
         parameters: {
             query?: never;
@@ -2795,6 +2830,847 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/oauth/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConsentRequestDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/oauth/requests/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["ConsentApproveInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConsentResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/oauth/requests/{id}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConsentResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentSettingsDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AgentSettingsInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentSettingsDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentConnectionDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentConnectionDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentConnectionDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/{id}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentCapabilitiesDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    connectionId?: string;
+                    kind?: string;
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AgentActivityPageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agents/stop-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StopAllInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StopAllResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoStateDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoSwitchInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoSwitchResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/simulate/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoRecordInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoEditResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/simulate/proposal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": null | components["schemas"]["DemoRecordInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoProposalResultDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/simulate/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoDecisionInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoDecisionResultDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/simulate/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoAgentInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoAgentResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/simulate/guest-read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoRecordInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoGuestReadResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DemoResetInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemoResetResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2884,6 +3760,145 @@ export interface components {
             /** Format: int32 */
             memberCount: number;
         };
+        /** @description One call of an agent. */
+        AgentActivityDto: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            at: string;
+            /** Format: uuid */
+            connectionId: string;
+            agentName: string;
+            person: components["schemas"]["UserRefDto"];
+            /** @description MCP tool (`search`, `draft_change`...), or `llms.txt`, `markdown`, `revoke`, `stop-all`. */
+            tool: string;
+            /** @description `read`, `draft`, `proposal`, `refused`, `quota` or `revoked`. */
+            kind: components["schemas"]["AgentActivityKind"];
+            /** @description In English, without the agent's name: "Read Billing (application)." */
+            summary: string;
+            recordKind: null | components["schemas"]["RecordKind"];
+            recordId: null | string;
+            /** @description Name of the record now, when the reader may see it. */
+            recordTitle: null | string;
+        };
+        /** @enum {unknown} */
+        AgentActivityKind: "read" | "draft" | "proposal" | "refused" | "quota" | "revoked";
+        AgentActivityPageDto: {
+            items: components["schemas"]["AgentActivityDto"][];
+            /** @description Pass it as `cursor` for the next (older) page; null on the last page. */
+            nextCursor: null | string;
+        };
+        /** @description "What this agent can do", in plain words: min(person's rights, ceiling, scopes). */
+        AgentCapabilitiesDto: {
+            /** Format: uuid */
+            connectionId: string;
+            agentName: string;
+            person: components["schemas"]["UserRefDto"];
+            ceiling: components["schemas"]["AgentCeiling"];
+            scopes: string[];
+            items: components["schemas"]["CapabilityDto"][];
+        };
+        /**
+         * @description The most an AI agent sees, whatever its person sees: records visible to everyone (`public`, the default), the
+         *     same with protected notes (`public+protected`), or everything its person sees (`asUser`; restricted records
+         *     also need the `docs:read:restricted` scope).
+         * @enum {unknown}
+         */
+        AgentCeiling: "public" | "public+protected" | "asUser";
+        /** @description An AI agent connected by a person. */
+        AgentConnectionDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description OAuth client id: the URL of its metadata document, or the id given at registration. */
+            clientId: string;
+            clientName: string;
+            clientUri: null | string;
+            /** @description The person it acts for. */
+            person: components["schemas"]["UserRefDto"];
+            /** @description `docs:read`, `docs:draft`, `docs:read:restricted`. */
+            scopes: string[];
+            state: components["schemas"]["AgentState"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastUsedAt: null | string;
+            /** Format: date-time */
+            revokedAt: null | string;
+            /** Format: date-time */
+            pausedUntil: null | string;
+            /** Format: date-time */
+            approvedAt: null | string;
+            /**
+             * Format: int32
+             * @description Calls since the start of the current hour (the quota window).
+             */
+            callsLastHour: number;
+            /**
+             * Format: int32
+             * @description Drafts it has not submitted yet.
+             */
+            openDrafts: number;
+            lastActivity: null | components["schemas"]["AgentActivityDto"];
+            /** @description Made by the demo toolbox. */
+            demo: boolean;
+        };
+        /** @description Settings of AI agents (MCP server, OAuth, llms.txt). */
+        AgentSettingsDto: {
+            /** @description The MCP server and the OAuth endpoints answer. Off: every agent is refused, and nobody can connect one. */
+            enabled: boolean;
+            /** @description `public` (default): records visible to everyone, without protected notes. `public+protected`: the same with protected notes. `asUser`: what the person sees (restricted records also need the `docs:read:restricted` scope). */
+            ceiling: components["schemas"]["AgentCeiling"];
+            /**
+             * Format: int32
+             * @description Calls per hour and per connection; over it, the connection is paused until the next hour.
+             */
+            quotaPerHour: number;
+            /** @description `anyMember`: everyone connects agents for themselves. `approvalRequired`: a new connection waits for an administrator. */
+            whoConnects: components["schemas"]["AgentWhoConnects"];
+            /** @description OAuth dynamic client registration (RFC 7591) is open, for clients without a Client ID Metadata Document. */
+            dynamicRegistration: boolean;
+            /** @description `/llms.txt`, `/llms-full.txt` and the Markdown views answer without a session: records visible to everyone, without protected notes. */
+            anonymousLlms: boolean;
+            /** @description Address of the MCP server, to paste in an agent's configuration. */
+            mcpUrl: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            updatedAt: null | string;
+        };
+        AgentSettingsInput: {
+            enabled: null | boolean;
+            ceiling: null | components["schemas"]["AgentCeiling"];
+            /** Format: int32 */
+            quotaPerHour: null | number;
+            whoConnects: null | components["schemas"]["AgentWhoConnects"];
+            dynamicRegistration: null | boolean;
+            anonymousLlms: null | boolean;
+            /**
+             * Format: int32
+             * @description The version that was read (409 when someone saved in between).
+             */
+            version: null | number;
+        };
+        /** @description What the "My agents" page shows to its reader. */
+        AgentSettingsSummaryDto: {
+            enabled: boolean;
+            ceiling: components["schemas"]["AgentCeiling"];
+            whoConnects: components["schemas"]["AgentWhoConnects"];
+            /** Format: int32 */
+            quotaPerHour: number;
+            mcpUrl: string;
+        };
+        /**
+         * @description `pending`: waits for an administrator's approval; `paused`: over the hourly quota; `revoked`: disconnected.
+         * @enum {unknown}
+         */
+        AgentState: "pending" | "active" | "paused" | "revoked";
+        /**
+         * @description Who may connect an agent: any member, for themselves, or the same with an administrator's approval.
+         * @enum {unknown}
+         */
+        AgentWhoConnects: "anyMember" | "approvalRequired";
         /** @description An application with its owner, the reader's permissions and its pages. */
         ApplicationDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */
@@ -2987,6 +4002,14 @@ export interface components {
         };
         /** @enum {unknown} */
         AuthorKind: "user" | "agent";
+        /** @description One line of "What this agent can do". */
+        CapabilityDto: {
+            /** @description `read`, `draft`, `publish`, `restricted`, `protectedNotes` or `quota`. */
+            key: string;
+            /** @description false for what the agent cannot do. */
+            allowed: boolean;
+            text: components["schemas"]["LocalizedTextDto"];
+        };
         /** @enum {unknown} */
         ChangeOperation: "create" | "update" | "delete";
         CompareDto: {
@@ -2995,6 +4018,44 @@ export interface components {
             /** Format: int32 */
             to: number;
             diff: components["schemas"]["DiffEntryDto"][];
+        };
+        ConsentApproveInput: {
+            /** @description Optional: grant fewer scopes than asked. */
+            scopes: null | string[];
+        };
+        /** @description What the consent page shows: who asks, for whom, and what it will be allowed to do. */
+        ConsentRequestDto: {
+            /** Format: uuid */
+            id: string;
+            clientId: string;
+            clientKind: components["schemas"]["OAuthClientKind"];
+            clientName: string;
+            clientUri: null | string;
+            /** @description Where the browser goes back after the decision. */
+            redirectHost: string;
+            person: components["schemas"]["UserRefDto"];
+            scopes: components["schemas"]["ConsentScopeDto"][];
+            capabilities: components["schemas"]["CapabilityDto"][];
+            ceiling: components["schemas"]["AgentCeiling"];
+            /** @description An administrator approves new connections before they work. */
+            approvalRequired: boolean;
+            /** @description The person already has a connection with this client: approving replaces its access. */
+            alreadyConnected: boolean;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        ConsentResultDto: {
+            /** @description Where the consent page sends the browser: the agent's redirect URI with the code (or the error). */
+            redirectTo: string;
+            /** @description The connection waits for an administrator before it works. */
+            pendingApproval: boolean;
+        };
+        /** @description A scope asked by the agent. */
+        ConsentScopeDto: {
+            scope: string;
+            /** @description false when the ceiling or the person's role does not allow it (it is then left out). */
+            grantable: boolean;
+            text: components["schemas"]["LocalizedTextDto"];
         };
         /** @description A data object with its owner (the team of its source application), permissions and pages. */
         DataObjectDetailDto: {
@@ -3038,6 +4099,119 @@ export interface components {
             description: null | string;
             /** Format: int32 */
             version: null | number;
+        };
+        DemoAgentInput: {
+            /** @description `draft`, `submit`, `refused` or `quota`. */
+            scenario: null | string;
+        };
+        DemoAgentResultDto: {
+            scenario: string;
+            /** Format: uuid */
+            connectionId: string;
+            /** @description The activity lines written by the scenario, oldest first. */
+            activity: components["schemas"]["AgentActivityDto"][];
+            /** Format: uuid */
+            proposalId: null | string;
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        DemoDecisionInput: {
+            /** Format: uuid */
+            proposalId: null | string;
+            /** @description `accept` or `refuse`. */
+            decision: null | string;
+            /** @description For a refusal; a default reason is given when empty. */
+            reason?: null | string;
+        };
+        DemoDecisionResultDto: {
+            /** Format: uuid */
+            proposalId: string;
+            status: components["schemas"]["ProposalStatus"];
+            decidedBy: components["schemas"]["UserRefDto"];
+            refusalReason: null | string;
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        DemoEditResultDto: {
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            /**
+             * Format: int32
+             * @description The new version: a save based on an older one now gets 409.
+             */
+            version: number;
+            author: components["schemas"]["UserRefDto"];
+            /** @description Open proposals on the record, outdated by this change. */
+            outdatedProposals: string[];
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        DemoGuestReadResultDto: {
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            /** @description The guest could read the record in full. */
+            read: boolean;
+            /**
+             * Format: int32
+             * @description Access log lines written by the read.
+             */
+            accessLogLines: number;
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        /** @description What the interface shows as a toast after a demo action, in the language of the signed-in user. */
+        DemoNoticeDto: {
+            title: string;
+            detail: string;
+            /** @description A path of the interface to open (`/review/…`). */
+            link: null | string;
+        };
+        /** @description A demo account, with what to try with it. */
+        DemoPersonaDto: {
+            username: string;
+            displayName: string;
+            role: components["schemas"]["Role"];
+            teams: components["schemas"]["TeamRefDto"][];
+            whatToTry: components["schemas"]["LocalizedTextDto"];
+            current: boolean;
+        };
+        DemoProposalResultDto: {
+            /** Format: uuid */
+            proposalId: string;
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            author: components["schemas"]["UserRefDto"];
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        DemoRecordInput: {
+            /** @description `application`, `flow`, `dataObject` or `page`. */
+            kind: null | string;
+            id: null | string;
+        };
+        DemoResetInput: {
+            confirm: null | boolean;
+        };
+        DemoResetResultDto: {
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        /** @description A demo action. */
+        DemoScenarioDto: {
+            /** @description `edit`, `proposal`, `decision`, `agent:draft`, `agent:submit`, `agent:refused`, `agent:quota`, `guest-read`, `reset`. */
+            id: string;
+            /** @description The endpoint that runs it. */
+            endpoint: string;
+            label: components["schemas"]["LocalizedTextDto"];
+            description: components["schemas"]["LocalizedTextDto"];
+        };
+        DemoStateDto: {
+            personas: components["schemas"]["DemoPersonaDto"][];
+            scenarios: components["schemas"]["DemoScenarioDto"][];
+            /** @description The signed-in demo user; null when signed out. */
+            current: null | string;
+            notice: components["schemas"]["DemoNoticeDto"];
+        };
+        DemoSwitchInput: {
+            username: null | string;
+        };
+        DemoSwitchResultDto: {
+            me: components["schemas"]["MeDto"];
+            notice: components["schemas"]["DemoNoticeDto"];
         };
         /** @description One changed field. `markdown` fields carry the raw texts, for an inline word diff. */
         DiffEntryDto: {
@@ -3345,6 +4519,11 @@ export interface components {
         };
         /** @enum {unknown} */
         Lifecycle: "planned" | "live" | "retiring" | "retired";
+        /** @description A text in the two languages of the interface. */
+        LocalizedTextDto: {
+            en: string;
+            fr: string;
+        };
         LoginInput: {
             username: null | string;
             password: null | string;
@@ -3359,6 +4538,19 @@ export interface components {
             /** @description Teams the user belongs to. */
             teams: components["schemas"]["TeamRefDto"][];
         };
+        MyAgentsDto: {
+            connections: components["schemas"]["AgentConnectionDto"][];
+            /** @description Drafts of the reader's agents (seen by nobody else but administrators). */
+            drafts: components["schemas"]["ProposalDto"][];
+            /** @description Proposals the reader's agents submitted, newest first. */
+            proposals: components["schemas"]["ProposalDto"][];
+            settings: components["schemas"]["AgentSettingsSummaryDto"];
+        };
+        /**
+         * @description `metadataDocument`: the client id is the https URL of its Client ID Metadata Document; `registered`: dynamic registration.
+         * @enum {unknown}
+         */
+        OAuthClientKind: "metadataDocument" | "registered";
         /** @description A page with its resolved links, backlinks, place in the tree, owner and the reader's permissions. */
         PageDetailDto: {
             /** @description Wiki links of the body, resolved; `exists: false` marks a broken link. */
@@ -3594,9 +4786,10 @@ export interface components {
             comment: null | string;
             /** @description `draft`, `submitted` (shown as "To validate"), `accepted`, `refused` or `withdrawn`. */
             status: components["schemas"]["ProposalStatus"];
+            /** @description `user`, or `agent` for a proposal written by an AI agent: `author` is then the person it acts for. */
             authorKind: components["schemas"]["AuthorKind"];
             author: components["schemas"]["UserRefDto"];
-            onBehalfOf: null | string;
+            onBehalfOf: null | components["schemas"]["UserRefDto"];
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3614,9 +4807,16 @@ export interface components {
             requiresAdmin: boolean;
             /** @description The reader may accept or refuse it now. */
             canDecide: boolean;
-            /** @description The reader is the author and may still edit, submit or withdraw it. */
+            /** @description The reader is the author (for an agent's proposal: the person it acts for) and may still edit, submit or withdraw it. */
             canEdit: boolean;
             changes: components["schemas"]["ProposalChangeDto"][];
+            /** @description For an agent's proposal: the name of the agent (its OAuth client name). */
+            agentName?: null | string;
+            /**
+             * Format: uuid
+             * @description For an agent's proposal: its connection.
+             */
+            agentConnectionId?: null | string;
         };
         ProposalInput: {
             title: null | string;
@@ -3794,6 +4994,18 @@ export interface components {
             defaultLanguage: null | string;
             /** Format: int32 */
             version: null | number;
+        };
+        StopAllInput: {
+            /** @description Must be true. */
+            confirm: null | boolean;
+        };
+        StopAllResultDto: {
+            /** Format: int32 */
+            revokedConnections: number;
+            /** Format: int32 */
+            revokedTokens: number;
+            /** Format: date-time */
+            at: string;
         };
         /** @description What a team owns and how many people publish there. */
         TeamAccessDto: {

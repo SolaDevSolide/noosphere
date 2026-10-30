@@ -30,7 +30,7 @@ JSON sur HTTP, sous `/api`. Les clés sont en camelCase et les énumérations so
 | 404 | Enregistrement introuvable |
 | 409 | Version périmée, identifiant déjà pris, enregistrement encore utilisé (suppression), proposition dépassée (`outdated: true`) |
 | 422 | Fichier d'import en erreur (corps : le résultat de l'import) |
-| 429 | Trop de tentatives de connexion |
+| 429 | Trop de tentatives de connexion, ou d'enregistrements de clients |
 
 ## Authentification et comptes
 
@@ -144,6 +144,34 @@ Voir les [pages](pages.md) : `GET/POST /api/pages`, `GET /api/pages/tree`, `GET/
 L'en-tête affiche `instanceName`, avec `organisationName` en dessous, et l'onglet du navigateur utilise
 `instanceName`. Les nouveaux comptes reçoivent `defaultLanguage`. Le nom technique `noosphere` (commande, image,
 cookie) ne change jamais.
+
+## Agents IA
+
+Voir [Agents IA (MCP)](agents.md) pour le serveur MCP à `/mcp`, les points d'accès OAuth (`/.well-known/*`,
+`/oauth/*`), `/llms.txt`, `/llms-full.txt` et les vues Markdown, qui sont hors de `/api`.
+
+| Méthode et chemin | Qui | Corps, réponse |
+| ----------------- | --- | -------------- |
+| `GET /api/settings/agents` | connecté | `{enabled, ceiling, quotaPerHour, whoConnects, dynamicRegistration, anonymousLlms, mcpUrl, version, updatedAt}` |
+| `PUT /api/settings/agents` | admin | Les mêmes champs (chacun facultatif) plus `version` |
+| `GET /api/me/agents` | connecté | `{connections, drafts, proposals, settings}` : mes connexions, les brouillons et autres propositions de mes agents |
+| `GET /api/agents` | admin | Toutes les connexions : `{id, clientId, clientName, clientUri, person, scopes, state, createdAt, lastUsedAt, revokedAt, pausedUntil, approvedAt, callsLastHour, openDrafts, lastActivity, demo}` |
+| `POST /api/agents/{id}/revoke` | admin, ou la personne | Révoque tout de suite la connexion et ses jetons |
+| `POST /api/agents/{id}/approve` | admin | Une connexion en attente d'approbation (409 sinon) |
+| `GET /api/agents/{id}/capabilities` | admin, ou la personne | `{connectionId, clientName, person, ceiling, scopes, items: [{key, allowed, text: {en, fr}}]}` pour « Ce que cet agent peut faire » |
+| `GET /api/agents/activity?connectionId=&kind=&cursor=&limit=` | connecté | `{items, nextCursor}`, du plus récent au plus ancien ; les miennes seulement, toutes pour un admin. `kind` : `read`, `draft`, `proposal`, `refused`, `quota`, `revoked` |
+| `POST /api/agents/stop-all` | admin | `{confirm: true}`, puis `{revokedConnections, revokedTokens, at}` |
+| `GET /api/oauth/requests/{id}`, `POST .../approve`, `POST .../deny` | connecté | La page de consentement : voir la [référence OAuth](agents.md#référence-oauth) |
+
+Une ligne d'activité vaut `{id, at, connectionId, agentName, person, tool, kind, summary, recordKind, recordId,
+recordTitle}`. Les propositions écrites par un agent ont `authorKind: "agent"`, `onBehalfOf` (la personne,
+`{username, displayName}`), `agentName` et `agentConnectionId`.
+
+## Boîte à outils de démo
+
+Avec `NOOSPHERE_DEMO=true` seulement (404 sinon) : `GET /api/demo/state`, `POST /api/demo/switch`,
+`POST /api/demo/simulate/{edit|proposal|decision|agent|guest-read}` et `POST /api/demo/reset`. Voir la
+[boîte à outils de démo](demo.md).
 
 ## Échange
 

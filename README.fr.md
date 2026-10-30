@@ -24,6 +24,11 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   du paysage sur ce niveau.
 - Un format d'échange documenté (JSON ou YAML) pour importer et exporter le paysage : ce que vous voyez ou, pour
   les administrateurs, un export complet inscrit au journal des accès.
+- Des **agents IA** se connectent par MCP (`/mcp`) pour une personne, après une page de consentement : ils
+  cherchent, lisent et rédigent des brouillons avec les droits de cette personne, sous un plafond fixé par un
+  administrateur et un quota horaire, et ne publient jamais. Chaque appel figure dans leur activité ; **Mes agents**
+  et une console des agents les révoquent, un par un ou tous d'un coup. `/llms.txt`, `/llms-full.txt` et une vue
+  Markdown de chaque fiche.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
 ## Démarrage rapide
@@ -54,7 +59,9 @@ comptes, tous avec le mot de passe `demo` :
 | `claire`    | guest  |                             | lire les noms, et le portail client partagé avec elle               |
 | `david`     | member | Team CRM                    | publier pour Team CRM, proposer ailleurs                            |
 
-Connectez-vous en `bob` pour valider les deux propositions que `david` a envoyées à Team Finance.
+Connectez-vous en `bob` pour valider les deux propositions que `david` a envoyées à Team Finance. La
+[boîte à outils de démo](docs/fr/demo.md) change de personnage d'un clic et fait agir un collègue, une autre équipe, un
+validateur, un agent IA ou l'invitée, pour essayer seul les fonctions collaboratives.
 
 N'activez jamais le mode démonstration sur un serveur partagé.
 
@@ -80,6 +87,8 @@ Tous les réglages sont des variables d'environnement (voir [.env.example](.env.
 | `NOOSPHERE_PUBLIC_URL`       | (adresse de la requête) | Adresse publique écrite dans les exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (aucun)                 | Réseaux du reverse proxy autorisés à envoyer les en-têtes `X-Forwarded-*` |
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`                   | Durée de conservation du journal des accès, en jours                  |
+| `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`                 | Durée de conservation de l'activité des agents IA, en jours           |
+| `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`             | Enregistrements de clients OAuth par minute et par adresse cliente    |
 
 ## Ligne de commande
 
@@ -102,6 +111,8 @@ docker compose exec noosphere noosphere demo reset --yes
 - [Historique](docs/fr/history.md)
 - [Pages](docs/fr/pages.md)
 - [Accès, notes protégées et journal des accès](docs/fr/acces.md)
+- [Agents IA (MCP)](docs/fr/agents.md), avec llms.txt et les vues Markdown
+- [Boîte à outils de démo](docs/fr/demo.md)
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

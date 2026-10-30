@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Routing;
 using Noosphere.Api;
+using Noosphere.Api.Agents;
 using Noosphere.Api.Auth;
 using Noosphere.Api.Cli;
 using Noosphere.Api.Data;
@@ -32,6 +33,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 1024 * 1024);
 builder.Services.AddAccounts();
+builder.Services.AddNoosphereAgents();
 builder.Services.AddHttpProtection(settings);
 // Session cookie keys survive restarts when KEYS_DIR is set (Docker volume); otherwise ASP.NET Core's default location.
 var protection = builder.Services.AddDataProtection().SetApplicationName("noosphere");
@@ -56,12 +58,16 @@ var staticFiles = new StaticFileOptions
 };
 app.UseStaticFiles(staticFiles);
 app.UseCsrfHeaderCheck();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapOpenApi(OpenApiSetup.Path).AllowAnonymous();
 app.MapHealth();
+app.MapOAuth(settings);
+app.MapMcp("/mcp").RequireAuthorization(AgentBearerHandler.Policy).RequireCors(OAuthEndpoints.CorsPolicy);
+app.MapLlms();
 
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapAccounts();
@@ -71,6 +77,9 @@ api.MapProposals();
 api.MapHistory();
 api.MapAccess();
 api.MapExplorer(settings);
+api.MapConsent();
+api.MapAgents();
+if (settings.Demo) api.MapDemo();
 // An unknown /api route never falls back to index.html.
 api.Map("{**rest}", () => Problems.Result(404, "Unknown API route.")).AllowAnonymous().ExcludeFromDescription();
 

@@ -227,12 +227,16 @@ public sealed record ProposalOwnerDto(string Id, string Name, UserRefDto? Approv
 /// <param name="OwnerTeams">Teams that validate (one validator each). An administrator accepts on behalf of all.</param>
 /// <param name="RequiresAdmin">A target is owned by administrators only (no owning team): only an administrator accepts.</param>
 /// <param name="CanDecide">The reader may accept or refuse it now.</param>
-/// <param name="CanEdit">The reader is the author and may still edit, submit or withdraw it.</param>
+/// <param name="CanEdit">The reader is the author (for an agent's proposal: the person it acts for) and may still edit, submit or withdraw it.</param>
+/// <param name="AuthorKind"><c>user</c>, or <c>agent</c> for a proposal written by an AI agent: <c>author</c> is then the person it acts for.</param>
+/// <param name="OnBehalfOf">For an agent's proposal: the person it acts for (the UI shows "AI agent for &lt;person&gt;").</param>
+/// <param name="AgentName">For an agent's proposal: the name of the agent (its OAuth client name).</param>
+/// <param name="AgentConnectionId">For an agent's proposal: its connection.</param>
 public sealed record ProposalDto(
-    Guid Id, string Title, string? Comment, ProposalStatus Status, AuthorKind AuthorKind, UserRefDto Author, string? OnBehalfOf,
+    Guid Id, string Title, string? Comment, ProposalStatus Status, AuthorKind AuthorKind, UserRefDto Author, UserRefDto? OnBehalfOf,
     DateTimeOffset CreatedAt, DateTimeOffset? SubmittedAt, UserRefDto? DecidedBy, DateTimeOffset? DecidedAt, string? RefusalReason,
     int Version, bool Outdated, IReadOnlyList<ProposalOwnerDto> OwnerTeams, bool RequiresAdmin, bool CanDecide, bool CanEdit,
-    IReadOnlyList<ProposalChangeDto> Changes);
+    IReadOnlyList<ProposalChangeDto> Changes, string? AgentName = null, Guid? AgentConnectionId = null);
 
 /// <summary>Counts for the header badge.</summary>
 /// <param name="ToValidate">Submitted proposals the reader may accept or refuse.</param>

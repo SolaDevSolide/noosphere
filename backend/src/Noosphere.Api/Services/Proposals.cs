@@ -39,8 +39,13 @@ public static class Proposals
     }
 
     /// <summary>Drafts are seen by their author only; other proposals by those who see all their records in full (and the author).</summary>
+    /// <remarks>
+    /// An agent's drafts are seen by the person it acts for (the author) and by administrators. Through an agent (limited
+    /// access), a proposal is seen only when all its records are within the agent's limits.
+    /// </remarks>
     public static bool Visible(Proposal p, Access access) =>
-        p.AuthorId == access.Viewer.Id
+        (p.AuthorId == access.Viewer.Id && (access.Limits is null || !p.Changes.Any(c => Hidden(c, access))))
+        || (p.Status == ProposalStatus.Draft && p.AuthorKind == AuthorKind.Agent && access.IsAdmin && access.Limits is null)
         || (p.Status != ProposalStatus.Draft && !p.Changes.Any(c => Hidden(c, access)));
 
     private static bool Hidden(ProposalChange c, Access access) =>
@@ -100,9 +105,14 @@ public static class Proposals
             return new ProposalOwnerDto(t, access.Facts.TeamName(t) ?? t, approval is null ? null : people.Ref(approval.UserId, approval.UserName), approval?.ApprovedAt);
         }).ToList();
         var open = p.Status is ProposalStatus.Draft or ProposalStatus.Submitted;
-        return new ProposalDto(p.Id, p.Title, p.Comment, p.Status, p.AuthorKind, people.Ref(p.AuthorId, p.AuthorName)!, p.OnBehalfOf,
+        var agentName = p.AgentConnectionId is { } connection
+            ? await db.AgentConnections.AsNoTracking().Where(c => c.Id == connection).Select(c => c.ClientName).FirstOrDefaultAsync(cancel)
+            : null;
+        var author = people.Ref(p.AuthorId, p.AuthorName)!;
+        return new ProposalDto(p.Id, p.Title, p.Comment, p.Status, p.AuthorKind, author, p.AuthorKind == AuthorKind.Agent ? author : null,
             p.CreatedAt, p.SubmittedAt, people.Ref(p.DecidedById, p.DecidedByName), p.DecidedAt, p.RefusalReason, p.Version,
-            open && changes.Any(c => c.Outdated), ownerTeams, owners.Contains(null), CanDecide(p, access), CanEdit(p, access), changes);
+            open && changes.Any(c => c.Outdated), ownerTeams, owners.Contains(null), CanDecide(p, access), CanEdit(p, access), changes,
+            p.AuthorKind == AuthorKind.Agent ? agentName ?? "AI agent" : null, p.AgentConnectionId);
     }
 
     // ---------- Writing ----------
