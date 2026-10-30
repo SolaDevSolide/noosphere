@@ -1,3 +1,4 @@
+import { accessFr } from './access.fr';
 import type { Dict } from './en';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n <= 1 ? one : many}`;
@@ -46,6 +47,7 @@ export const fr: Dict = {
     pages: 'Pages',
     reviewWaiting: (n: number) => `${plural(n, 'proposition', 'propositions')} à valider`,
     trash: 'Corbeille',
+    access: 'Accès',
     settings: 'Réglages',
     role: { admin: 'Administrateur', member: 'Membre', guest: 'Invité' },
   },
@@ -399,6 +401,8 @@ export const fr: Dict = {
     unsaved: 'Vous avez des modifications non enregistrées.',
     discardConfirm: 'Abandonner vos modifications ?',
     fields: {
+      protectedNotes: 'Notes protégées',
+      access: 'Liste d’accès',
       name: 'Nom',
       id: 'Identifiant',
       domain: 'Domaine',
@@ -943,4 +947,5 @@ export const fr: Dict = {
     order: 'Ordre',
   },
   notFound: { title: 'Page introuvable', text: 'Cette adresse ne correspond à aucune page.' },
+  access: accessFr,
 };

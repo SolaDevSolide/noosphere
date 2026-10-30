@@ -373,3 +373,39 @@ export const IconDomain = ({ size = 16, ...p }: P) => (
     <path d="M1.8 6.2h12.4M6.2 6.2v8" />
   </svg>
 );
+export const IconEyeOff = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M2 2l12 12M6.6 3.7A6.8 6.8 0 0 1 8 3.5c4 0 6.5 4.5 6.5 4.5a11 11 0 0 1-1.9 2.4M10 11.9a6 6 0 0 1-2 .6c-4 0-6.5-4.5-6.5-4.5a11.5 11.5 0 0 1 2.6-3" />
+  </svg>
+);
+export const IconUser = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="8" cy="5.5" r="2.6" />
+    <path d="M3 13.8c.6-2.6 2.6-4 5-4s4.4 1.4 5 4" />
+  </svg>
+);
+export const IconUsers = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="6" cy="5.5" r="2.3" />
+    <path d="M1.8 13.5c.5-2.4 2.2-3.7 4.2-3.7s3.7 1.3 4.2 3.7" />
+    <circle cx="11.5" cy="6" r="1.8" />
+    <path d="M11 9.8c1.7 0 3 1 3.3 3" />
+  </svg>
+);
+export const IconShield = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M8 1.8l5.2 2v4c0 3.2-2.2 5.4-5.2 6.4-3-1-5.2-3.2-5.2-6.4v-4z" />
+  </svg>
+);
+export const IconShare = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="5.5" cy="5.5" r="2.2" />
+    <path d="M1.8 13c.5-2.2 1.9-3.4 3.7-3.4 1.2 0 2.2.5 2.9 1.4M12 8.5v5M9.5 11h5" />
+  </svg>
+);
+export const IconClock = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M8 4.8V8l2.2 1.4" />
+  </svg>
+);

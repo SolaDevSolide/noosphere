@@ -1,3 +1,4 @@
+import { accessEn } from './access.en';
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export const en = {
@@ -44,6 +45,7 @@ export const en = {
     pages: 'Pages',
     reviewWaiting: (n: number) => `${plural(n, 'proposal', 'proposals')} to validate`,
     trash: 'Trash',
+    access: 'Access',
     settings: 'Settings',
     role: { admin: 'Administrator', member: 'Member', guest: 'Guest' },
   },
@@ -382,6 +384,8 @@ export const en = {
     unsaved: 'You have unsaved changes.',
     discardConfirm: 'Discard your changes?',
     fields: {
+      protectedNotes: 'Protected notes',
+      access: 'Access list',
       name: 'Name',
       id: 'Identifier',
       domain: 'Domain',
@@ -920,6 +924,7 @@ export const en = {
     order: 'Order',
   },
   notFound: { title: 'Page not found', text: 'This address does not match any page.' },
+  access: accessEn,
 };
 
 export type Dict = typeof en;

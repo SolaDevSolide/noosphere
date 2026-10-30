@@ -1,4 +1,8 @@
 import type {
+  AccessLogPage,
+  AccessOverview,
+  Person,
+  RecordAccess,
   Application,
   ApplicationInput,
   DataObject,
@@ -152,6 +156,17 @@ export const KIND_PATH: Record<RecordKind, string> = {
 };
 const hist = (kind: RecordKind, id: string) => `/${KIND_PATH[kind]}/${enc(id)}/history`;
 
+export interface AccessLogQuery {
+  username?: string;
+  kind?: string;
+  entityId?: string;
+  what?: string;
+  from?: string;
+  to?: string;
+  cursor?: string;
+  limit?: number;
+}
+
 export interface ProposalQuery {
   status?: string;
   mine?: boolean;
@@ -234,7 +249,47 @@ export const api = {
   settings: () => request<Settings>('GET', '/settings'),
   updateSettings: (body: Settings) => request<Settings>('PUT', '/settings', body),
 
-  exportUrl: (format: 'json' | 'yaml') => `/api/export?format=${format}`,
+  exportUrl: (format: 'json' | 'yaml', scope: 'visible' | 'full' = 'visible', reason?: string) =>
+    '/api/export' + q({ format, scope: scope === 'full' ? 'full' : undefined, reason: reason?.trim() || undefined }),
+  /** Downloads an export as a file; errors (403, 422 on the reason) come back as an ApiError. */
+  exportFile: async (format: 'json' | 'yaml', scope: 'visible' | 'full', reason?: string) => {
+    let res: Response;
+    try {
+      res = await fetch(api.exportUrl(format, scope, reason), {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'fetch' },
+      });
+    } catch {
+      throw new ApiError(0, 'network');
+    }
+    if (!res.ok) {
+      const p = await readProblem(res);
+      if (res.status === 401) onUnauthorized();
+      const fieldErrors = p.errors && !Array.isArray(p.errors) ? p.errors : {};
+      throw new ApiError(res.status, p.title ?? res.statusText, p.detail, fieldErrors, p);
+    }
+    const name = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') ?? '')?.[1];
+    return { blob: await res.blob(), name: name ?? `noosphere-landscape.${format}` };
+  },
+
+  recordAccess: (kind: RecordKind, id: string) => request<RecordAccess>('GET', `/${KIND_PATH[kind]}/${enc(id)}/access`),
+  people: () => request<Person[]>('GET', '/people'),
+  accessOverview: () => request<AccessOverview>('GET', '/access/overview'),
+  accessLog: (f: AccessLogQuery = {}) =>
+    request<AccessLogPage>(
+      'GET',
+      '/access-log' +
+        q({
+          username: f.username,
+          kind: f.kind,
+          entityId: f.entityId,
+          what: f.what,
+          from: f.from,
+          to: f.to,
+          cursor: f.cursor,
+          limit: f.limit ? String(f.limit) : undefined,
+        }),
+    ),
   importEnvelope: (envelope: ExchangeEnvelope | string, dryRun: boolean, contentType = 'application/json') =>
     request<ImportResult>('POST', '/import' + q({ dryRun: String(dryRun) }), undefined, {
       headers: { 'Content-Type': contentType },
