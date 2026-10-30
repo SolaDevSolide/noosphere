@@ -19,7 +19,7 @@ public class UsersTests : IDisposable
             await client.PostJson("/api/users", new { username = "x", password = "long-enough" }, HttpStatusCode.Forbidden);
         }
         var users = await (await _api.SignedIn("alice")).GetJson("/api/users");
-        Assert.Equal(["alice", "bob", "claire"], users.EnumerateArray().Select(u => u.Str("username")));
+        Assert.Equal(["alice", "bob", "claire", "david"], users.EnumerateArray().Select(u => u.Str("username")));
     }
 
     [Fact]
@@ -69,12 +69,16 @@ public class UsersTests : IDisposable
         await claire.PostJson("/api/teams", new { name = "Guests" }, HttpStatusCode.Forbidden);
         await claire.PutJson("/api/teams/team-crm", new { name = "CRM", version = 1 }, HttpStatusCode.Forbidden);
 
+        // Domains and teams are changed by administrators only.
         var bob = await _api.SignedIn("bob");
-        await bob.PostJson("/api/teams", new { name = "Members" }, HttpStatusCode.Created);
-        await bob.PutJson("/api/teams/members", new { name = "Members!", version = 1 });
-        Assert.Equal(HttpStatusCode.Forbidden, await bob.Delete("/api/teams/members"));
+        await bob.PostJson("/api/teams", new { name = "Members" }, HttpStatusCode.Forbidden);
+        await bob.PutJson("/api/teams/team-finance", new { name = "Finance!", version = 1 }, HttpStatusCode.Forbidden);
+        await bob.PostJson("/api/domains", new { name = "Members" }, HttpStatusCode.Forbidden);
 
         var alice = await _api.SignedIn("alice");
+        await alice.PostJson("/api/teams", new { name = "Members" }, HttpStatusCode.Created);
+        await alice.PutJson("/api/teams/members", new { name = "Members!", version = 1 });
+        Assert.Equal(HttpStatusCode.Forbidden, await bob.Delete("/api/teams/members"));
         Assert.Equal(HttpStatusCode.NoContent, await alice.Delete("/api/teams/members"));
         _ = (await alice.PostAsJsonAsync("/api/auth/logout", new { })).EnsureSuccessStatusCode();
     }

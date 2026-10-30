@@ -90,7 +90,8 @@ public class MigrationBackupTests : IDisposable
         var backup = JsonDocument.Parse(await File.ReadAllTextAsync(file)).RootElement;
         Assert.Equal(20, backup.GetProperty("Applications").GetArrayLength());
         Assert.Equal(36, backup.GetProperty("Flows").GetArrayLength());
-        Assert.Equal(3, backup.GetProperty("Users").GetArrayLength());
+        Assert.Equal(4, backup.GetProperty("Users").GetArrayLength());
+        Assert.Equal(7, backup.GetProperty("Pages").GetArrayLength());
         Assert.True(backup.TryGetProperty("__EFMigrationsHistory", out _));
     }
 
@@ -102,7 +103,7 @@ public class MigrationBackupTests : IDisposable
         // Pretend the last migration is not applied yet, with its tables already there.
         var last = (await db.Database.GetAppliedMigrationsAsync()).Last();
         await db.Database.ExecuteSqlAsync($"""delete from "__EFMigrationsHistory" where "MigrationId" = {last}""");
-        await db.Database.ExecuteSqlRawAsync("""drop table "Flows", "DataObjects", "Applications", "Teams", "Domains", "Users" """);
+        await db.Database.ExecuteSqlRawAsync("""drop table "ProposalApprovals", "ProposalChanges", "Proposals", "Revisions", "Pages", "TeamMembers", "InstanceSettings" """);
         // An older migration stays applied: the database is not new, so it is backed up.
         await db.Database.ExecuteSqlRawAsync("""insert into "__EFMigrationsHistory" values ('20200101000000_Older', '10.0.0')""");
         var directory = Path.Combine(_api.Directory, "backups");
@@ -110,6 +111,18 @@ public class MigrationBackupTests : IDisposable
         Assert.Equal(1, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
         Assert.Single(Directory.GetFiles(directory, "before-migration-*.json"));
         Assert.Equal(0, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
+
+        // The migration backfills one revision per existing record, with its current state.
+        Assert.Equal(6 + 11 + 20 + 5 + 36, await db.Revisions.CountAsync());
+        var billing = await db.Revisions.SingleAsync(r => r.EntityId == "billing");
+        var app = await db.Applications.SingleAsync(a => a.Id == "billing");
+        Assert.Equal((app.Version, "system"), (billing.Version, billing.AuthorName));
+        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(Noosphere.Api.Services.Records.Application.Snapshot(app),
+            System.Text.Json.Nodes.JsonNode.Parse(billing.Snapshot)), billing.Snapshot);
+        var flow = await db.Revisions.SingleAsync(r => r.Kind == Noosphere.Domain.RecordKind.Flow && r.EntityId == "crm-to-billing-customers");
+        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(
+            Noosphere.Api.Services.Records.Flow.Snapshot(await db.Flows.SingleAsync(f => f.Id == "crm-to-billing-customers")),
+            System.Text.Json.Nodes.JsonNode.Parse(flow.Snapshot)), flow.Snapshot);
     }
 }
 

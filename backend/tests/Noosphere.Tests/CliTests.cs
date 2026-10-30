@@ -55,7 +55,7 @@ public class CliTests : IDisposable
     public async Task Users_are_listed_created_and_reset()
     {
         var list = await Run("users", "list", "--json");
-        Assert.Equal(["alice", "bob", "claire"], JsonDocument.Parse(list.Out).RootElement.EnumerateArray().Select(u => u.GetProperty("username").GetString()));
+        Assert.Equal(["alice", "bob", "claire", "david"], JsonDocument.Parse(list.Out).RootElement.EnumerateArray().Select(u => u.GetProperty("username").GetString()));
         Assert.Contains("alice", (await Run("users", "list")).Out, StringComparison.Ordinal);
 
         var created = await Run("users", "create", "Dan", "--role", "admin", "--display-name", "Dan Roux", "--json");
@@ -91,7 +91,7 @@ public class CliTests : IDisposable
         var dry = await Run("import", file, "--dry-run", "--json");
         Assert.Equal(0, dry.Code);
         var result = JsonDocument.Parse(dry.Out).RootElement.GetProperty("result");
-        Assert.Equal((78, true), (result.GetProperty("unchanged").GetInt32(), result.GetProperty("dryRun").GetBoolean()));
+        Assert.Equal((85, true), (result.GetProperty("unchanged").GetInt32(), result.GetProperty("dryRun").GetBoolean()));
 
         var bad = Path.Combine(_api.Directory, "bad.json");
         await File.WriteAllTextAsync(bad, """{"formatVersion":"noosphere/v1","mode":"full","items":[{"kind":"Team","id":"x","metadata":{"name":""},"spec":{}}]}""");
