@@ -452,7 +452,7 @@ export function ApplicationRecord() {
               <h2 id="desc-h">{t.record.fields.description}</h2>
               {a.description ? <Markdown text={a.description} /> : <p className="muted">{t.record.noDescription}</p>}
             </section>
-            <RecordExtensions record={a} />
+            <RecordExtensions kind="application" record={a} />
             <section className="box" aria-labelledby="flows-h">
               <h2 id="flows-h">{t.record.flowsIn(ins.length)}</h2>
               <div className="rows">

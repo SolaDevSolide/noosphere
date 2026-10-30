@@ -13,7 +13,8 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   comparaison par champ, validées par les équipes responsables des enregistrements.
 - Un historique des révisions sur chaque fiche et chaque page, avec comparaison et restauration, et une corbeille.
 - Des pages de documentation en Markdown, en arborescence, rattachées aux fiches, avec des liens wiki
-  (`[[application:billing]]`), des rétroliens et la détection des liens cassés.
+  (`[[application:billing]]`), des rétroliens et la détection des liens cassés, un éditeur avec aperçu en direct,
+  suggestions de liens et trois modèles de page.
 - Des applications et des pages restreintes, visibles en entier par les seuls administrateurs.
 - Un format d'échange documenté (JSON ou YAML) pour importer et exporter tout le paysage.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
@@ -88,6 +89,7 @@ docker compose exec noosphere noosphere demo reset --yes
 
 - [Installation](docs/fr/installation.md)
 - [Configuration](docs/fr/configuration.md)
+- [Guide utilisateur](docs/fr/guide-utilisateur.md)
 - [Propositions et validation](docs/fr/proposals.md)
 - [Historique](docs/fr/history.md)
 - [Pages](docs/fr/pages.md)

@@ -29,6 +29,8 @@ import {
   seedGovernance,
   type GovCtx,
 } from './governance';
+import { handlePages, seedPages } from './pages';
+import { slugify } from '../docpages/model';
 
 const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -39,6 +41,7 @@ const db = {
   applications: clone(seed.applications),
   dataObjects: clone(seed.dataObjects),
   flows: clone(seed.flows),
+  pages: seedPages(),
   users: [
     { username: 'alice', displayName: 'Alice Martin', role: 'admin', language: 'en', teamIds: [] },
     {
@@ -160,6 +163,18 @@ const gov: GovCtx = {
       f.sensitivity = flowSensitivity(f.dataObjectIds ?? []);
       f.completeness = flowCompleteness(f);
     }
+    if (kind === 'page') {
+      // A page proposed for creation carries the editor's input: give it an id and the defaults.
+      if (!rec.id)
+        rec.id = slugify(typeof rec.title === 'string' ? rec.title : '').slice(0, 64) || 'page-' + Date.now();
+      rec.parentId ??= null;
+      rec.order ??= 0;
+      rec.attachedTo ??= null;
+      rec.ownerTeamId ??= null;
+      rec.tags ??= [];
+      rec.visibility ??= 'everyone';
+      rec.body ??= '';
+    }
     return rec;
   },
 };
@@ -181,6 +196,11 @@ function search(u: UserM2, text: string): SearchHit[] {
     if (fold(tm.name).includes(t)) hits.push({ kind: 'team', id: tm.id, title: tm.name, subtitle: '' });
   for (const d of db.domains)
     if (fold(d.name).includes(t)) hits.push({ kind: 'domain', id: d.id, title: d.name, subtitle: '' });
+  for (const p of db.pages)
+    if (fold(p.title).includes(t) || fold(p.body).includes(t) || p.tags.some((x) => fold(x).includes(t))) {
+      const parent = db.pages.find((x) => x.id === p.parentId);
+      hits.push({ kind: 'page', id: p.id, title: p.title, subtitle: parent?.title ?? '' });
+    }
   return hits.slice(0, 20);
 }
 
@@ -246,6 +266,8 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
   if (!u) return problem(401, 'Not signed in.');
   const g = handleGovernance(gov, u, method, url, path, () => parse<Rec>());
   if (g) return g;
+  const pg = handlePages(gov, u, method, path, () => parse<Rec>());
+  if (pg) return pg;
   const can = (r: Role[]) => r.includes(u.role);
 
   if (path === '/auth/me')
@@ -274,6 +296,12 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
   }
   if (path === '/search') return json(200, search(u, url.searchParams.get('q') ?? ''));
   if (path === '/domains') return json(200, db.domains);
+  const dm = /^\/domains\/([^/]+)$/.exec(path);
+  if (dm && method === 'GET') {
+    const d = db.domains.find((x) => x.id === decodeURIComponent(dm![1]));
+    if (!d) return problem(404, 'Domain not found.');
+    return json(200, { ...d, ...recordExtras(gov, u, 'domain', d as unknown as Rec) });
+  }
   if (path === '/teams') return json(200, db.teams);
   if (path === '/data-objects') return json(200, db.dataObjects);
 

@@ -114,3 +114,28 @@ export type Settings = Omit<S['SettingsDto'], 'defaultLanguage' | 'updatedAt'> &
   defaultLanguage: Language;
   updatedAt?: string | null;
 };
+
+/* ---- Documentation pages ---- */
+
+export type AttachedTo = S['AttachedToDto'];
+/** The kinds of record a page can be attached to. */
+export type AttachKind = Exclude<RecordKind, 'page'>;
+export type PageRef = S['PageRefDto'];
+export type PageLink = S['PageLinkDto'];
+export type Page = S['PageDto'];
+export type PageInput = S['PageInput'];
+export type PageSummary = S['PageSummaryDto'];
+export type RestrictedPage = S['RestrictedPageDto'];
+export type PageListItem = PageSummary | RestrictedPage;
+export type PageTreeNode = S['PageTreeNodeDto'];
+/** A page with its resolved links, backlinks, place in the tree, owner and the reader's permissions. */
+export type PageDetail = Page &
+  Pick<
+    S['PageDetailDto'],
+    'links' | 'backlinks' | 'ancestors' | 'children' | 'attachedTitle' | 'owningTeamId' | 'permissions'
+  >;
+export type DomainDetail = S['DomainDetailDto'];
+export type DataObjectDetail = S['DataObjectDetailDto'];
+
+export const isRestrictedPage = (p: PageListItem | PageDetail | RestrictedPage): p is RestrictedPage =>
+  p.restricted === true;

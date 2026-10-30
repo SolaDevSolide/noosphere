@@ -253,3 +253,123 @@ export const IconBot = ({ size = 16, ...p }: P) => (
     <path d="M8 2.2V5M5.8 8.6v.8M10.2 8.6v.8" />
   </svg>
 );
+
+/* ---- documentation pages ---- */
+
+export const IconBook = ({ size = 18, ...p }: P) => (
+  <svg
+    {...base(size, p)}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" />
+    <path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" />
+    <path d="M9 7.5h7M9 11h5" />
+  </svg>
+);
+export const IconDoc = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M4 1.8h5.5L12.5 5v9.2H4z" />
+    <path d="M9.5 1.8V5h3M6 8.5h4.5M6 11h3" />
+  </svg>
+);
+export const IconFolder = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M1.8 4.2c0-.6.4-1 1-1h3.4l1.4 1.6h5.6c.6 0 1 .4 1 1v6.9c0 .6-.4 1-1 1H2.8c-.6 0-1-.4-1-1z" />
+  </svg>
+);
+export const IconChevron = ({ size = 14, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.8}>
+    <path d="M4.5 6.2 8 9.8l3.5-3.6" />
+  </svg>
+);
+export const IconGrip = ({ size = 14, ...p }: P) => (
+  <svg {...base(size, p)} viewBox="0 0 12 16" fill="currentColor">
+    <circle cx="4" cy="4" r="1.2" />
+    <circle cx="8" cy="4" r="1.2" />
+    <circle cx="4" cy="8" r="1.2" />
+    <circle cx="8" cy="8" r="1.2" />
+    <circle cx="4" cy="12" r="1.2" />
+    <circle cx="8" cy="12" r="1.2" />
+  </svg>
+);
+export const IconCopy = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="5.2" y="5.2" width="8.6" height="8.6" rx="1.6" />
+    <path d="M10.8 5.2V3.6c0-.9-.7-1.6-1.6-1.6H3.6C2.7 2 2 2.7 2 3.6v5.6c0 .9.7 1.6 1.6 1.6h1.6" />
+  </svg>
+);
+export const IconCode = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.7}>
+    <path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" />
+  </svg>
+);
+export const IconNote = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.7}>
+    <circle cx="8" cy="8" r="6.3" />
+    <path d="M8 7.2v4M8 4.8v.1" />
+  </svg>
+);
+export const IconBulb = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M6 12.5h4M6.6 14.5h2.8M5.2 9.8A4.4 4.4 0 1 1 10.8 9.8c-.6.5-.8 1-.8 1.7H6c0-.7-.2-1.2-.8-1.7z" />
+  </svg>
+);
+export const IconLink = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.7}>
+    <path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2.2-2.2a2.8 2.8 0 0 0-4-4l-.9.9" />
+    <path d="M9.2 6.8a2.8 2.8 0 0 0-4 0L3 9a2.8 2.8 0 0 0 4 4l.9-.9" />
+  </svg>
+);
+export const IconList = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.7}>
+    <path d="M6 4h8M6 8h8M6 12h8" />
+    <circle cx="2.6" cy="4" r=".6" fill="currentColor" />
+    <circle cx="2.6" cy="8" r=".6" fill="currentColor" />
+    <circle cx="2.6" cy="12" r=".6" fill="currentColor" />
+  </svg>
+);
+export const IconOList = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M6.5 4h7.5M6.5 8h7.5M6.5 12h7.5" />
+    <path d="M2 2.8h1v2.6M1.8 5.4h1.6M1.8 7.4c.3-.4.8-.6 1.2-.4.5.2.5.8.1 1.2L1.8 9.6h1.8" strokeWidth={1.2} />
+  </svg>
+);
+export const IconTable = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.4" />
+    <path d="M1.8 6.2h12.4M1.8 9.8h12.4M6.2 6.2v7.2" />
+  </svg>
+);
+export const IconCallout = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="1.8" y="2.6" width="12.4" height="10.8" rx="1.6" />
+    <path d="M4.6 5.8v4.4M7 6.4h4.6M7 9.6h3.2" />
+  </svg>
+);
+export const IconMenu = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)} strokeWidth={1.8}>
+    <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+  </svg>
+);
+export const IconEdit = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M10.5 2.5l3 3-8 8H2.5v-3z" />
+    <path d="M9 4l3 3" />
+  </svg>
+);
+export const IconSend = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M14 2 7 9M14 2l-4.5 12L7 9 2 6.5z" />
+  </svg>
+);
+export const IconDomain = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="1.8" y="1.8" width="12.4" height="12.4" rx="2" />
+    <path d="M1.8 6.2h12.4M6.2 6.2v8" />
+  </svg>
+);

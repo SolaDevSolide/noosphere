@@ -13,7 +13,7 @@ before changing this API?".
   teams that own the records.
 - A revision history on every record and page, with compare and restore, and a trash for deleted records.
 - Markdown documentation pages in a tree, attached to records, with wiki links (`[[application:billing]]`),
-  backlinks and broken link detection.
+  backlinks and broken link detection, an editor with live preview, link suggestions and three page templates.
 - Restricted applications and pages, shown in full to administrators only.
 - A documented exchange format (JSON or YAML) to import and export the whole landscape.
 - English and French interface. Runs as one container next to PostgreSQL.
@@ -87,6 +87,7 @@ docker compose exec noosphere noosphere demo reset --yes
 
 - [Installation](docs/en/installation.md)
 - [Configuration](docs/en/configuration.md)
+- [User guide](docs/en/user-guide.md)
 - [Proposals and validation](docs/en/proposals.md)
 - [History](docs/en/history.md)
 - [Pages](docs/en/pages.md)

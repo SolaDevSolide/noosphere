@@ -8,6 +8,7 @@ import type {
   Flow,
   HistoryEntry,
   OwnerApproval,
+  Page,
   Permissions,
   PersonRef,
   Proposal,
@@ -31,6 +32,7 @@ export interface GovDb {
   applications: Application[];
   dataObjects: DataObject[];
   flows: Flow[];
+  pages: Page[];
   users: UserM2[];
 }
 
@@ -77,6 +79,12 @@ const FIELDS: Record<RecordKind, [string, string, FieldDiff['kind']][]> = {
   ],
   page: [
     ['title', 'Title', 'text'],
+    ['parentId', 'Parent page', 'ref'],
+    ['order', 'Order', 'text'],
+    ['attachedTo', 'Attached to', 'text'],
+    ['ownerTeamId', 'Owner team', 'ref'],
+    ['tags', 'Tags', 'list'],
+    ['visibility', 'Visibility', 'text'],
     ['body', 'Body', 'markdown'],
   ],
   team: [
@@ -96,6 +104,8 @@ const norm = (v: unknown): unknown => {
   if (v && typeof v === 'object' && !Array.isArray(v)) {
     const o = v as { summary?: string; date?: string | null };
     if ('summary' in o) return o.date ? `${o.summary} (${o.date})` : (o.summary ?? null);
+    const r = v as { kind?: string; id?: string };
+    if (r.kind && r.id) return `${r.kind}:${r.id}`;
   }
   return v;
 };
@@ -170,6 +180,7 @@ function listOf(db: GovDb, kind: RecordKind): Rec[] {
   if (kind === 'dataObject') return db.dataObjects as unknown as Rec[];
   if (kind === 'team') return db.teams as unknown as Rec[];
   if (kind === 'domain') return db.domains as unknown as Rec[];
+  if (kind === 'page') return db.pages as unknown as Rec[];
   return [];
 }
 const find = (db: GovDb, kind: RecordKind, id: string | null) =>
@@ -184,7 +195,27 @@ export function ownerOf(db: GovDb, kind: RecordKind, rec: Rec | null): string | 
   if (kind === 'flow') return (rec.ownerTeamId as string | null) || appTeam(rec.fromId);
   if (kind === 'dataObject') return appTeam(rec.sourceApplicationId);
   if (kind === 'team' || kind === 'domain') return null;
-  return (rec.ownerTeamId as string | null) ?? null;
+  if (rec.ownerTeamId) return rec.ownerTeamId as string;
+  const at = rec.attachedTo as { kind: RecordKind; id: string } | null | undefined;
+  return at && at.kind !== 'page' ? ownerOf(db, at.kind, find(db, at.kind, at.id)) : null;
+}
+
+const LINK = /\[\[(application|flow|dataObject|page|domain|team):([a-z0-9-]+)(?:\|[^\]\n]*)?\]\]/g;
+const linksIn = (body: string) =>
+  [
+    ...body
+      .replace(/```[\s\S]*?(```|$)/g, '')
+      .replace(/`[^`\n]*`/g, '')
+      .matchAll(LINK),
+  ].map((m) => m[1] + ':' + m[2]);
+
+/** The pages attached to a record, and the pages that link to it. */
+export function pagesOf(db: GovDb, kind: RecordKind, id: string) {
+  const ref = (p: Page) => ({ id: p.id, title: p.title });
+  return {
+    pages: db.pages.filter((p) => p.attachedTo?.kind === kind && p.attachedTo.id === id).map(ref),
+    mentionedIn: db.pages.filter((p) => linksIn(p.body).includes(kind + ':' + id)).map(ref),
+  };
 }
 
 export function permissions(db: GovDb, u: UserM2, kind: RecordKind, rec: Rec | null): Permissions {
@@ -229,7 +260,7 @@ function addRevision(
 }
 
 /** The revisions of a record, oldest first; an entity without any gets its current state as the first one. */
-function history(ctx: GovCtx, kind: RecordKind, id: string): StoredRevision[] {
+export function history(ctx: GovCtx, kind: RecordKind, id: string): StoredRevision[] {
   const k = key(kind, id);
   let list = revisions.get(k);
   if (!list) {
@@ -624,8 +655,7 @@ export function recordExtras(ctx: GovCtx, u: UserM2, kind: RecordKind, rec: Rec)
   return {
     owningTeamId: ownerOf(ctx.db, kind, rec),
     permissions: permissions(ctx.db, u, kind, rec),
-    pages: [],
-    mentionedIn: [],
+    ...pagesOf(ctx.db, kind, String(rec.id)),
   };
 }
 
@@ -693,8 +723,7 @@ export function handleGovernance(
         ...team,
         owningTeamId: null,
         permissions: { publish: isAdmin, propose: false },
-        pages: [],
-        mentionedIn: [],
+        ...pagesOf(db, 'team', id),
       });
     if (m[2] && method === 'GET')
       return json(

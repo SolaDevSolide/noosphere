@@ -189,7 +189,7 @@ export function TeamRecord() {
               <p style={{ margin: 0 }}>{team.description}</p>
             </section>
           )}
-          <RecordExtensions record={team} />
+          <RecordExtensions kind="team" record={team} />
           <section className="box" aria-labelledby="tapps-h">
             <h2 id="tapps-h">{t.panel.teamApps(apps.length)}</h2>
             {apps.length ? (

@@ -1,10 +1,10 @@
-import type { FlowStatus, FlowType, Sensitivity } from '../api/types';
+import type { FlowStatus, FlowType, SearchHit, Sensitivity } from '../api/types';
 import { isRestrictedApp, isRestrictedFlow } from '../api/types';
 import type { Dict } from '../i18n/en';
 import { fold, type Model } from '../domain/model';
 import { nameOf, objName, teamName } from '../explorer/bits';
 
-export type SearchKind = 'app' | 'flow' | 'object' | 'team' | 'filter';
+export type SearchKind = 'app' | 'flow' | 'object' | 'team' | 'page' | 'filter';
 export type FilterKey = 'type' | 'obj' | 'sens' | 'status' | 'preset';
 
 export interface SearchItem {
@@ -123,12 +123,34 @@ export function score(it: SearchItem, q: string): number {
   return 0;
 }
 
-export const GROUPS: SearchKind[] = ['app', 'flow', 'object', 'team', 'filter'];
-const LIMIT: Record<SearchKind, number> = { app: 5, flow: 6, object: 5, team: 5, filter: 3 };
+export const GROUPS: SearchKind[] = ['app', 'flow', 'object', 'team', 'page', 'filter'];
+const LIMIT: Record<SearchKind, number> = { app: 5, flow: 6, object: 5, team: 5, page: 5, filter: 3 };
 
 export interface SearchGroup {
   kind: SearchKind;
   items: SearchItem[];
+}
+
+/** Pages found by the server (title, then body), as search items; the excerpt around the match is the subtitle. */
+export function pageItems(hits: SearchHit[]): SearchItem[] {
+  return hits
+    .filter((h) => h.kind === 'page')
+    .map((h) => ({ kind: 'page' as const, id: h.id, label: h.title, sub: excerpt(h.subtitle), hay: fold(h.title) }));
+}
+
+/** The server sends a passage of the page around the match: one short line is enough in the list. */
+function excerpt(s: string | null | undefined): string {
+  const one = (s ?? '').replace(/\s+/g, ' ').trim();
+  return one.length > 90 ? one.slice(0, 89).trimEnd() + '…' : one;
+}
+
+/** Adds the pages group to the grouped results, before the quick filters. */
+export function withPages(groups: SearchGroup[], pages: SearchItem[]): SearchGroup[] {
+  if (!pages.length) return groups;
+  const g = { kind: 'page' as const, items: pages.slice(0, LIMIT.page) };
+  const i = groups.findIndex((x) => x.kind === 'filter');
+  const at = i < 0 ? groups.length : i;
+  return [...groups.slice(0, at), g, ...groups.slice(at)];
 }
 
 /** Grouped results; with no query, a starter list (busiest apps, data objects, teams, quick filters). */

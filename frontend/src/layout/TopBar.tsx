@@ -5,7 +5,7 @@ import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import { useInbox } from '../review/inbox';
 import { toggleTheme } from '../ui/theme';
-import { IconLogo, IconMoon, IconReview, IconSun } from '../ui/icons';
+import { IconBook, IconLogo, IconMoon, IconReview, IconSun } from '../ui/icons';
 import { Search } from './Search';
 import { UserMenu } from './UserMenu';
 
@@ -56,6 +56,24 @@ export function ReviewLink() {
   );
 }
 
+/** The header entry to the documentation pages. */
+export function PagesLink() {
+  const { t } = useI18n();
+  const loc = useLocation();
+  const here = loc.pathname === '/pages' || loc.pathname.startsWith('/pages/');
+  return (
+    <Link
+      to="/pages"
+      className={'iconbtn navp' + (here ? ' on' : '')}
+      aria-current={here ? 'page' : undefined}
+      title={t.top.pages}
+    >
+      <IconBook />
+      <span className="navl">{t.top.pages}</span>
+    </Link>
+  );
+}
+
 export function ThemeButton() {
   const { t } = useI18n();
   return (
@@ -81,6 +99,7 @@ export function TopBar({ filter }: { filter?: ReactNode }) {
         {filter}
       </div>
       <div className="top-r">
+        <PagesLink />
         <ReviewLink />
         <ThemeButton />
         <UserMenu />
