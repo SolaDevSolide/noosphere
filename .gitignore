@@ -1,0 +1,14 @@
+bin/
+obj/
+node_modules/
+dist/
+*.user
+.vs/
+.vscode/
+.idea/
+.env
+TestResults/
+backend/src/Noosphere.Api/wwwroot/
+frontend/*.tsbuildinfo
+frontend/test-results/
+frontend/playwright-report/
