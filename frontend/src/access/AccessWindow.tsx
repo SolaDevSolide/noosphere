@@ -482,6 +482,8 @@ export function AccessChips({
   usePopover(pop === 'access', accWrap, () => setPop(null));
   usePopover(pop === 'sens', sensWrap, () => setPop(null));
   const guest = me?.role === 'guest';
+  // Domains, teams and data objects are open to everyone, guests included.
+  const shared = guest && (kind === 'application' || kind === 'flow' || kind === 'page');
   const restricted = visibility === 'restricted';
   const teams = (access?.teamIds.filter((x) => x !== owner).length ?? 0) + (owner ? 1 : 0);
   const people = access?.usernames.length ?? 0;
@@ -492,15 +494,15 @@ export function AccessChips({
       <span className="chip-wrap" ref={accWrap}>
         <button
           type="button"
-          className={'vchip' + (restricted ? ' restricted' : guest ? ' shared' : '')}
+          className={'vchip' + (restricted ? ' restricted' : shared ? ' shared' : '')}
           aria-expanded={pop === 'access'}
           aria-haspopup="dialog"
           onClick={() => setPop(pop === 'access' ? null : 'access')}
         >
-          {restricted ? <IconLock size={15} /> : guest ? <IconUser size={15} /> : <IconEye size={15} />}
+          {restricted ? <IconLock size={15} /> : shared ? <IconUser size={15} /> : <IconEye size={15} />}
           {restricted
             ? t.access.restrictedChip(teams, people)
-            : guest
+            : shared
               ? t.access.sharedWithYou
               : t.access.visibleEveryone}
           <IconChevron className="cv" />
