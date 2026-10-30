@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Noosphere",
-    "description": "Application landscape API: applications, flows, data objects, teams and domains. Guide: docs/en/api.md.",
+    "description": "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals and revision history. Guide: docs/en/api.md.",
     "version": "v1"
   },
   "paths": {
@@ -434,7 +434,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DomainDto"
+                  "$ref": "#/components/schemas/DomainDetailDto"
                 }
               }
             }
@@ -613,7 +613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TeamDto"
+                  "$ref": "#/components/schemas/TeamDetailDto"
                 }
               }
             }
@@ -674,6 +674,78 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/members": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Teams"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamMembersInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -801,7 +873,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/ApplicationDto"
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
                     },
                     {
                       "$ref": "#/components/schemas/RestrictedApplicationDto"
@@ -995,7 +1067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DataObjectDto"
+                  "$ref": "#/components/schemas/DataObjectDetailDto"
                 }
               }
             }
@@ -1183,7 +1255,7 @@
                 "schema": {
                   "oneOf": [
                     {
-                      "$ref": "#/components/schemas/FlowDto"
+                      "$ref": "#/components/schemas/FlowDetailDto"
                     },
                     {
                       "$ref": "#/components/schemas/RestrictedFlowDto"
@@ -1259,6 +1331,634 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pages": {
+      "get": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "attachedKind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachedId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/PageSummaryDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/RestrictedPageDto"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Pages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/tree": {
+      "get": {
+        "tags": [
+          "Pages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PageTreeNodeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}": {
+      "get": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PageDetailDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RestrictedPageDto"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/raw": {
+      "get": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/markdown": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/move": {
+      "post": {
+        "tags": [
+          "Pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PageMoveInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "toValidate",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProposalDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProposalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/submit": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/withdraw": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/accept": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/refuse": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefusalInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{id}/rebase": {
+      "post": {
+        "tags": [
+          "Proposals"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/inbox": {
+      "get": {
+        "tags": [
+          "Proposals"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboxDto"
+                }
+              }
+            }
           }
         }
       }
@@ -1460,10 +2160,1225 @@
           }
         }
       }
+    },
+    "/api/applications/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "CompareApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/applications/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestoreApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "CompareFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestoreFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryDataObject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionDataObject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "CompareDataObject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestoreDataObject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "ComparePage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestorePage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryDomain",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionDomain",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "CompareDomain",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestoreDomain",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/history": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "HistoryTeam",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/history/{version}": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RevisionTeam",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/history/compare": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "CompareTeam",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/history/{version}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "operationId": "RestoreTeam",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trash": {
+      "get": {
+        "tags": [
+          "History"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrashItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trash/{kind}/{id}/restore": {
+      "post": {
+        "tags": [
+          "History"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrashRestoreResultDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Settings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ApplicationDetailDto": {
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages attached to the record."
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to the record."
+          },
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ApplicationKind"
+          },
+          "tech": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/Lifecycle"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "sourceOf": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ids of the data objects whose source is this application (derived from `DataObject.sourceApplicationId`)."
+          },
+          "completeness": {
+            "type": "number",
+            "description": "Share of the recommended fields that are filled, 0 to 1.",
+            "format": "double"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An application with its owner, the reader's permissions and its pages."
+      },
       "ApplicationDto": {
         "required": [
           "id",
@@ -1654,6 +3569,122 @@
         ],
         "description": "What an application is: an application proper, a message bus, a SaaS, a data store, a file exchange or a third party."
       },
+      "AttachedToDto": {
+        "required": [
+          "kind",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "`application`, `flow`, `dataObject`, `domain` or `team`.",
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "AuthorKind": {
+        "enum": [
+          "user",
+          "agent"
+        ]
+      },
+      "ChangeOperation": {
+        "enum": [
+          "create",
+          "update",
+          "delete"
+        ]
+      },
+      "CompareDto": {
+        "required": [
+          "from",
+          "to",
+          "diff"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "to": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiffEntryDto"
+            }
+          }
+        }
+      },
+      "DataObjectDetailDto": {
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages attached to the record."
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to the record."
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "sourceApplicationId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A data object with its owner (the team of its source application), permissions and pages."
+      },
       "DataObjectDto": {
         "required": [
           "id",
@@ -1755,6 +3786,131 @@
             "format": "int32"
           }
         }
+      },
+      "DiffEntryDto": {
+        "required": [
+          "field",
+          "label",
+          "kind",
+          "before",
+          "after",
+          "beforeTitle",
+          "afterTitle"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DiffKind"
+          },
+          "before": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Value before (null when empty or on a creation).",
+                "$ref": "#/components/schemas/JsonNode"
+              }
+            ]
+          },
+          "after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Value after (null when empty or on a deletion).",
+                "$ref": "#/components/schemas/JsonNode"
+              }
+            ]
+          },
+          "beforeTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For `ref` fields: the name of the record referred to."
+          },
+          "afterTitle": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "One changed field. `markdown` fields carry the raw texts, for an inline word diff."
+      },
+      "DiffKind": {
+        "enum": [
+          "text",
+          "markdown",
+          "list",
+          "ref"
+        ]
+      },
+      "DomainDetailDto": {
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages attached to the record."
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to the record."
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A domain (administrators only change it) with its pages."
       },
       "DomainDto": {
         "required": [
@@ -1882,7 +4038,7 @@
         "properties": {
           "kind": {
             "type": "string",
-            "description": "`Domain`, `Team`, `Application`, `DataObject` or `Flow`."
+            "description": "`Domain`, `Team`, `Application`, `DataObject`, `Flow` or `Page`."
           },
           "id": {
             "type": "string"
@@ -1936,6 +4092,120 @@
             "format": "date-time"
           }
         }
+      },
+      "FlowDetailDto": {
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages attached to the record."
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to the record."
+          },
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "fromId": {
+            "type": "string"
+          },
+          "toId": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/FlowType"
+          },
+          "schedule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dataObjectIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sensitivity": {
+            "description": "Most sensitive of the carried data objects (internal when there is none).",
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FlowStatus"
+          },
+          "volume": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "plannedChange": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlannedChangeDto"
+              }
+            ]
+          },
+          "completeness": {
+            "type": "number",
+            "format": "double"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A flow with its owner (its owner team, or else the team of its source application), permissions and pages."
       },
       "FlowDto": {
         "required": [
@@ -2194,6 +4464,59 @@
           }
         }
       },
+      "HistoryEntryDto": {
+        "required": [
+          "version",
+          "operation",
+          "author",
+          "authorKind",
+          "createdAt",
+          "summary",
+          "proposalId"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/RevisionOperation"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Null for revisions made by the system (migration, command line).",
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "authorKind": {
+            "$ref": "#/components/schemas/AuthorKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "proposalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "description": "One revision of a record, newest first."
+      },
       "ImportErrorDto": {
         "required": [
           "index",
@@ -2272,6 +4595,27 @@
         },
         "description": "Outcome of an import (or of its dry run): counts of items, or the errors that stopped it (nothing written)."
       },
+      "InboxDto": {
+        "required": [
+          "toValidate",
+          "mineOpen"
+        ],
+        "type": "object",
+        "properties": {
+          "toValidate": {
+            "type": "integer",
+            "description": "Submitted proposals the reader may accept or refuse.",
+            "format": "int32"
+          },
+          "mineOpen": {
+            "type": "integer",
+            "description": "The reader's own proposals in draft or submitted.",
+            "format": "int32"
+          }
+        },
+        "description": "Counts for the header badge."
+      },
+      "JsonNode": {},
       "JsonObject": {
         "type": "object"
       },
@@ -2412,7 +4756,8 @@
           "username",
           "displayName",
           "role",
-          "language"
+          "language",
+          "teams"
         ],
         "type": "object",
         "properties": {
@@ -2428,9 +4773,536 @@
           "language": {
             "type": "string",
             "description": "`en` or `fr`."
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamRefDto"
+            },
+            "description": "Teams the user belongs to."
           }
         },
         "description": "The signed-in user."
+      },
+      "PageDetailDto": {
+        "required": [
+          "links",
+          "backlinks",
+          "ancestors",
+          "children",
+          "attachedTitle",
+          "owningTeamId",
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageLinkDto"
+            },
+            "description": "Wiki links of the body, resolved; `exists: false` marks a broken link."
+          },
+          "backlinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to this page."
+          },
+          "ancestors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "From the top-level page down to the parent."
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            }
+          },
+          "attachedTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the attached record (null when missing or hidden)."
+          },
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Markdown. Wiki links: `[[application:billing]]`, `[[page:glossary|the glossary]]`."
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Parent page in the tree; null for a top-level page."
+          },
+          "order": {
+            "type": "integer",
+            "description": "Position among its siblings (ascending, then by title).",
+            "format": "int32"
+          },
+          "attachedTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AttachedToDto"
+              }
+            ]
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Owning team as set on the page; when null, the owner of the attached record owns it."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A page with its resolved links, backlinks, place in the tree, owner and the reader's permissions."
+      },
+      "PageDto": {
+        "required": [
+          "id",
+          "restricted",
+          "title",
+          "body",
+          "parentId",
+          "order",
+          "attachedTo",
+          "ownerTeamId",
+          "tags",
+          "visibility",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string",
+            "description": "Markdown. Wiki links: `[[application:billing]]`, `[[page:glossary|the glossary]]`."
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Parent page in the tree; null for a top-level page."
+          },
+          "order": {
+            "type": "integer",
+            "description": "Position among its siblings (ascending, then by title).",
+            "format": "int32"
+          },
+          "attachedTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AttachedToDto"
+              }
+            ]
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Owning team as set on the page; when null, the owner of the attached record owns it."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A documentation page the reader may see in full. `restricted` is always false."
+      },
+      "PageInput": {
+        "required": [
+          "id",
+          "title",
+          "body",
+          "parentId",
+          "order",
+          "attachedTo",
+          "ownerTeamId",
+          "tags",
+          "visibility",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "body": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Markdown; may be empty."
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "attachedTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AttachedToDto"
+              }
+            ]
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional: when empty, the owner of the attached record owns the page (administrators when none)."
+          },
+          "tags": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Visibility"
+              }
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PageLinkDto": {
+        "required": [
+          "kind",
+          "id",
+          "title",
+          "exists",
+          "restricted",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the target; null when it does not exist or is hidden from the reader."
+          },
+          "exists": {
+            "type": "boolean",
+            "description": "False for a broken link."
+          },
+          "restricted": {
+            "type": "boolean",
+            "description": "The target exists but the reader may not see it."
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Text after the `|`, when given."
+          }
+        },
+        "description": "A link found in a page body."
+      },
+      "PageMoveInput": {
+        "required": [
+          "parentId",
+          "order",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New parent; null moves the page to the top level."
+          },
+          "order": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Optional: when given, a stale version returns 409.",
+            "format": "int32"
+          }
+        }
+      },
+      "PageRefDto": {
+        "required": [
+          "id",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "description": "A page, as listed on a record or next to another page."
+      },
+      "PageSummaryDto": {
+        "required": [
+          "id",
+          "restricted",
+          "title",
+          "parentId",
+          "order",
+          "attachedTo",
+          "ownerTeamId",
+          "tags",
+          "visibility",
+          "brokenLinks",
+          "version",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attachedTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AttachedToDto"
+              }
+            ]
+          },
+          "ownerTeamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "brokenLinks": {
+            "type": "integer",
+            "description": "Number of wiki links whose target does not exist.",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A page in the list (no body)."
+      },
+      "PageTreeNodeDto": {
+        "required": [
+          "id",
+          "restricted",
+          "title",
+          "order",
+          "attachedTo",
+          "children"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attachedTo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AttachedToDto"
+              }
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageTreeNodeDto"
+            }
+          }
+        },
+        "description": "A node of the page tree. A restricted page hidden from the reader has no title."
       },
       "PasswordChangeInput": {
         "required": [
@@ -2452,6 +5324,24 @@
             ]
           }
         }
+      },
+      "PermissionsDto": {
+        "required": [
+          "publish",
+          "propose"
+        ],
+        "type": "object",
+        "properties": {
+          "publish": {
+            "type": "boolean",
+            "description": "Save, delete or restore directly (administrator, or member of the owning team)."
+          },
+          "propose": {
+            "type": "boolean",
+            "description": "Send a change proposal (members and administrators, on applications, flows, data objects and pages)."
+          }
+        },
+        "description": "What the signed-in user may do with a record."
       },
       "PlannedChangeDto": {
         "required": [
@@ -2507,9 +5397,508 @@
               }
             },
             "description": "Field errors (field name in camelCase, then messages), on 400 only."
+          },
+          "outdated": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "true on the 409 answered when accepting a proposal whose records changed since it was written."
           }
         },
         "description": "Body of every error response."
+      },
+      "ProposalChangeDto": {
+        "required": [
+          "kind",
+          "targetId",
+          "targetTitle",
+          "operation",
+          "baseVersion",
+          "currentVersion",
+          "outdated",
+          "before",
+          "after",
+          "diff",
+          "conflicts"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "targetId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "targetTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the target (after the change for a creation)."
+          },
+          "operation": {
+            "$ref": "#/components/schemas/ChangeOperation"
+          },
+          "baseVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "currentVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Version of the target now (null when it does not exist).",
+            "format": "int32"
+          },
+          "outdated": {
+            "type": "boolean",
+            "description": "The target changed since `baseVersion`: accepting returns 409 until the proposal is rebased."
+          },
+          "before": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ]
+          },
+          "after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ]
+          },
+          "diff": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiffEntryDto"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Fields changed both by the proposal and on the record, found by the last rebase."
+          }
+        },
+        "description": "A change with its snapshots and field diff."
+      },
+      "ProposalChangeInput": {
+        "required": [
+          "kind",
+          "targetId",
+          "operation",
+          "baseVersion",
+          "after"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "`application`, `flow`, `dataObject` or `page`.",
+                "$ref": "#/components/schemas/RecordKind"
+              }
+            ]
+          },
+          "targetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Record changed; null for a creation (the id then comes from `after.id` or the name)."
+          },
+          "operation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ChangeOperation"
+              }
+            ]
+          },
+          "baseVersion": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Version the change was written against: required for update and delete.",
+            "format": "int32"
+          },
+          "after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The whole record after the change, in the shape of its PUT body (create and update).",
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ]
+          }
+        },
+        "description": "One change of a proposal."
+      },
+      "ProposalDto": {
+        "required": [
+          "id",
+          "title",
+          "comment",
+          "status",
+          "authorKind",
+          "author",
+          "onBehalfOf",
+          "createdAt",
+          "submittedAt",
+          "decidedBy",
+          "decidedAt",
+          "refusalReason",
+          "version",
+          "outdated",
+          "ownerTeams",
+          "requiresAdmin",
+          "canDecide",
+          "canEdit",
+          "changes"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "description": "`draft`, `submitted` (shown as \"To validate\"), `accepted`, `refused` or `withdrawn`.",
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "authorKind": {
+            "$ref": "#/components/schemas/AuthorKind"
+          },
+          "author": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "onBehalfOf": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submittedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "decidedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "refusalReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "outdated": {
+            "type": "boolean"
+          },
+          "ownerTeams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalOwnerDto"
+            },
+            "description": "Teams that validate (one validator each). An administrator accepts on behalf of all."
+          },
+          "requiresAdmin": {
+            "type": "boolean",
+            "description": "A target is owned by administrators only (no owning team): only an administrator accepts."
+          },
+          "canDecide": {
+            "type": "boolean",
+            "description": "The reader may accept or refuse it now."
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "The reader is the author and may still edit, submit or withdraw it."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProposalChangeDto"
+            }
+          }
+        },
+        "description": "A change proposal."
+      },
+      "ProposalInput": {
+        "required": [
+          "title",
+          "comment",
+          "changes",
+          "submit",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "changes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ProposalChangeInput"
+            }
+          },
+          "submit": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "true sends it for validation at once; otherwise it stays a draft."
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "On PUT: the proposal version that was read.",
+            "format": "int32"
+          }
+        }
+      },
+      "ProposalOwnerDto": {
+        "required": [
+          "id",
+          "name",
+          "approvedBy",
+          "approvedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "approvedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "approvedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "An owning team whose acceptance the proposal needs."
+      },
+      "ProposalStatus": {
+        "enum": [
+          "draft",
+          "submitted",
+          "accepted",
+          "refused",
+          "withdrawn"
+        ]
+      },
+      "RecordContextDto": {
+        "required": [
+          "owningTeamId",
+          "permissions",
+          "pages",
+          "mentionedIn"
+        ],
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "permissions": {
+            "required": [
+              "publish",
+              "propose"
+            ],
+            "type": "object",
+            "properties": {
+              "publish": {
+                "type": "boolean",
+                "description": "Save, delete or restore directly (administrator, or member of the owning team)."
+              },
+              "propose": {
+                "type": "boolean",
+                "description": "Send a change proposal (members and administrators, on applications, flows, data objects and pages)."
+              }
+            },
+            "description": "What the signed-in user may do with a record."
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "required": [
+                "id",
+                "title"
+              ],
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "description": "A page, as listed on a record or next to another page."
+            }
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "required": [
+                "id",
+                "title"
+              ],
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "description": "A page, as listed on a record or next to another page."
+            }
+          }
+        },
+        "description": "Owner, permissions and pages of a record."
+      },
+      "RecordKind": {
+        "enum": [
+          "application",
+          "flow",
+          "dataObject",
+          "page",
+          "domain",
+          "team"
+        ],
+        "description": "Kinds of versioned records: each has a history of revisions."
+      },
+      "RefusalInput": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Shown to the author: 3 to 500 characters."
+          }
+        }
+      },
+      "RestoreResultDto": {
+        "required": [
+          "outcome",
+          "version",
+          "proposalId"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "description": "`published` (a new revision) or `proposed` (a submitted proposal, for non-owners)."
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "proposalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
       },
       "RestrictedApplicationDto": {
         "required": [
@@ -2569,6 +5958,109 @@
         },
         "description": "A flow from or to a restricted application, as seen by a reader who is not an administrator."
       },
+      "RestrictedPageDto": {
+        "required": [
+          "id",
+          "restricted",
+          "parentId",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              true
+            ],
+            "type": "boolean"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A restricted page, as seen by a reader who is not an administrator."
+      },
+      "RevisionDto": {
+        "required": [
+          "kind",
+          "entityId",
+          "version",
+          "operation",
+          "author",
+          "authorKind",
+          "createdAt",
+          "summary",
+          "proposalId",
+          "snapshot"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/RevisionOperation"
+          },
+          "author": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "authorKind": {
+            "$ref": "#/components/schemas/AuthorKind"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "proposalId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/JsonObject"
+          }
+        },
+        "description": "A revision with its snapshot (the record's editable fields, in the shape of its PUT body)."
+      },
+      "RevisionOperation": {
+        "enum": [
+          "create",
+          "update",
+          "delete",
+          "restore"
+        ]
+      },
       "Role": {
         "enum": [
           "admin",
@@ -2582,7 +6074,8 @@
           "flow",
           "dataObject",
           "team",
-          "domain"
+          "domain",
+          "page"
         ]
       },
       "SearchResultDto": {
@@ -2607,7 +6100,8 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "For a page: an excerpt of the body around the match."
           }
         }
       },
@@ -2619,6 +6113,146 @@
           "sensitive"
         ],
         "description": "Ordered from the least to the most sensitive: the sensitivity of a flow is the maximum of what it carries."
+      },
+      "SettingsDto": {
+        "required": [
+          "instanceName",
+          "organisationName",
+          "defaultLanguage",
+          "version",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "instanceName": {
+            "type": "string",
+            "description": "Shown in the header and the browser tab (default \"Noosphere\")."
+          },
+          "organisationName": {
+            "type": "string",
+            "description": "Shown under the instance name; may be empty."
+          },
+          "defaultLanguage": {
+            "type": "string",
+            "description": "Language of new accounts and of the sign-in page: `en` or `fr`."
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SettingsInput": {
+        "required": [
+          "instanceName",
+          "organisationName",
+          "defaultLanguage",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "instanceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "organisationName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "defaultLanguage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "TeamDetailDto": {
+        "required": [
+          "members"
+        ],
+        "type": "object",
+        "properties": {
+          "owningTeamId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Team whose members publish changes; null when only administrators do."
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsDto"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages attached to the record."
+          },
+          "mentionedIn": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageRefDto"
+            },
+            "description": "Pages whose body links to the record."
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamMemberDto"
+            }
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A team (administrators only change it) with its members and pages."
       },
       "TeamDto": {
         "required": [
@@ -2707,6 +6341,120 @@
           }
         }
       },
+      "TeamMemberDto": {
+        "required": [
+          "username",
+          "displayName",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        }
+      },
+      "TeamMembersInput": {
+        "required": [
+          "usernames"
+        ],
+        "type": "object",
+        "properties": {
+          "usernames": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Replaces the members of a team."
+      },
+      "TeamRefDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TrashItemDto": {
+        "required": [
+          "kind",
+          "entityId",
+          "title",
+          "deletedAt",
+          "deletedBy",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deletedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserRefDto"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "description": "Version of the deletion revision.",
+            "format": "int32"
+          }
+        },
+        "description": "A deleted record. Its history is kept; administrators restore it."
+      },
+      "TrashRestoreResultDto": {
+        "required": [
+          "kind",
+          "id",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "UserCreateInput": {
         "required": [
           "username",
@@ -2750,6 +6498,15 @@
               "null",
               "string"
             ]
+          },
+          "teamIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -2759,6 +6516,7 @@
           "displayName",
           "role",
           "language",
+          "teamIds",
           "version",
           "createdAt",
           "updatedAt"
@@ -2777,6 +6535,13 @@
           "language": {
             "type": "string"
           },
+          "teamIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Teams the user belongs to."
+          },
           "version": {
             "type": "integer",
             "format": "int32"
@@ -2790,6 +6555,22 @@
             "format": "date-time"
           }
         }
+      },
+      "UserRefDto": {
+        "required": [
+          "username",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          }
+        },
+        "description": "A user as shown next to a proposal or a revision."
       },
       "UserUpdateInput": {
         "required": [
@@ -2836,6 +6617,16 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "teamIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Teams of the user; null keeps them unchanged."
           }
         }
       },
@@ -2874,10 +6665,22 @@
       "name": "Flows"
     },
     {
+      "name": "Pages"
+    },
+    {
+      "name": "Proposals"
+    },
+    {
       "name": "Explorer"
     },
     {
       "name": "Exchange"
+    },
+    {
+      "name": "History"
+    },
+    {
+      "name": "Settings"
     }
   ]
 }

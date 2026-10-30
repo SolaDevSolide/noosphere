@@ -155,7 +155,18 @@ public static class Accounts
         return string.Join('-', Enumerable.Range(0, 4).Select(i => raw.Substring(i * 4, 4)));
     }
 
-    public static MeDto Me(User u) => new(u.Username, u.DisplayName, u.Role, u.Language);
+    public static async Task<MeDto> Me(NoosphereDbContext db, User u) => new(u.Username, u.DisplayName, u.Role, u.Language,
+        await db.TeamMembers.Where(m => m.UserId == u.Id).Join(db.Teams, m => m.TeamId, t => t.Id, (_, t) => t)
+            .OrderBy(t => t.Name).Select(t => new TeamRefDto(t.Id, t.Name)).ToListAsync());
 
-    public static UserDto Dto(User u) => new(u.Username, u.DisplayName, u.Role, u.Language, u.Version, u.CreatedAt, u.UpdatedAt);
+    public static UserDto Dto(User u, IReadOnlyList<string> teamIds) => new(u.Username, u.DisplayName, u.Role, u.Language, teamIds, u.Version, u.CreatedAt, u.UpdatedAt);
+
+    /// <summary>Accounts with their teams.</summary>
+    public static async Task<List<UserDto>> Dtos(NoosphereDbContext db, IEnumerable<User> users)
+    {
+        var teams = (await db.TeamMembers.AsNoTracking().ToListAsync()).ToLookup(m => m.UserId, m => m.TeamId);
+        return [.. users.Select(u => Dto(u, [.. teams[u.Id].Order(StringComparer.Ordinal)]))];
+    }
+
+    public static async Task<UserDto> Dto(NoosphereDbContext db, User u) => (await Dtos(db, [u]))[0];
 }

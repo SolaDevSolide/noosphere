@@ -11,33 +11,33 @@ public class CatalogTests : IDisposable
     [Fact]
     public async Task Create_derives_the_id_from_the_name_and_keeps_it_unique()
     {
-        var bob = await _api.SignedIn("bob");
-        var first = await bob.PostJson("/api/domains", new { name = "Human resources", order = 7 }, HttpStatusCode.Created);
-        var second = await bob.PostJson("/api/domains", new { name = "Human Resources" }, HttpStatusCode.Created);
+        var alice = await _api.SignedIn("alice");
+        var first = await alice.PostJson("/api/domains", new { name = "Human resources", order = 7 }, HttpStatusCode.Created);
+        var second = await alice.PostJson("/api/domains", new { name = "Human Resources" }, HttpStatusCode.Created);
         Assert.Equal(("human-resources", "human-resources-2", 1), (first.Str("id"), second.Str("id"), first.GetProperty("version").GetInt32()));
-        await bob.PostJson("/api/domains", new { id = "human-resources", name = "Again" }, HttpStatusCode.Conflict);
-        var bad = await bob.PostJson("/api/domains", new { id = "Bad Id", name = "" }, HttpStatusCode.BadRequest);
+        await alice.PostJson("/api/domains", new { id = "human-resources", name = "Again" }, HttpStatusCode.Conflict);
+        var bad = await alice.PostJson("/api/domains", new { id = "Bad Id", name = "" }, HttpStatusCode.BadRequest);
         Assert.Equal(["id", "name"], bad.GetProperty("errors").EnumerateObject().Select(p => p.Name).Order());
-        await bob.GetJson("/api/domains/human-resources");
+        await alice.GetJson("/api/domains/human-resources");
     }
 
     [Fact]
     public async Task Update_needs_the_current_version_and_bumps_it()
     {
-        var bob = await _api.SignedIn("bob");
-        var crm = await bob.GetJson("/api/applications/crm");
+        var david = await _api.SignedIn("david");
+        var crm = await david.GetJson("/api/applications/crm");
         Assert.Equal(1, crm.GetProperty("version").GetInt32());
         var body = new { name = "CRM 2", domainId = "customer", teamId = "team-crm", kind = "saas", tech = "Dynamics 365", lifecycle = "retiring", visibility = "everyone", version = 1 };
-        var updated = await bob.PutJson("/api/applications/crm", body);
+        var updated = await david.PutJson("/api/applications/crm", body);
         Assert.Equal(("CRM 2", "saas", "retiring", 2), (updated.Str("name"), updated.Str("kind"), updated.Str("lifecycle"), updated.GetProperty("version").GetInt32()));
         Assert.True(updated.GetProperty("updatedAt").GetDateTimeOffset() > updated.GetProperty("createdAt").GetDateTimeOffset());
 
-        var stale = await bob.PutJson("/api/applications/crm", body, HttpStatusCode.Conflict);
+        var stale = await david.PutJson("/api/applications/crm", body, HttpStatusCode.Conflict);
         Assert.Equal("Someone changed this record. Reload it and try again.", stale.Str("detail"));
-        var missing = await bob.PutJson("/api/applications/crm", new { name = "CRM", domainId = "customer" }, HttpStatusCode.BadRequest);
+        var missing = await david.PutJson("/api/applications/crm", new { name = "CRM", domainId = "customer" }, HttpStatusCode.BadRequest);
         Assert.True(missing.GetProperty("errors").TryGetProperty("version", out _));
-        await bob.PutJson("/api/applications/nope", body, HttpStatusCode.NotFound);
-        await bob.PutJson("/api/applications/crm", new { id = "other", name = "CRM", domainId = "customer", version = 2 }, HttpStatusCode.BadRequest);
+        await david.PutJson("/api/applications/nope", body, HttpStatusCode.NotFound);
+        await david.PutJson("/api/applications/crm", new { id = "other", name = "CRM", domainId = "customer", version = 2 }, HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -55,8 +55,8 @@ public class CatalogTests : IDisposable
     [Fact]
     public async Task A_flow_gets_computed_sensitivity_and_completeness()
     {
-        var bob = await _api.SignedIn("bob");
-        var flow = await bob.PostJson("/api/flows", new
+        var alice = await _api.SignedIn("alice");
+        var flow = await alice.PostJson("/api/flows", new
         {
             name = "Claims export", fromId = "claims", toId = "dwh", type = "batch", schedule = "Daily",
             dataObjectIds = new[] { "invoice", "claim", "invoice" }, plannedChange = new { summary = "Moves to events", date = "2027-01-15" },

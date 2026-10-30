@@ -17,15 +17,23 @@ public enum FlowStatus { Planned, Live, Deprecated }
 
 public enum Role { Admin, Member, Guest }
 
-/// <summary>Common part of every landscape record: a stable human-readable id (kebab-case slug), timestamps and an optimistic concurrency version.</summary>
-public abstract class LandscapeEntity
+/// <summary>Kinds of versioned records: each has a history of revisions.</summary>
+public enum RecordKind { Application, Flow, DataObject, Page, Domain, Team }
+
+/// <summary>Common part of every versioned record: a stable human-readable id (kebab-case slug), timestamps and an optimistic concurrency version.</summary>
+public abstract class VersionedEntity
 {
     public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public string? Description { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public int Version { get; set; }
+}
+
+/// <summary>A landscape record: a name and an optional markdown description.</summary>
+public abstract class LandscapeEntity : VersionedEntity
+{
+    public string Name { get; set; } = "";
+    public string? Description { get; set; }
 }
 
 /// <summary>A business domain grouping applications (Customer, Finance...).</summary>
@@ -86,6 +94,123 @@ public sealed class User
     /// <summary>Changed when the password or the role changes: open sessions of the account are closed.</summary>
     public Guid SecurityStamp { get; set; } = Guid.NewGuid();
     public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public int Version { get; set; }
+}
+
+/// <summary>A user belongs to 0..n teams. Members of a record's owning team publish its changes directly.</summary>
+public sealed class TeamMember
+{
+    public Guid UserId { get; set; }
+    public string TeamId { get; set; } = "";
+}
+
+/// <summary>A Markdown documentation page, in a tree, optionally attached to a record.</summary>
+public sealed class Page : VersionedEntity
+{
+    public string Title { get; set; } = "";
+    public string Body { get; set; } = "";
+    public string? ParentId { get; set; }
+    public int Order { get; set; }
+    public RecordKind? AttachedKind { get; set; }
+    public string? AttachedId { get; set; }
+    public string? OwnerTeamId { get; set; }
+    public List<string> Tags { get; set; } = [];
+    public Visibility Visibility { get; set; } = Visibility.Everyone;
+    /// <summary>Wiki link targets found in the body, as <c>kind:id</c> (<c>application:billing</c>). Derived from the body on every save.</summary>
+    public List<string> Links { get; set; } = [];
+}
+
+public enum AuthorKind { User, Agent }
+
+public enum RevisionOperation { Create, Update, Delete, Restore }
+
+/// <summary>
+/// One published state of a record: every direct save, accepted proposal, restore and deletion adds one. The snapshot
+/// holds the editable fields, in the shape of the API input of its kind. Revisions outlive the record.
+/// </summary>
+public sealed class Revision
+{
+    public long Id { get; set; }
+    public RecordKind Kind { get; set; }
+    public string EntityId { get; set; } = "";
+    public int Version { get; set; }
+    public RevisionOperation Operation { get; set; }
+    /// <summary>JSON object.</summary>
+    public string Snapshot { get; set; } = "{}";
+    public Guid? AuthorId { get; set; }
+    /// <summary>Username when the revision was made (kept when the account is deleted); "system" for the command line and migrations.</summary>
+    public string AuthorName { get; set; } = "";
+    public AuthorKind AuthorKind { get; set; }
+    public Guid? ProposalId { get; set; }
+    public string? Summary { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+public enum ProposalStatus { Draft, Submitted, Accepted, Refused, Withdrawn }
+
+public enum ChangeOperation { Create, Update, Delete }
+
+/// <summary>A change proposal: 1..n changes, validated by the owning teams of their targets (or an administrator).</summary>
+public sealed class Proposal
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Title { get; set; } = "";
+    public string? Comment { get; set; }
+    public ProposalStatus Status { get; set; }
+    public Guid AuthorId { get; set; }
+    public string AuthorName { get; set; } = "";
+    public AuthorKind AuthorKind { get; set; }
+    /// <summary>For agents (later): the user the agent works for.</summary>
+    public string? OnBehalfOf { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public Guid? DecidedById { get; set; }
+    public string? DecidedByName { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public string? RefusalReason { get; set; }
+    public int Version { get; set; }
+    public List<ProposalChange> Changes { get; set; } = [];
+    public List<ProposalApproval> Approvals { get; set; } = [];
+}
+
+public sealed class ProposalChange
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ProposalId { get; set; }
+    public int Position { get; set; }
+    public RecordKind Kind { get; set; }
+    /// <summary>Null until accepted for a creation without a requested id.</summary>
+    public string? TargetId { get; set; }
+    public ChangeOperation Operation { get; set; }
+    /// <summary>Version of the target the change was written against (update, delete).</summary>
+    public int? BaseVersion { get; set; }
+    /// <summary>JSON object: the target at <see cref="BaseVersion"/>; null for a creation.</summary>
+    public string? Before { get; set; }
+    /// <summary>JSON object: the whole record after the change; null for a deletion.</summary>
+    public string? After { get; set; }
+    /// <summary>Fields changed both by the proposal and on the record, found by the last rebase.</summary>
+    public List<string> Conflicts { get; set; } = [];
+}
+
+/// <summary>Acceptance of a proposal on behalf of one owning team.</summary>
+public sealed class ProposalApproval
+{
+    public Guid ProposalId { get; set; }
+    public string TeamId { get; set; } = "";
+    public Guid UserId { get; set; }
+    public string UserName { get; set; } = "";
+    public DateTimeOffset ApprovedAt { get; set; }
+}
+
+/// <summary>Settings of the instance, set by administrators (one row).</summary>
+public sealed class InstanceSettings
+{
+    public int Id { get; set; } = 1;
+    public string InstanceName { get; set; } = "Noosphere";
+    public string OrganisationName { get; set; } = "";
+    public string DefaultLanguage { get; set; } = "en";
     public DateTimeOffset UpdatedAt { get; set; }
     public int Version { get; set; }
 }

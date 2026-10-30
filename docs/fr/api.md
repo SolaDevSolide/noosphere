@@ -26,9 +26,9 @@ JSON sur HTTP, sous `/api`. Les clés sont en camelCase et les énumérations so
 | ------ | ---- |
 | 400 | Saisie invalide (`errors` par champ) |
 | 401 | Pas de session, ou identifiants faux |
-| 403 | Rôle insuffisant, enregistrement restreint, `X-Requested-With` absent |
+| 403 | Rôle insuffisant, hors de l'équipe responsable (envoyer une proposition), enregistrement restreint, `X-Requested-With` absent |
 | 404 | Enregistrement introuvable |
-| 409 | Version périmée, identifiant déjà pris, enregistrement encore utilisé (suppression) |
+| 409 | Version périmée, identifiant déjà pris, enregistrement encore utilisé (suppression), proposition dépassée (`outdated: true`) |
 | 422 | Fichier d'import en erreur (corps : le résultat de l'import) |
 | 429 | Trop de tentatives de connexion |
 
@@ -36,14 +36,16 @@ JSON sur HTTP, sous `/api`. Les clés sont en camelCase et les énumérations so
 
 | Méthode et chemin | Qui | Corps, réponse |
 | ----------------- | --- | -------------- |
-| `POST /api/auth/login` | tous | `{username, password}`, puis `{username, displayName, role, language}` |
+| `POST /api/auth/login` | tous | `{username, password}`, puis `{username, displayName, role, language, teams}` |
 | `POST /api/auth/logout` | tous | 204 |
-| `GET /api/auth/me` | connecté | `{username, displayName, role, language}` |
+| `GET /api/auth/me` | connecté | `{username, displayName, role, language, teams: [{id, name}]}` |
 | `PUT /api/auth/me/language` | connecté | `{language: "en" ou "fr"}` |
 | `PUT /api/auth/me/password` | connecté | `{currentPassword, newPassword}`, 204 ; ferme les autres sessions du compte |
-| `GET /api/users`, `GET /api/users/{username}` | admin | `UserDto` |
-| `POST /api/users` | admin | `{username, displayName, role, language?, password}`, 201 |
-| `PUT /api/users/{username}` | admin | `{displayName, role, language, password?, version}` |
+| `GET /api/users`, `GET /api/users/{username}` | admin | `UserDto`, avec `teamIds` |
+| `POST /api/users` | admin | `{username, displayName, role, language?, password, teamIds?}`, 201 |
+| `PUT /api/users/{username}` | admin | `{displayName, role, language, password?, teamIds?, version}` ; sans `teamIds`, les équipes restent |
+| `GET /api/teams/{id}/members` | connecté | `[{username, displayName, role}]` |
+| `PUT /api/teams/{id}/members` | admin | `{usernames: []}` remplace les membres |
 | `DELETE /api/users/{username}` | admin | 204 ; refusé pour son propre compte et pour le dernier admin |
 
 Rôles : `admin`, `member` et `guest` (voir la [configuration](configuration.md#rôles)).
@@ -51,8 +53,14 @@ Rôles : `admin`, `member` et `guest` (voir la [configuration](configuration.md#
 ## Enregistrements du paysage
 
 `GET/POST /api/domains`, `GET/PUT/DELETE /api/domains/{id}`, et de même pour `teams`, `applications`,
-`data-objects` et `flows`. Tout compte connecté lit, les membres et les admins créent et modifient, les admins
-suppriment. Un enregistrement encore référencé ne peut pas être supprimé (409).
+`data-objects` et `flows`. Tout compte connecté lit. Les administrateurs et les membres de l'équipe responsable
+créent, modifient et suppriment ; les autres membres envoient une [proposition](proposals.md) (une écriture directe
+renvoie 403). Les domaines et les équipes ne sont modifiés que par les administrateurs. Chaque modification crée une
+[révision](history.md). Un enregistrement encore référencé ne peut pas être supprimé (409).
+
+`GET /api/{kind}/{id}` renvoie aussi, pour le lecteur, `owningTeamId` (null : administrateurs seulement),
+`permissions: {publish, propose}`, `pages` (pages rattachées) et `mentionedIn` (pages qui pointent vers
+l'enregistrement). Une équipe renvoie aussi ses `members`.
 
 | Type | Champs (saisie) | Calculés (réponse) |
 | ---- | --------------- | ------------------ |
@@ -85,12 +93,51 @@ distingués par `restricted`.
   les touchent. Les filtres de flux (`type`, `status`, `dataObjectId`) gardent les flux qui correspondent et
   seulement les applications à leurs extrémités. Un flux vient toujours avec ses deux extrémités.
 - `GET /api/search?q=` renvoie au plus 20 éléments `{kind, id, title, subtitle}`, où `kind` vaut `application`, `flow`,
-  `dataObject`, `team` ou `domain`. Les noms qui commencent par le texte viennent en premier.
+  `dataObject`, `team`, `domain` ou `page`. Les noms qui commencent par le texte viennent en premier. Pour une page,
+  le texte compte aussi, et le sous-titre est un extrait autour du passage trouvé.
+
+## Propositions
+
+Voir [propositions et validation](proposals.md).
+
+| Méthode et chemin | Qui | Description |
+| ----------------- | --- | ----------- |
+| `GET /api/proposals?status=&mine=true&toValidate=true` | connecté | Propositions visibles par le lecteur (brouillons : leur auteur seulement), les plus récentes d'abord |
+| `GET /api/proposals/{id}` | connecté | Une proposition, avec les instantanés et la comparaison `diff` de chaque modification |
+| `POST /api/proposals` | membre, admin | `{title, comment?, changes: [{kind, targetId?, operation, baseVersion?, after?}], submit?}`, 201 |
+| `PUT /api/proposals/{id}` | auteur | Même corps plus `version`, en brouillon ou à valider |
+| `POST /api/proposals/{id}/submit`, `/withdraw` | auteur | |
+| `POST /api/proposals/{id}/accept` | valideur | 409 avec `outdated: true` si une cible a changé |
+| `POST /api/proposals/{id}/refuse` | valideur | `{reason}`, 3 à 500 caractères |
+| `POST /api/proposals/{id}/rebase` | auteur | Reporte les modifications sur les dernières versions |
+| `GET /api/me/inbox` | connecté | `{toValidate, mineOpen}` |
+
+## Historique et corbeille
+
+Voir l'[historique](history.md) : `GET /api/{kind}/{id}/history`, `.../history/{version}`,
+`.../history/compare?from=&to=`, `POST .../history/{version}/restore`, et pour les administrateurs `GET /api/trash`
+et `POST /api/trash/{kind}/{id}/restore`.
+
+## Pages
+
+Voir les [pages](pages.md) : `GET/POST /api/pages`, `GET /api/pages/tree`, `GET/PUT/DELETE /api/pages/{id}`,
+`GET /api/pages/{id}/raw` et `POST /api/pages/{id}/move`.
+
+## Réglages
+
+| Méthode et chemin | Qui | Corps, réponse |
+| ----------------- | --- | -------------- |
+| `GET /api/settings` | tous, même sans session | `{instanceName, organisationName, defaultLanguage, version, updatedAt}` |
+| `PUT /api/settings` | admin | `{instanceName, organisationName?, defaultLanguage?, version}` (`version` 0 avant le premier enregistrement) |
+
+L'en-tête affiche `instanceName`, avec `organisationName` en dessous, et l'onglet du navigateur utilise
+`instanceName`. Les nouveaux comptes reçoivent `defaultLanguage`. Le nom technique `noosphere` (commande, image,
+cookie) ne change jamais.
 
 ## Échange
 
 - `GET /api/export?format=json|yaml`, pour tout compte connecté, télécharge le paysage au
-  [format d'échange](exchange-format.md). Les applications restreintes sont omises pour les non-admins.
+  [format d'échange](exchange-format.md). Les applications et pages restreintes sont omises pour les non-admins.
 - `POST /api/import?dryRun=true|false`, pour les admins, prend le fichier comme corps de la requête (JSON ou YAML,
   selon `Content-Type` ou `?format=`) et renvoie `{created, updated, unchanged, errors[], dryRun, applied}`.
 

@@ -11,6 +11,13 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<DataObject> DataObjects => Set<DataObject>();
     public DbSet<Flow> Flows => Set<Flow>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+    public DbSet<Page> Pages => Set<Page>();
+    public DbSet<Revision> Revisions => Set<Revision>();
+    public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<ProposalChange> ProposalChanges => Set<ProposalChange>();
+    public DbSet<ProposalApproval> ProposalApprovals => Set<ProposalApproval>();
+    public DbSet<InstanceSettings> InstanceSettings => Set<InstanceSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +68,83 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.DisplayName).HasMaxLength(Rules.MaxNameLength);
             e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Language).HasMaxLength(5);
+            e.Property(x => x.Version).IsConcurrencyToken();
+        });
+        modelBuilder.Entity<TeamMember>(e =>
+        {
+            e.HasKey(x => new { x.UserId, x.TeamId });
+            e.Property(x => x.TeamId).HasMaxLength(Rules.MaxIdLength);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Team>().WithMany().HasForeignKey(x => x.TeamId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.TeamId);
+        });
+        modelBuilder.Entity<Page>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.Title).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Body).HasMaxLength(Rules.MaxBodyLength);
+            e.Property(x => x.ParentId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.AttachedKind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.AttachedId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.Visibility).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasOne<Page>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Team>().WithMany().HasForeignKey(x => x.OwnerTeamId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.AttachedKind, x.AttachedId });
+            // Backlinks and "mentioned in".
+            e.HasIndex(x => x.Links).HasMethod("gin");
+        });
+        modelBuilder.Entity<Revision>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.EntityId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.Operation).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Snapshot).HasColumnType("jsonb");
+            e.Property(x => x.AuthorName).HasMaxLength(100);
+            e.Property(x => x.AuthorKind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Summary).HasMaxLength(Rules.MaxShortTextLength);
+            e.HasIndex(x => new { x.Kind, x.EntityId, x.Version }).IsUnique();
+            e.HasIndex(x => x.ProposalId);
+        });
+        modelBuilder.Entity<Proposal>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Comment).HasMaxLength(Rules.MaxTextLength);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.AuthorName).HasMaxLength(100);
+            e.Property(x => x.AuthorKind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.OnBehalfOf).HasMaxLength(100);
+            e.Property(x => x.DecidedByName).HasMaxLength(100);
+            e.Property(x => x.RefusalReason).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasMany(x => x.Changes).WithOne().HasForeignKey(x => x.ProposalId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Approvals).WithOne().HasForeignKey(x => x.ProposalId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.AuthorId);
+        });
+        modelBuilder.Entity<ProposalChange>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.TargetId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.Operation).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Before).HasColumnType("jsonb");
+            e.Property(x => x.After).HasColumnType("jsonb");
+            e.HasIndex(x => new { x.Kind, x.TargetId });
+        });
+        modelBuilder.Entity<ProposalApproval>(e =>
+        {
+            e.HasKey(x => new { x.ProposalId, x.TeamId });
+            e.Property(x => x.TeamId).HasMaxLength(Rules.MaxIdLength);
+            e.Property(x => x.UserName).HasMaxLength(100);
+        });
+        modelBuilder.Entity<InstanceSettings>(e =>
+        {
+            e.ToTable("InstanceSettings");
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.InstanceName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.OrganisationName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.DefaultLanguage).HasMaxLength(5);
             e.Property(x => x.Version).IsConcurrencyToken();
         });
     }

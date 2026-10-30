@@ -8,8 +8,13 @@ responsables. Elle répond à des questions comme « que reçoit la facturation,
 données clients ? » ou « qui prévenir avant de changer cette API ? ».
 
 - Un explorateur avec des cartes, une vue des connexions et un graphe, une loupe sur une application et le lignage des données.
-- Une fiche pour chaque application et chaque flux, modifiable par les membres, avec un indicateur de complétude.
-- Des applications restreintes, visibles en entier par les seuls administrateurs.
+- Une fiche pour chaque application et chaque flux, avec un indicateur de complétude.
+- Tout le monde lit, chacun propose, l'équipe responsable valide : des propositions de modification avec une
+  comparaison par champ, validées par les équipes responsables des enregistrements.
+- Un historique des révisions sur chaque fiche et chaque page, avec comparaison et restauration, et une corbeille.
+- Des pages de documentation en Markdown, en arborescence, rattachées aux fiches, avec des liens wiki
+  (`[[application:billing]]`), des rétroliens et la détection des liens cassés.
+- Des applications et des pages restreintes, visibles en entier par les seuls administrateurs.
 - Un format d'échange documenté (JSON ou YAML) pour importer et exporter tout le paysage.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
@@ -31,13 +36,17 @@ Puis ouvrir <http://localhost:8080>.
 ### Comptes de démonstration
 
 Avec `NOOSPHERE_DEMO=true`, Noosphere charge « Alizé », un assureur fictif (20 applications, 36 flux, 6 domaines,
-5 objets de données) et trois comptes, tous avec le mot de passe `demo` :
+5 objets de données, 7 pages de documentation, un historique sur Billing et quelques propositions) et quatre
+comptes, tous avec le mot de passe `demo` :
 
-| Identifiant | Rôle   | Peut                                                   |
-| ----------- | ------ | ------------------------------------------------------ |
-| `alice`     | admin  | tout, y compris supprimer et gérer les comptes         |
-| `bob`       | member | lire, créer et modifier                                |
-| `claire`    | guest  | lire seulement                                         |
+| Identifiant | Rôle   | Équipes                     | Peut                                                                |
+| ----------- | ------ | --------------------------- | ------------------------------------------------------------------- |
+| `alice`     | admin  |                             | tout, y compris les domaines, les équipes, les comptes et les réglages |
+| `bob`       | member | Team Finance, Team Payments | publier sur les enregistrements de ses équipes, valider les propositions |
+| `claire`    | guest  |                             | lire seulement                                                      |
+| `david`     | member | Team CRM                    | publier pour Team CRM, proposer ailleurs                            |
+
+Connectez-vous en `bob` pour valider les deux propositions que `david` a envoyées à Team Finance.
 
 N'activez jamais le mode démonstration sur un serveur partagé.
 
@@ -59,7 +68,7 @@ Tous les réglages sont des variables d'environnement (voir [.env.example](.env.
 | `NOOSPHERE_LOGIN_RATE_LIMIT` | `10`                    | Tentatives de connexion par minute et par adresse                     |
 | `NOOSPHERE_KEYS_DIR`         | `/data/keys`            | Clés des sessions (volume Docker)                                     |
 | `NOOSPHERE_BACKUPS_DIR`      | `/data/backups`         | Sauvegardes faites avant les migrations de la base                    |
-| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`             | Nom écrit dans les exports                                            |
+| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`             | Nom de l'instance tant qu'un administrateur ne l'a pas réglé          |
 | `NOOSPHERE_PUBLIC_URL`       | (adresse de la requête) | Adresse publique écrite dans les exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (aucun)                 | Réseaux du reverse proxy autorisés à envoyer les en-têtes `X-Forwarded-*` |
 
@@ -79,6 +88,9 @@ docker compose exec noosphere noosphere demo reset --yes
 
 - [Installation](docs/fr/installation.md)
 - [Configuration](docs/fr/configuration.md)
+- [Propositions et validation](docs/fr/proposals.md)
+- [Historique](docs/fr/history.md)
+- [Pages](docs/fr/pages.md)
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

@@ -8,8 +8,13 @@ questions such as "what does Billing receive, from whom, and when?", "where does
 before changing this API?".
 
 - An explorer with cards, a connections view and a graph, a lens on one application and data lineage.
-- Records for every application and flow, editable by members, with completeness hints.
-- Restricted applications, shown in full to administrators only.
+- Records for every application and flow, with completeness hints.
+- Everyone reads, anyone proposes, the owning team validates: change proposals with a field diff, validated by the
+  teams that own the records.
+- A revision history on every record and page, with compare and restore, and a trash for deleted records.
+- Markdown documentation pages in a tree, attached to records, with wiki links (`[[application:billing]]`),
+  backlinks and broken link detection.
+- Restricted applications and pages, shown in full to administrators only.
 - A documented exchange format (JSON or YAML) to import and export the whole landscape.
 - English and French interface. Runs as one container next to PostgreSQL.
 
@@ -31,13 +36,17 @@ Then open <http://localhost:8080>.
 ### Demo accounts
 
 With `NOOSPHERE_DEMO=true`, Noosphere loads "Alizé", a fictional insurer (20 applications, 36 flows, 6 domains,
-5 data objects) and three accounts, all with the password `demo`:
+5 data objects, 7 documentation pages, a history on Billing and a few proposals) and four accounts, all with the
+password `demo`:
 
-| Username | Role   | Can                                         |
-| -------- | ------ | ------------------------------------------- |
-| `alice`  | admin  | everything, including deleting and users    |
-| `bob`    | member | read, create and edit                       |
-| `claire` | guest  | read only                                   |
+| Username | Role   | Teams                       | Can                                                        |
+| -------- | ------ | --------------------------- | ---------------------------------------------------------- |
+| `alice`  | admin  |                             | everything, including domains, teams, users and settings   |
+| `bob`    | member | Team Finance, Team Payments | publish changes to their teams' records, validate proposals |
+| `claire` | guest  |                             | read only                                                  |
+| `david`  | member | Team CRM                    | publish for Team CRM, propose changes elsewhere            |
+
+Sign in as `bob` to validate the two proposals that `david` sent to Team Finance.
 
 Never turn demo mode on for a shared server.
 
@@ -58,7 +67,7 @@ All settings are environment variables (see [.env.example](.env.example) and
 | `NOOSPHERE_LOGIN_RATE_LIMIT` | `10`                | Sign-in attempts per minute and per client address             |
 | `NOOSPHERE_KEYS_DIR`         | `/data/keys`        | Session key storage (Docker volume)                            |
 | `NOOSPHERE_BACKUPS_DIR`      | `/data/backups`     | Backups taken before database migrations                       |
-| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`         | Name written in exports                                        |
+| `NOOSPHERE_INSTANCE_NAME`    | `Noosphere`         | Instance name until an administrator sets it in the settings   |
 | `NOOSPHERE_PUBLIC_URL`       | (request address)   | Public address written in exports                              |
 | `NOOSPHERE_TRUSTED_PROXIES`  | (none)              | Reverse proxy networks allowed to send `X-Forwarded-*` headers |
 
@@ -78,6 +87,9 @@ docker compose exec noosphere noosphere demo reset --yes
 
 - [Installation](docs/en/installation.md)
 - [Configuration](docs/en/configuration.md)
+- [Proposals and validation](docs/en/proposals.md)
+- [History](docs/en/history.md)
+- [Pages](docs/en/pages.md)
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)

@@ -35,6 +35,7 @@ const db = {
     { username: 'claire', displayName: 'Claire Petit', role: 'guest', language: 'fr' },
   ].map((x): User => ({
     ...(x as Pick<User, 'username' | 'displayName' | 'role' | 'language'>),
+    teamIds: [],
     version: 1,
     createdAt: '2026-09-01T08:00:00Z',
     updatedAt: '2026-09-01T08:00:00Z',
@@ -193,7 +194,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const u = db.users.find((x) => x.username === username);
     if (!u || password !== 'demo') return problem(401, 'Invalid username or password.');
     sessionStorage.setItem(SESSION_KEY, u.username);
-    return json(200, u satisfies Me);
+    return json(200, { ...u, teams: [] } satisfies Me);
   }
   if (path === '/auth/logout') {
     sessionStorage.removeItem(SESSION_KEY);
@@ -312,6 +313,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         displayName: b.displayName ?? '',
         role: b.role ?? 'guest',
         language: b.language === 'fr' ? 'fr' : 'en',
+        teamIds: [],
         version: 1,
         createdAt: now(),
         updatedAt: now(),
