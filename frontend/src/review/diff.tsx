@@ -138,7 +138,9 @@ function Side({ d, side, m }: { d: FieldDiff; side: 'before' | 'after'; m: Model
       </span>
     );
   }
-  const text = displayValue(t, m, d.field, v);
+  // references come with the record names from the server; the landscape resolves the rest
+  const title = side === 'before' ? d.beforeTitle : d.afterTitle;
+  const text = title || displayValue(t, m, d.field, v);
   if (!text) return <Empty />;
   return <Mark>{text}</Mark>;
 }

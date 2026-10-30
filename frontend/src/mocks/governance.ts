@@ -2,7 +2,7 @@
 // settings. server.ts calls `handleGovernance` before its own routes; it answers null for paths it does not own.
 import type {
   Application,
-  ChangeKind,
+  RecordKind,
   DataObject,
   FieldDiff,
   Flow,
@@ -40,12 +40,12 @@ export interface GovCtx {
   problem: Problem;
   now: () => string;
   /** Recomputes the server-side fields of a record after a change. */
-  finish: (kind: ChangeKind, rec: Rec) => Rec;
+  finish: (kind: RecordKind, rec: Rec) => Rec;
 }
 
 /* ---------- field catalogue used by the diff ---------- */
 
-const FIELDS: Record<ChangeKind, [string, string, FieldDiff['kind']][]> = {
+const FIELDS: Record<RecordKind, [string, string, FieldDiff['kind']][]> = {
   application: [
     ['name', 'Name', 'text'],
     ['domainId', 'Domain', 'ref'],
@@ -79,6 +79,16 @@ const FIELDS: Record<ChangeKind, [string, string, FieldDiff['kind']][]> = {
     ['title', 'Title', 'text'],
     ['body', 'Body', 'markdown'],
   ],
+  team: [
+    ['name', 'Name', 'text'],
+    ['contact', 'Contact', 'text'],
+    ['description', 'Description', 'markdown'],
+  ],
+  domain: [
+    ['name', 'Name', 'text'],
+    ['order', 'Order', 'text'],
+    ['description', 'Description', 'markdown'],
+  ],
 };
 
 const norm = (v: unknown): unknown => {
@@ -91,7 +101,7 @@ const norm = (v: unknown): unknown => {
 };
 const same = (a: unknown, b: unknown) => JSON.stringify(norm(a)) === JSON.stringify(norm(b));
 
-export function fieldDiff(kind: ChangeKind, before: Rec | null, after: Rec | null): FieldDiff[] {
+export function fieldDiff(kind: RecordKind, before: Rec | null, after: Rec | null): FieldDiff[] {
   const out: FieldDiff[] = [];
   for (const [field, label, k] of FIELDS[kind]) {
     const b = before ? norm(before[field]) : null;
@@ -101,7 +111,7 @@ export function fieldDiff(kind: ChangeKind, before: Rec | null, after: Rec | nul
   return out;
 }
 
-const pick = (kind: ChangeKind, r: Rec): Rec => {
+const pick = (kind: RecordKind, r: Rec): Rec => {
   const o: Rec = { id: r.id, version: r.version };
   for (const [f] of FIELDS[kind]) o[f] = r[f] ?? null;
   if (kind === 'application') o.sourceOf = r.sourceOf ?? [];
@@ -111,7 +121,7 @@ const pick = (kind: ChangeKind, r: Rec): Rec => {
 /* ---------- state ---------- */
 
 interface StoredChange {
-  kind: ChangeKind;
+  kind: RecordKind;
   targetId: string | null;
   operation: 'create' | 'update' | 'delete';
   baseVersion: number | null;
@@ -119,12 +129,15 @@ interface StoredChange {
   after: Rec | null;
   conflicts: string[];
 }
-interface StoredProposal extends Omit<Proposal, 'author' | 'decidedBy' | 'changes'> {
+interface StoredProposal extends Omit<
+  Proposal,
+  'author' | 'decidedBy' | 'changes' | 'outdated' | 'ownerTeams' | 'requiresAdmin' | 'canDecide' | 'canEdit'
+> {
   author: string;
   decidedBy: string | null;
   changes: StoredChange[];
 }
-interface StoredRevision extends Omit<Revision, 'author'> {
+interface StoredRevision extends Omit<Revision, 'author' | 'kind' | 'entityId'> {
   author: string | null;
 }
 interface Deleted {
@@ -140,32 +153,41 @@ interface Deleted {
 const revisions = new Map<string, StoredRevision[]>();
 const proposals: StoredProposal[] = [];
 const trash: Deleted[] = [];
-let settings: Settings = { instanceName: 'Noosphere', organisationName: 'Alizé', defaultLanguage: 'en', version: 1 };
+let settings: Settings = {
+  instanceName: 'Noosphere',
+  organisationName: 'Alizé',
+  defaultLanguage: 'en',
+  version: 1,
+  updatedAt: null,
+};
 let seq = 100;
 
-const key = (kind: ChangeKind, id: string) => kind + ':' + id;
+const key = (kind: RecordKind, id: string) => kind + ':' + id;
 
-function listOf(db: GovDb, kind: ChangeKind): Rec[] {
+function listOf(db: GovDb, kind: RecordKind): Rec[] {
   if (kind === 'application') return db.applications as unknown as Rec[];
   if (kind === 'flow') return db.flows as unknown as Rec[];
   if (kind === 'dataObject') return db.dataObjects as unknown as Rec[];
+  if (kind === 'team') return db.teams as unknown as Rec[];
+  if (kind === 'domain') return db.domains as unknown as Rec[];
   return [];
 }
-const find = (db: GovDb, kind: ChangeKind, id: string | null) =>
+const find = (db: GovDb, kind: RecordKind, id: string | null) =>
   id ? (listOf(db, kind).find((x) => x.id === id) ?? null) : null;
 const titleOf = (r: Rec | null) => (r ? String(r.name ?? r.title ?? r.id) : '');
 
 /** The team that owns a record, or null when only administrators do. */
-export function ownerOf(db: GovDb, kind: ChangeKind, rec: Rec | null): string | null {
+export function ownerOf(db: GovDb, kind: RecordKind, rec: Rec | null): string | null {
   if (!rec) return null;
   const appTeam = (id: unknown) => db.applications.find((a) => a.id === id)?.teamId ?? null;
   if (kind === 'application') return (rec.teamId as string | null) ?? null;
   if (kind === 'flow') return (rec.ownerTeamId as string | null) || appTeam(rec.fromId);
   if (kind === 'dataObject') return appTeam(rec.sourceApplicationId);
+  if (kind === 'team' || kind === 'domain') return null;
   return (rec.ownerTeamId as string | null) ?? null;
 }
 
-export function permissions(db: GovDb, u: UserM2, kind: ChangeKind, rec: Rec | null): Permissions {
+export function permissions(db: GovDb, u: UserM2, kind: RecordKind, rec: Rec | null): Permissions {
   if (u.role === 'guest') return { publish: false, propose: false };
   if (u.role === 'admin') return { publish: true, propose: true };
   const owner = ownerOf(db, kind, rec);
@@ -173,7 +195,7 @@ export function permissions(db: GovDb, u: UserM2, kind: ChangeKind, rec: Rec | n
 }
 
 /** Members of a team owning a record, or anyone when it has no owner (the admins). */
-function canPublish(db: GovDb, u: UserM2, kind: ChangeKind, rec: Rec | null) {
+function canPublish(db: GovDb, u: UserM2, kind: RecordKind, rec: Rec | null) {
   return permissions(db, u, kind, rec).publish;
 }
 
@@ -186,7 +208,7 @@ function person(db: GovDb, username: string | null): PersonRef | null {
 /** Records a published version. */
 function addRevision(
   ctx: GovCtx,
-  kind: ChangeKind,
+  kind: RecordKind,
   rec: Rec,
   author: string | null,
   summary: string | null,
@@ -207,7 +229,7 @@ function addRevision(
 }
 
 /** The revisions of a record, oldest first; an entity without any gets its current state as the first one. */
-function history(ctx: GovCtx, kind: ChangeKind, id: string): StoredRevision[] {
+function history(ctx: GovCtx, kind: RecordKind, id: string): StoredRevision[] {
   const k = key(kind, id);
   let list = revisions.get(k);
   if (!list) {
@@ -488,7 +510,7 @@ function view(ctx: GovCtx, u: UserM2, p: StoredProposal): Proposal {
   const owners = ownerTeams(ctx, p);
   return {
     ...p,
-    author: person(ctx.db, p.author),
+    author: person(ctx.db, p.author) ?? { username: p.author, displayName: p.author },
     decidedBy: person(ctx.db, p.decidedBy),
     outdated: changes.some((c) => c.outdated),
     ownerTeams: owners,
@@ -502,22 +524,24 @@ function view(ctx: GovCtx, u: UserM2, p: StoredProposal): Proposal {
 function buildChanges(ctx: GovCtx, body: ProposalInput): StoredChange[] | string {
   const out: StoredChange[] = [];
   for (const c of body.changes ?? []) {
-    const cur = find(ctx.db, c.kind, c.targetId);
-    if (c.operation !== 'create' && !cur) return `Unknown ${c.kind} ${String(c.targetId)}.`;
+    const kind = c.kind as RecordKind;
+    const operation = c.operation ?? 'update';
+    const cur = find(ctx.db, kind, c.targetId);
+    if (operation !== 'create' && !cur) return `Unknown ${kind} ${String(c.targetId)}.`;
     out.push({
-      kind: c.kind,
+      kind,
       targetId: c.targetId,
-      operation: c.operation,
+      operation,
       baseVersion: cur ? Number(cur.version) : null,
-      before: cur ? pick(c.kind, cur) : null,
-      after: c.operation === 'delete' ? null : { ...(cur ? pick(c.kind, cur) : null), ...c.after },
+      before: cur ? pick(kind, cur) : null,
+      after: operation === 'delete' ? null : { ...(cur ? pick(kind, cur) : null), ...c.after },
       conflicts: [],
     });
   }
   return out.length ? out : 'A proposal holds at least one change.';
 }
 
-function moveToTrash(ctx: GovCtx, kind: ChangeKind, id: string, by: string) {
+function moveToTrash(ctx: GovCtx, kind: RecordKind, id: string, by: string) {
   const list = listOf(ctx.db, kind);
   const i = list.findIndex((x) => x.id === id);
   if (i < 0) return;
@@ -581,11 +605,13 @@ function rebase(ctx: GovCtx, c: StoredChange): StoredChange {
 
 /* ---------- requests ---------- */
 
-const KINDS: Record<string, ChangeKind> = {
+const KINDS: Record<string, RecordKind> = {
   applications: 'application',
   flows: 'flow',
   'data-objects': 'dataObject',
   pages: 'page',
+  teams: 'team',
+  domains: 'domain',
 };
 
 /** The routes reachable without signing in. */
@@ -594,7 +620,7 @@ export function handlePublic(ctx: GovCtx, method: string, path: string): Respons
   return null;
 }
 
-export function recordExtras(ctx: GovCtx, u: UserM2, kind: ChangeKind, rec: Rec) {
+export function recordExtras(ctx: GovCtx, u: UserM2, kind: RecordKind, rec: Rec) {
   return {
     owningTeamId: ownerOf(ctx.db, kind, rec),
     permissions: permissions(ctx.db, u, kind, rec),
@@ -604,16 +630,16 @@ export function recordExtras(ctx: GovCtx, u: UserM2, kind: ChangeKind, rec: Rec)
 }
 
 /** Called by the record PUT and DELETE routes: refuses non-owners, as the real API does. */
-export function guardWrite(ctx: GovCtx, u: UserM2, kind: ChangeKind, rec: Rec): Response | null {
+export function guardWrite(ctx: GovCtx, u: UserM2, kind: RecordKind, rec: Rec): Response | null {
   return canPublish(ctx.db, u, kind, rec)
     ? null
     : ctx.problem(403, 'Forbidden', 'Only the owning team publishes this record; send a proposal instead.');
 }
-export function afterSave(ctx: GovCtx, u: UserM2, kind: ChangeKind, rec: Rec) {
+export function afterSave(ctx: GovCtx, u: UserM2, kind: RecordKind, rec: Rec) {
   history(ctx, kind, String(rec.id));
   addRevision(ctx, kind, rec, u.username, null, 'update');
 }
-export function deleteRecord(ctx: GovCtx, u: UserM2, kind: ChangeKind, id: string) {
+export function deleteRecord(ctx: GovCtx, u: UserM2, kind: RecordKind, id: string) {
   history(ctx, kind, id);
   moveToTrash(ctx, kind, id, u.username);
 }
@@ -642,7 +668,8 @@ export function handleGovernance(
       instanceName: b.instanceName.trim(),
       organisationName: (b.organisationName ?? '').trim(),
       defaultLanguage: b.defaultLanguage === 'fr' ? 'fr' : 'en',
-      version: (settings.version ?? 1) + 1,
+      version: settings.version + 1,
+      updatedAt: ctx.now(),
     };
     return json(200, settings);
   }
@@ -803,7 +830,10 @@ export function handleGovernance(
   }
 
   /* history */
-  m = /^\/(applications|flows|data-objects|pages)\/([^/]+)\/history(?:\/(compare|\d+)(\/restore)?)?$/.exec(path);
+  m =
+    /^\/(applications|flows|data-objects|pages|teams|domains)\/([^/]+)\/history(?:\/(compare|\d+)(\/restore)?)?$/.exec(
+      path,
+    );
   if (m) {
     const kind = KINDS[m[1]];
     const id = decodeURIComponent(m[2]);
@@ -818,11 +848,11 @@ export function handleGovernance(
       const from = list.find((r) => r.version === Number(url.searchParams.get('from')));
       const to = list.find((r) => r.version === Number(url.searchParams.get('to')));
       if (!from || !to) return problem(404, 'Version not found.');
-      return json(200, fieldDiff(kind, from.snapshot, to.snapshot));
+      return json(200, { from: from.version, to: to.version, diff: fieldDiff(kind, from.snapshot, to.snapshot) });
     }
     const rev = list.find((r) => r.version === Number(m![3]));
     if (!rev) return problem(404, 'Version not found.');
-    if (!m[4]) return json(200, { ...rev, author: person(db, rev.author) });
+    if (!m[4]) return json(200, { ...rev, kind, entityId: id, author: person(db, rev.author) });
     if (method !== 'POST') return null;
     if (u.role === 'guest') return problem(403, 'Read-only account.');
     const cur = find(db, kind, id);
@@ -894,7 +924,7 @@ export function handleGovernance(
     const i = trash.findIndex((x) => x.kind === m![1] && x.entityId === decodeURIComponent(m![2]));
     if (i < 0) return problem(404, 'Not in the trash.');
     const d = trash[i];
-    const kind = d.kind as ChangeKind;
+    const kind = d.kind as RecordKind;
     const rec = { ...d.snapshot, version: d.version + 1, updatedAt: ctx.now() };
     listOf(db, kind).push(rec);
     trash.splice(i, 1);

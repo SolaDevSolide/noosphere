@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import type { ChangeKind, Proposal, ProposalChange } from '../api/types';
+import type { Proposal, ProposalChange, RecordKind } from '../api/types';
 import { useDocumentTitle } from '../app/settings';
 import { useLandscape } from '../explorer/landscape';
 import { paths } from '../explorer/paths';
@@ -26,7 +26,7 @@ export function reasonError(t: Dict, reason: string): string | null {
   return null;
 }
 
-const recordPath = (kind: ChangeKind, id: string) =>
+const recordPath = (kind: RecordKind, id: string) =>
   kind === 'application'
     ? paths.app(id)
     : kind === 'flow'

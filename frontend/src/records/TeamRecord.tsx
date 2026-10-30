@@ -8,9 +8,10 @@ import { useLandscape } from '../explorer/landscape';
 import { FlowRow } from '../explorer/Panel';
 import { paths } from '../explorer/paths';
 import { useI18n } from '../i18n';
-import { IconTeam } from '../ui/icons';
+import { IconHistory, IconTeam } from '../ui/icons';
 import { useToast } from '../ui/Toast';
 import { PageShell, RecordError, RecordSkeleton, useRecord } from './common';
+import { HistoryPanel } from './HistoryPanel';
 import { RecordExtensions } from './RecordExtensions';
 
 /** Administrators pick the members of a team among all users. */
@@ -112,6 +113,7 @@ export function TeamRecord() {
   const [members, setMembers] = useState<TeamMember[] | null>(null);
   const [membersError, setMembersError] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -156,8 +158,29 @@ export function TeamRecord() {
           <Link className="btn" to={paths.team(team.id)}>
             {t.team.showOnMap}
           </Link>
+          <button
+            type="button"
+            className="btn hist-btn"
+            aria-pressed={historyOpen}
+            aria-haspopup="dialog"
+            onClick={() => setHistoryOpen(true)}
+          >
+            <IconHistory />
+            {t.history.button}
+          </button>
         </div>
       </div>
+      {historyOpen && (
+        <HistoryPanel
+          kind="team"
+          id={team.id}
+          name={team.name}
+          canPublish={team.permissions?.publish ?? isAdmin}
+          canPropose={false}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={reload}
+        />
+      )}
       <div className="grid2">
         <div>
           {team.description && (

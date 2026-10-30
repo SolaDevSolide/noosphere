@@ -231,7 +231,10 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     const u = db.users.find((x) => x.username === username);
     if (!u || password !== 'demo') return problem(401, 'Invalid username or password.');
     sessionStorage.setItem(SESSION_KEY, u.username);
-    return json(200, u satisfies Me);
+    return json(200, {
+      ...u,
+      teams: db.teams.filter((x) => u.teamIds.includes(x.id)).map((x) => ({ id: x.id, name: x.name })),
+    } satisfies Me);
   }
   if (path === '/auth/logout') {
     sessionStorage.removeItem(SESSION_KEY);
@@ -251,7 +254,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
       displayName: u.displayName,
       role: u.role,
       language: u.language,
-      teams: db.teams.filter((x) => u.teamIds?.includes(x.id)).map((x) => ({ id: x.id, name: x.name })),
+      teams: db.teams.filter((x) => u.teamIds.includes(x.id)).map((x) => ({ id: x.id, name: x.name })),
     });
   if (path === '/auth/me/language' && method === 'PUT') {
     u.language = parse<{ language: 'en' | 'fr' }>().language;

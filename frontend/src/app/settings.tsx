@@ -2,7 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { api } from '../api/client';
 import type { Settings } from '../api/types';
 
-export const DEFAULT_SETTINGS: Settings = { instanceName: 'Noosphere', organisationName: '', defaultLanguage: 'en' };
+export const DEFAULT_SETTINGS: Settings = {
+  instanceName: 'Noosphere',
+  organisationName: '',
+  defaultLanguage: 'en',
+  version: 0,
+};
 
 interface SettingsState {
   settings: Settings;

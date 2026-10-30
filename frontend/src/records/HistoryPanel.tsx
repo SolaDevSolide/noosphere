@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
-import type { ChangeKind, FieldDiff, HistoryEntry } from '../api/types';
+import type { FieldDiff, HistoryEntry, RecordKind } from '../api/types';
 import { useLandscape } from '../explorer/landscape';
 import { paths } from '../explorer/paths';
 import { useI18n } from '../i18n';
@@ -42,7 +42,7 @@ export function HistoryPanel({
   onClose,
   onRestored,
 }: {
-  kind: ChangeKind;
+  kind: RecordKind;
   id: string;
   name: string;
   canPublish: boolean;
@@ -88,7 +88,7 @@ export function HistoryPanel({
     setView({ name: 'compare', from, to, diff: null });
     api
       .compare(kind, id, from, to)
-      .then((diff) => setView((v) => (v.name === 'compare' && v.from === from ? { ...v, diff } : v)))
+      .then((c) => setView((v) => (v.name === 'compare' && v.from === from ? { ...v, diff: c.diff } : v)))
       .catch((e: unknown) =>
         setView((v) =>
           v.name === 'compare'

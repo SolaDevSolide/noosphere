@@ -4,8 +4,8 @@ import type {
   DataObject,
   Domain,
   ExchangeEnvelope,
-  ChangeKind,
-  FieldDiff,
+  Compare,
+  RecordKind,
   Flow,
   FlowInput,
   HistoryEntry,
@@ -115,13 +115,15 @@ const q = (params: Record<string, string | undefined>) => {
 const enc = encodeURIComponent;
 
 /** The URL segment of each kind of record. */
-export const KIND_PATH: Record<ChangeKind, string> = {
+export const KIND_PATH: Record<RecordKind, string> = {
   application: 'applications',
   flow: 'flows',
   dataObject: 'data-objects',
   page: 'pages',
+  domain: 'domains',
+  team: 'teams',
 };
-const hist = (kind: ChangeKind, id: string) => `/${KIND_PATH[kind]}/${enc(id)}/history`;
+const hist = (kind: RecordKind, id: string) => `/${KIND_PATH[kind]}/${enc(id)}/history`;
 
 export interface ProposalQuery {
   status?: string;
@@ -179,14 +181,15 @@ export const api = {
   rebaseProposal: (id: string) => request<Proposal>('POST', `/proposals/${enc(id)}/rebase`, {}),
   inbox: () => request<Inbox>('GET', '/me/inbox'),
 
-  history: (kind: ChangeKind, id: string) => request<HistoryEntry[]>('GET', hist(kind, id)),
-  revision: (kind: ChangeKind, id: string, version: number) => request<Revision>('GET', `${hist(kind, id)}/${version}`),
-  compare: (kind: ChangeKind, id: string, from: number, to: number) =>
-    request<FieldDiff[]>('GET', `${hist(kind, id)}/compare` + q({ from: String(from), to: String(to) })),
-  restore: (kind: ChangeKind, id: string, version: number) =>
+  history: (kind: RecordKind, id: string) => request<HistoryEntry[]>('GET', hist(kind, id)),
+  revision: (kind: RecordKind, id: string, version: number) => request<Revision>('GET', `${hist(kind, id)}/${version}`),
+  compare: (kind: RecordKind, id: string, from: number, to: number) =>
+    request<Compare>('GET', `${hist(kind, id)}/compare` + q({ from: String(from), to: String(to) })),
+  restore: (kind: RecordKind, id: string, version: number) =>
     request<RestoreResult>('POST', `${hist(kind, id)}/${version}/restore`, {}),
   trash: () => request<TrashItem[]>('GET', '/trash'),
-  restoreTrash: (kind: string, id: string) => request<void>('POST', `/trash/${enc(kind)}/${enc(id)}/restore`, {}),
+  restoreTrash: (kind: RecordKind, id: string) =>
+    request<unknown>('POST', `/trash/${enc(kind)}/${enc(id)}/restore`, {}),
 
   settings: () => request<Settings>('GET', '/settings'),
   updateSettings: (body: Settings) => request<Settings>('PUT', '/settings', body),

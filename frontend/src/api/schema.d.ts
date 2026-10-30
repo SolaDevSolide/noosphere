@@ -512,7 +512,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DomainDto"];
+                        "application/json": components["schemas"]["DomainDetailDto"];
                     };
                 };
             };
@@ -658,7 +658,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TeamDto"];
+                        "application/json": components["schemas"]["TeamDetailDto"];
                     };
                 };
             };
@@ -710,6 +710,68 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamMemberDto"][];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TeamMembersInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamMemberDto"][];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -804,7 +866,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ApplicationDto"] | components["schemas"]["RestrictedApplicationDto"];
+                        "application/json": components["schemas"]["ApplicationDetailDto"] | components["schemas"]["RestrictedApplicationDto"];
                     };
                 };
                 /** @description Not Found */
@@ -959,7 +1021,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["DataObjectDto"];
+                        "application/json": components["schemas"]["DataObjectDetailDto"];
                     };
                 };
             };
@@ -1105,7 +1167,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["FlowDto"] | components["schemas"]["RestrictedFlowDto"];
+                        "application/json": components["schemas"]["FlowDetailDto"] | components["schemas"]["RestrictedFlowDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1166,6 +1228,647 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    attachedKind?: string;
+                    attachedId?: string;
+                    tag?: string;
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": (components["schemas"]["PageSummaryDto"] | components["schemas"]["RestrictedPageDto"])[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PageInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PageDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PageTreeNodeDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PageDetailDto"] | components["schemas"]["RestrictedPageDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PageInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PageDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/raw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/markdown": string;
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PageMoveInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PageDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                    mine?: boolean;
+                    toValidate?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProposalInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProposalInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}/refuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RefusalInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{id}/rebase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InboxDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1350,10 +2053,559 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/applications/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CompareApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/applications/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CompareFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreFlow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data-objects/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryDataObject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data-objects/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionDataObject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data-objects/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CompareDataObject"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/data-objects/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreDataObject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ComparePage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pages/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestorePage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/domains/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryDomain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/domains/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionDomain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/domains/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CompareDomain"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/domains/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreDomain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HistoryTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/history/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RevisionTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/history/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CompareTeam"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{id}/history/{version}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RestoreTeam"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TrashItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/trash/{kind}/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: string;
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TrashRestoreResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SettingsDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettingsInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SettingsDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description An application with its owner, the reader's permissions and its pages. */
+        ApplicationDetailDto: {
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId?: null | string;
+            permissions?: components["schemas"]["PermissionsDto"];
+            /** @description Pages attached to the record. */
+            pages?: components["schemas"]["PageRefDto"][];
+            /** @description Pages whose body links to the record. */
+            mentionedIn?: components["schemas"]["PageRefDto"][];
+            id?: string;
+            /** @enum {boolean} */
+            restricted?: false;
+            name?: string;
+            domainId?: string;
+            teamId?: null | string;
+            kind?: components["schemas"]["ApplicationKind"];
+            tech?: null | string;
+            description?: null | string;
+            lifecycle?: components["schemas"]["Lifecycle"];
+            visibility?: components["schemas"]["Visibility"];
+            /** @description Ids of the data objects whose source is this application (derived from `DataObject.sourceApplicationId`). */
+            sourceOf?: string[];
+            /**
+             * Format: double
+             * @description Share of the recommended fields that are filled, 0 to 1.
+             */
+            completeness?: number;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         /** @description An application the reader may see in full. `restricted` is always false (true on RestrictedApplicationDto). */
         ApplicationDto: {
             id: string;
@@ -1399,6 +2651,43 @@ export interface components {
          * @enum {unknown}
          */
         ApplicationKind: "app" | "bus" | "saas" | "data" | "file" | "external";
+        AttachedToDto: {
+            /** @description `application`, `flow`, `dataObject`, `domain` or `team`. */
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+        };
+        /** @enum {unknown} */
+        AuthorKind: "user" | "agent";
+        /** @enum {unknown} */
+        ChangeOperation: "create" | "update" | "delete";
+        CompareDto: {
+            /** Format: int32 */
+            from: number;
+            /** Format: int32 */
+            to: number;
+            diff: components["schemas"]["DiffEntryDto"][];
+        };
+        /** @description A data object with its owner (the team of its source application), permissions and pages. */
+        DataObjectDetailDto: {
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId?: null | string;
+            permissions?: components["schemas"]["PermissionsDto"];
+            /** @description Pages attached to the record. */
+            pages?: components["schemas"]["PageRefDto"][];
+            /** @description Pages whose body links to the record. */
+            mentionedIn?: components["schemas"]["PageRefDto"][];
+            id?: string;
+            name?: string;
+            sensitivity?: components["schemas"]["Sensitivity"];
+            sourceApplicationId?: null | string;
+            description?: null | string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         DataObjectDto: {
             id: string;
             name: string;
@@ -1420,6 +2709,40 @@ export interface components {
             description: null | string;
             /** Format: int32 */
             version: null | number;
+        };
+        /** @description One changed field. `markdown` fields carry the raw texts, for an inline word diff. */
+        DiffEntryDto: {
+            field: string;
+            label: string;
+            kind: components["schemas"]["DiffKind"];
+            before: null | components["schemas"]["JsonNode"];
+            after: null | components["schemas"]["JsonNode"];
+            /** @description For `ref` fields: the name of the record referred to. */
+            beforeTitle: null | string;
+            afterTitle: null | string;
+        };
+        /** @enum {unknown} */
+        DiffKind: "text" | "markdown" | "list" | "ref";
+        /** @description A domain (administrators only change it) with its pages. */
+        DomainDetailDto: {
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId?: null | string;
+            permissions?: components["schemas"]["PermissionsDto"];
+            /** @description Pages attached to the record. */
+            pages?: components["schemas"]["PageRefDto"][];
+            /** @description Pages whose body links to the record. */
+            mentionedIn?: components["schemas"]["PageRefDto"][];
+            id?: string;
+            name?: string;
+            description?: null | string;
+            /** Format: int32 */
+            order?: number;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         DomainDto: {
             id: string;
@@ -1469,6 +2792,40 @@ export interface components {
             url: null | string;
             /** Format: date-time */
             exportedAt: string;
+        };
+        /** @description A flow with its owner (its owner team, or else the team of its source application), permissions and pages. */
+        FlowDetailDto: {
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId?: null | string;
+            permissions?: components["schemas"]["PermissionsDto"];
+            /** @description Pages attached to the record. */
+            pages?: components["schemas"]["PageRefDto"][];
+            /** @description Pages whose body links to the record. */
+            mentionedIn?: components["schemas"]["PageRefDto"][];
+            id?: string;
+            /** @enum {boolean} */
+            restricted?: false;
+            name?: string;
+            fromId?: string;
+            toId?: string;
+            type?: components["schemas"]["FlowType"];
+            schedule?: null | string;
+            dataObjectIds?: string[];
+            /** @description Most sensitive of the carried data objects (internal when there is none). */
+            sensitivity?: components["schemas"]["Sensitivity"];
+            ownerTeamId?: null | string;
+            status?: components["schemas"]["FlowStatus"];
+            volume?: null | string;
+            description?: null | string;
+            plannedChange?: null | components["schemas"]["PlannedChangeDto"];
+            /** Format: double */
+            completeness?: number;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
         };
         /** @description A flow the reader may see in full. `restricted` is always false (true on RestrictedFlowDto). */
         FlowDto: {
@@ -1523,6 +2880,19 @@ export interface components {
             /** @description `ok`, `unreachable` or `migrations-pending`. */
             database?: null | string;
         };
+        /** @description One revision of a record, newest first. */
+        HistoryEntryDto: {
+            /** Format: int32 */
+            version: number;
+            operation: components["schemas"]["RevisionOperation"];
+            author: null | components["schemas"]["UserRefDto"];
+            authorKind: components["schemas"]["AuthorKind"];
+            /** Format: date-time */
+            createdAt: string;
+            summary: null | string;
+            /** Format: uuid */
+            proposalId: null | string;
+        };
         ImportErrorDto: {
             /**
              * Format: int32
@@ -1548,6 +2918,20 @@ export interface components {
             /** @description True when the changes were written (not a dry run, no error). */
             applied: boolean;
         };
+        /** @description Counts for the header badge. */
+        InboxDto: {
+            /**
+             * Format: int32
+             * @description Submitted proposals the reader may accept or refuse.
+             */
+            toValidate: number;
+            /**
+             * Format: int32
+             * @description The reader's own proposals in draft or submitted.
+             */
+            mineOpen: number;
+        };
+        JsonNode: unknown;
         JsonObject: Record<string, never>;
         /**
          * @description Everything the explorer needs, in one call. `applications` holds ApplicationDto or
@@ -1589,10 +2973,163 @@ export interface components {
             role: components["schemas"]["Role"];
             /** @description `en` or `fr`. */
             language: string;
+            /** @description Teams the user belongs to. */
+            teams: components["schemas"]["TeamRefDto"][];
+        };
+        /** @description A page with its resolved links, backlinks, place in the tree, owner and the reader's permissions. */
+        PageDetailDto: {
+            /** @description Wiki links of the body, resolved; `exists: false` marks a broken link. */
+            links: components["schemas"]["PageLinkDto"][];
+            /** @description Pages whose body links to this page. */
+            backlinks: components["schemas"]["PageRefDto"][];
+            /** @description From the top-level page down to the parent. */
+            ancestors: components["schemas"]["PageRefDto"][];
+            children: components["schemas"]["PageRefDto"][];
+            /** @description Name of the attached record (null when missing or hidden). */
+            attachedTitle: null | string;
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId: null | string;
+            permissions: components["schemas"]["PermissionsDto"];
+            id?: string;
+            /** @enum {boolean} */
+            restricted?: false;
+            title?: string;
+            /** @description Markdown. Wiki links: `[[application:billing]]`, `[[page:glossary|the glossary]]`. */
+            body?: string;
+            /** @description Parent page in the tree; null for a top-level page. */
+            parentId?: null | string;
+            /**
+             * Format: int32
+             * @description Position among its siblings (ascending, then by title).
+             */
+            order?: number;
+            attachedTo?: null | components["schemas"]["AttachedToDto"];
+            /** @description Owning team as set on the page; when null, the owner of the attached record owns it. */
+            ownerTeamId?: null | string;
+            tags?: string[];
+            visibility?: components["schemas"]["Visibility"];
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        /** @description A documentation page the reader may see in full. `restricted` is always false. */
+        PageDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: false;
+            title: string;
+            /** @description Markdown. Wiki links: `[[application:billing]]`, `[[page:glossary|the glossary]]`. */
+            body: string;
+            /** @description Parent page in the tree; null for a top-level page. */
+            parentId: null | string;
+            /**
+             * Format: int32
+             * @description Position among its siblings (ascending, then by title).
+             */
+            order: number;
+            attachedTo: null | components["schemas"]["AttachedToDto"];
+            /** @description Owning team as set on the page; when null, the owner of the attached record owns it. */
+            ownerTeamId: null | string;
+            tags: string[];
+            visibility: components["schemas"]["Visibility"];
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        PageInput: {
+            id: null | string;
+            title: null | string;
+            /** @description Markdown; may be empty. */
+            body: null | string;
+            parentId: null | string;
+            /** Format: int32 */
+            order: null | number;
+            attachedTo: null | components["schemas"]["AttachedToDto"];
+            /** @description Optional: when empty, the owner of the attached record owns the page (administrators when none). */
+            ownerTeamId: null | string;
+            tags: null | string[];
+            visibility: null | components["schemas"]["Visibility"];
+            /** Format: int32 */
+            version: null | number;
+        };
+        /** @description A link found in a page body. */
+        PageLinkDto: {
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            /** @description Name of the target; null when it does not exist or is hidden from the reader. */
+            title: null | string;
+            /** @description False for a broken link. */
+            exists: boolean;
+            /** @description The target exists but the reader may not see it. */
+            restricted: boolean;
+            /** @description Text after the `|`, when given. */
+            label: null | string;
+        };
+        PageMoveInput: {
+            /** @description New parent; null moves the page to the top level. */
+            parentId: null | string;
+            /** Format: int32 */
+            order: null | number;
+            /**
+             * Format: int32
+             * @description Optional: when given, a stale version returns 409.
+             */
+            version: null | number;
+        };
+        /** @description A page, as listed on a record or next to another page. */
+        PageRefDto: {
+            id: string;
+            title: string;
+        };
+        /** @description A page in the list (no body). */
+        PageSummaryDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: false;
+            title: string;
+            parentId: null | string;
+            /** Format: int32 */
+            order: number;
+            attachedTo: null | components["schemas"]["AttachedToDto"];
+            ownerTeamId: null | string;
+            tags: string[];
+            visibility: components["schemas"]["Visibility"];
+            /**
+             * Format: int32
+             * @description Number of wiki links whose target does not exist.
+             */
+            brokenLinks: number;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /** @description A node of the page tree. A restricted page hidden from the reader has no title. */
+        PageTreeNodeDto: {
+            id: string;
+            restricted: boolean;
+            title: null | string;
+            /** Format: int32 */
+            order: number;
+            attachedTo: null | components["schemas"]["AttachedToDto"];
+            children: components["schemas"]["PageTreeNodeDto"][];
         };
         PasswordChangeInput: {
             currentPassword: null | string;
             newPassword: null | string;
+        };
+        /** @description What the signed-in user may do with a record. */
+        PermissionsDto: {
+            /** @description Save, delete or restore directly (administrator, or member of the owning team). */
+            publish: boolean;
+            /** @description Send a change proposal (members and administrators, on applications, flows, data objects and pages). */
+            propose: boolean;
         };
         PlannedChangeDto: {
             summary: string;
@@ -1613,6 +3150,133 @@ export interface components {
             errors?: null | {
                 [key: string]: string[];
             };
+            /** @description true on the 409 answered when accepting a proposal whose records changed since it was written. */
+            outdated?: null | boolean;
+        };
+        /** @description A change with its snapshots and field diff. */
+        ProposalChangeDto: {
+            kind: components["schemas"]["RecordKind"];
+            targetId: null | string;
+            /** @description Name of the target (after the change for a creation). */
+            targetTitle: null | string;
+            operation: components["schemas"]["ChangeOperation"];
+            /** Format: int32 */
+            baseVersion: null | number;
+            /**
+             * Format: int32
+             * @description Version of the target now (null when it does not exist).
+             */
+            currentVersion: null | number;
+            /** @description The target changed since `baseVersion`: accepting returns 409 until the proposal is rebased. */
+            outdated: boolean;
+            before: null | components["schemas"]["JsonObject"];
+            after: null | components["schemas"]["JsonObject"];
+            diff: components["schemas"]["DiffEntryDto"][];
+            /** @description Fields changed both by the proposal and on the record, found by the last rebase. */
+            conflicts: string[];
+        };
+        /** @description One change of a proposal. */
+        ProposalChangeInput: {
+            kind: null | components["schemas"]["RecordKind"];
+            /** @description Record changed; null for a creation (the id then comes from `after.id` or the name). */
+            targetId: null | string;
+            operation: null | components["schemas"]["ChangeOperation"];
+            /**
+             * Format: int32
+             * @description Version the change was written against: required for update and delete.
+             */
+            baseVersion: null | number;
+            after: null | components["schemas"]["JsonObject"];
+        };
+        /** @description A change proposal. */
+        ProposalDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            comment: null | string;
+            /** @description `draft`, `submitted` (shown as "To validate"), `accepted`, `refused` or `withdrawn`. */
+            status: components["schemas"]["ProposalStatus"];
+            authorKind: components["schemas"]["AuthorKind"];
+            author: components["schemas"]["UserRefDto"];
+            onBehalfOf: null | string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            submittedAt: null | string;
+            decidedBy: null | components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            decidedAt: null | string;
+            refusalReason: null | string;
+            /** Format: int32 */
+            version: number;
+            outdated: boolean;
+            /** @description Teams that validate (one validator each). An administrator accepts on behalf of all. */
+            ownerTeams: components["schemas"]["ProposalOwnerDto"][];
+            /** @description A target is owned by administrators only (no owning team): only an administrator accepts. */
+            requiresAdmin: boolean;
+            /** @description The reader may accept or refuse it now. */
+            canDecide: boolean;
+            /** @description The reader is the author and may still edit, submit or withdraw it. */
+            canEdit: boolean;
+            changes: components["schemas"]["ProposalChangeDto"][];
+        };
+        ProposalInput: {
+            title: null | string;
+            comment: null | string;
+            changes: null | components["schemas"]["ProposalChangeInput"][];
+            /** @description true sends it for validation at once; otherwise it stays a draft. */
+            submit: null | boolean;
+            /**
+             * Format: int32
+             * @description On PUT: the proposal version that was read.
+             */
+            version: null | number;
+        };
+        /** @description An owning team whose acceptance the proposal needs. */
+        ProposalOwnerDto: {
+            id: string;
+            name: string;
+            approvedBy: null | components["schemas"]["UserRefDto"];
+            /** Format: date-time */
+            approvedAt: null | string;
+        };
+        /** @enum {unknown} */
+        ProposalStatus: "draft" | "submitted" | "accepted" | "refused" | "withdrawn";
+        /** @description Owner, permissions and pages of a record. */
+        RecordContextDto: {
+            owningTeamId: null | string;
+            /** @description What the signed-in user may do with a record. */
+            permissions: {
+                /** @description Save, delete or restore directly (administrator, or member of the owning team). */
+                publish: boolean;
+                /** @description Send a change proposal (members and administrators, on applications, flows, data objects and pages). */
+                propose: boolean;
+            };
+            pages: {
+                id: string;
+                title: string;
+            }[];
+            mentionedIn: {
+                id: string;
+                title: string;
+            }[];
+        };
+        /**
+         * @description Kinds of versioned records: each has a history of revisions.
+         * @enum {unknown}
+         */
+        RecordKind: "application" | "flow" | "dataObject" | "page" | "domain" | "team";
+        RefusalInput: {
+            /** @description Shown to the author: 3 to 500 characters. */
+            reason: null | string;
+        };
+        RestoreResultDto: {
+            /** @description `published` (a new revision) or `proposed` (a submitted proposal, for non-owners). */
+            outcome: string;
+            /** Format: int32 */
+            version: null | number;
+            /** Format: uuid */
+            proposalId: null | string;
         };
         /** @description A restricted application, as seen by a reader who is not an administrator. */
         RestrictedApplicationDto: {
@@ -1631,14 +3295,42 @@ export interface components {
             /** @enum {unknown} */
             type: "api" | "event" | "batch";
         };
+        /** @description A restricted page, as seen by a reader who is not an administrator. */
+        RestrictedPageDto: {
+            id: string;
+            /** @enum {boolean} */
+            restricted: true;
+            parentId: null | string;
+            /** Format: int32 */
+            order: number;
+        };
+        /** @description A revision with its snapshot (the record's editable fields, in the shape of its PUT body). */
+        RevisionDto: {
+            kind: components["schemas"]["RecordKind"];
+            entityId: string;
+            /** Format: int32 */
+            version: number;
+            operation: components["schemas"]["RevisionOperation"];
+            author: null | components["schemas"]["UserRefDto"];
+            authorKind: components["schemas"]["AuthorKind"];
+            /** Format: date-time */
+            createdAt: string;
+            summary: null | string;
+            /** Format: uuid */
+            proposalId: null | string;
+            snapshot: components["schemas"]["JsonObject"];
+        };
+        /** @enum {unknown} */
+        RevisionOperation: "create" | "update" | "delete" | "restore";
         /** @enum {unknown} */
         Role: "admin" | "member" | "guest";
         /** @enum {unknown} */
-        SearchKind: "application" | "flow" | "dataObject" | "team" | "domain";
+        SearchKind: "application" | "flow" | "dataObject" | "team" | "domain" | "page";
         SearchResultDto: {
             kind: components["schemas"]["SearchKind"];
             id: string;
             title: string;
+            /** @description For a page: an excerpt of the body around the match. */
             subtitle: null | string;
         };
         /**
@@ -1646,6 +3338,46 @@ export interface components {
          * @enum {unknown}
          */
         Sensitivity: "public" | "internal" | "personal" | "sensitive";
+        SettingsDto: {
+            /** @description Shown in the header and the browser tab (default "Noosphere"). */
+            instanceName: string;
+            /** @description Shown under the instance name; may be empty. */
+            organisationName: string;
+            /** @description Language of new accounts and of the sign-in page: `en` or `fr`. */
+            defaultLanguage: string;
+            /** Format: int32 */
+            version: number;
+            /** Format: date-time */
+            updatedAt: null | string;
+        };
+        SettingsInput: {
+            instanceName: null | string;
+            organisationName: null | string;
+            defaultLanguage: null | string;
+            /** Format: int32 */
+            version: null | number;
+        };
+        /** @description A team (administrators only change it) with its members and pages. */
+        TeamDetailDto: {
+            /** @description Team whose members publish changes; null when only administrators do. */
+            owningTeamId?: null | string;
+            permissions?: components["schemas"]["PermissionsDto"];
+            /** @description Pages attached to the record. */
+            pages?: components["schemas"]["PageRefDto"][];
+            /** @description Pages whose body links to the record. */
+            mentionedIn?: components["schemas"]["PageRefDto"][];
+            members: components["schemas"]["TeamMemberDto"][];
+            id?: string;
+            name?: string;
+            description?: null | string;
+            contact?: null | string;
+            /** Format: int32 */
+            version?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         TeamDto: {
             id: string;
             name: string;
@@ -1666,24 +3398,65 @@ export interface components {
             /** Format: int32 */
             version: null | number;
         };
+        TeamMemberDto: {
+            username: string;
+            displayName: string;
+            role: components["schemas"]["Role"];
+        };
+        /** @description Replaces the members of a team. */
+        TeamMembersInput: {
+            usernames: null | string[];
+        };
+        TeamRefDto: {
+            id: string;
+            name: string;
+        };
+        /** @description A deleted record. Its history is kept; administrators restore it. */
+        TrashItemDto: {
+            kind: components["schemas"]["RecordKind"];
+            entityId: string;
+            title: string;
+            /** Format: date-time */
+            deletedAt: string;
+            deletedBy: null | components["schemas"]["UserRefDto"];
+            /**
+             * Format: int32
+             * @description Version of the deletion revision.
+             */
+            version: number;
+        };
+        TrashRestoreResultDto: {
+            kind: components["schemas"]["RecordKind"];
+            id: string;
+            /** Format: int32 */
+            version: number;
+        };
         UserCreateInput: {
             username: null | string;
             displayName: null | string;
             role: null | components["schemas"]["Role"];
             language: null | string;
             password: null | string;
+            teamIds?: null | string[];
         };
         UserDto: {
             username: string;
             displayName: string;
             role: components["schemas"]["Role"];
             language: string;
+            /** @description Teams the user belongs to. */
+            teamIds: string[];
             /** Format: int32 */
             version: number;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        /** @description A user as shown next to a proposal or a revision. */
+        UserRefDto: {
+            username: string;
+            displayName: string;
         };
         UserUpdateInput: {
             displayName: null | string;
@@ -1693,6 +3466,8 @@ export interface components {
             password: null | string;
             /** Format: int32 */
             version: null | number;
+            /** @description Teams of the user; null keeps them unchanged. */
+            teamIds?: null | string[];
         };
         /**
          * @description `Restricted` applications are only shown in full to administrators; others see their id and domain.
@@ -1707,4 +3482,617 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    HistoryApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    CompareApplication: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestoreApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+    HistoryFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    CompareFlow: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestoreFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+    HistoryDataObject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionDataObject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    CompareDataObject: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestoreDataObject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+    HistoryPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    ComparePage: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestorePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+    HistoryDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    CompareDomain: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestoreDomain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+    HistoryTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryEntryDto"][];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    RevisionTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevisionDto"];
+                };
+            };
+        };
+    };
+    CompareTeam: {
+        parameters: {
+            query?: {
+                from?: number;
+                to?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareDto"];
+                };
+            };
+        };
+    };
+    RestoreTeam: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestoreResultDto"];
+                };
+            };
+        };
+    };
+}
