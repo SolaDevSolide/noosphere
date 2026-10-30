@@ -155,12 +155,15 @@ export function DiffView({
   leftTitle,
   rightTitle,
   conflicts = [],
+  afterOnly = false,
 }: {
   diff: FieldDiff[];
   m: Model | null;
   leftTitle: string;
   rightTitle: string;
   conflicts?: string[];
+  /** A new record: only the proposed values, without an empty "before" column. */
+  afterOnly?: boolean;
 }) {
   const { t } = useI18n();
   if (!diff.length) return <p className="muted dempty">{t.review.noChange}</p>;
@@ -175,8 +178,8 @@ export function DiffView({
   return (
     <div className="dview">
       {short.length > 0 && (
-        <div className="diff">
-          {(['before', 'after'] as const).map((side) => (
+        <div className={'diff' + (afterOnly ? ' one' : '')}>
+          {(afterOnly ? (['after'] as const) : (['before', 'after'] as const)).map((side) => (
             <div key={side} className={'dside ' + side}>
               <h3>{side === 'before' ? leftTitle : rightTitle}</h3>
               <dl>
@@ -200,7 +203,11 @@ export function DiffView({
           <h3>
             {fieldLabel(t, d)} {flag(d)}
           </h3>
-          <WordDiff before={asText(d.before)} after={asText(d.after)} />
+          {afterOnly ? (
+            <div className="wdiff">{asText(d.after)}</div>
+          ) : (
+            <WordDiff before={asText(d.before)} after={asText(d.after)} />
+          )}
         </div>
       ))}
     </div>

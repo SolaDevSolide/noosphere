@@ -585,6 +585,7 @@ export const fr: Dict = {
     changedSince: (base: number, cur: number) => `Écrite sur la v${base}, la fiche est en v${cur}`,
     published: (v: number) => `Publiée · v${v}`,
     proposed: 'Proposée',
+    proposedNew: 'Fiche proposée',
     nothingYet: 'Pas encore publiée',
     deleteText:
       'Cette proposition supprime la fiche. Son historique est conservé et un administrateur peut la restaurer.',

@@ -4496,3 +4496,6 @@ ins.d {
 .box.decide .textarea {
   min-height: 72px;
 }
+.diff.one {
+  grid-template-columns: minmax(0, 1fr);
+}

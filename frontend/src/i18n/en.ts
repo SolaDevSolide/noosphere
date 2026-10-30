@@ -567,6 +567,7 @@ export const en = {
     changedSince: (base: number, cur: number) => `Written on v${base}, the record is now v${cur}`,
     published: (v: number) => `Published · v${v}`,
     proposed: 'Proposed',
+    proposedNew: 'Proposed record',
     nothingYet: 'Not published yet',
     deleteText: 'This proposal deletes the record. Its history is kept, and an administrator can restore it.',
     noChange: 'No field changed.',

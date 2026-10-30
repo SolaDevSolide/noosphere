@@ -39,7 +39,7 @@ function ChangeBox({ c, n, total }: { c: ProposalChange; n: number; total: numbe
   const { t } = useI18n();
   const { model: m } = useLandscape();
   const target = c.targetTitle || c.targetId || t.review.newRecord;
-  const to = c.targetId && c.operation !== 'delete' ? recordPath(c.kind, c.targetId) : null;
+  const to = c.targetId && c.operation === 'update' ? recordPath(c.kind, c.targetId) : null;
   const diff = c.diff ?? [];
   return (
     <section className="box change" aria-labelledby={'ch-' + n}>
@@ -82,8 +82,9 @@ function ChangeBox({ c, n, total }: { c: ProposalChange; n: number; total: numbe
           diff={diff}
           m={m}
           leftTitle={c.operation === 'create' ? t.review.nothingYet : t.review.published(c.baseVersion ?? 0)}
-          rightTitle={t.review.proposed}
+          rightTitle={c.operation === 'create' ? t.review.proposedNew : t.review.proposed}
           conflicts={c.conflicts}
+          afterOnly={c.operation === 'create'}
         />
       )}
     </section>
