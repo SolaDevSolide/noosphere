@@ -15,6 +15,8 @@ export interface SearchItem {
   hay: string;
   flowType?: FlowType;
   sens?: Sensitivity;
+  /** An application's computed sensitivity, shown after its subtitle. */
+  level?: Sensitivity;
   fk?: FilterKey;
   fv?: string;
 }
@@ -23,7 +25,18 @@ export function buildIndex(m: Model, t: Dict): SearchItem[] {
   const items: SearchItem[] = [];
   for (const id of m.appIds) {
     const a = m.apps.get(id)!;
-    if (isRestrictedApp(a)) continue;
+    if (isRestrictedApp(a)) {
+      // a guest's outline: the name and domain only; restricted applications stay out of search
+      if (!a.restricted)
+        items.push({
+          kind: 'app',
+          id,
+          label: a.name,
+          sub: m.domain.get(a.domainId)?.name ?? '',
+          hay: fold(a.name),
+        });
+      continue;
+    }
     const dom = m.domain.get(a.domainId)?.name ?? '';
     const team = teamName(m, a.teamId);
     items.push({
@@ -32,6 +45,7 @@ export function buildIndex(m: Model, t: Dict): SearchItem[] {
       label: a.name,
       sub: [dom, team].filter(Boolean).join(' · '),
       hay: fold(`${a.name} ${team} ${a.tech ?? ''} ${t.kind[a.kind]}`),
+      level: a.sensitivity,
     });
   }
   for (const f of m.flows) {

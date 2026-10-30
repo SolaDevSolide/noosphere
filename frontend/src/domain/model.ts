@@ -117,6 +117,8 @@ export interface Filters {
   hidden: string[];
   /** Graph view: hide applications without any visible link. */
   isolated: boolean;
+  /** Applications at least this sensitive stand out; the others are dimmed. */
+  appSens: Sensitivity | null;
 }
 
 export const EMPTY_FILTERS: Filters = {
@@ -127,6 +129,7 @@ export const EMPTY_FILTERS: Filters = {
   changeOnly: false,
   hidden: [],
   isolated: false,
+  appSens: null,
 };
 
 /** Filters that act on flows (all views). */
@@ -139,7 +142,8 @@ export const filterCount = (f: Filters) =>
   f.sens.length +
   f.status.length +
   f.hidden.length +
-  (f.isolated ? 1 : 0);
+  (f.isolated ? 1 : 0) +
+  (f.appSens ? 1 : 0);
 
 export function matches(f: LandscapeFlow, fl: Filters): boolean {
   if (isRestrictedFlow(f)) {
@@ -183,7 +187,19 @@ export function visibleApps(m: Model, fl: Filters): string[] {
   });
 }
 
-export const anyFilter = (f: Filters) => anyFlowFilter(f) || f.hidden.length > 0 || f.isolated;
+export const anyFilter = (f: Filters) => anyFlowFilter(f) || f.hidden.length > 0 || f.isolated || !!f.appSens;
+
+const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
+
+/**
+ * False for an application below the "sensitivity at least" filter. Applications whose sensitivity the reader does not
+ * know (restricted ones, guest outlines) never match a level.
+ */
+export function appMeetsSens(a: LandscapeApplication | undefined, min: Sensitivity | null): boolean {
+  if (!min) return true;
+  const s = a && 'sensitivity' in a ? (a as { sensitivity?: Sensitivity }).sensitivity : undefined;
+  return !!s && RANK[s] >= RANK[min];
+}
 
 export function appStats(m: Model, id: string, fl: Filters): AppStats {
   const ok = makeMatcher(m, fl);

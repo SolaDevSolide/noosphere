@@ -3,6 +3,7 @@ import { useGo } from '../ui/useGo';
 import { Link } from 'react-router-dom';
 import { isRestrictedApp } from '../api/types';
 import {
+  appMeetsSens,
   adjacency,
   anyFilter,
   appOrder,
@@ -17,9 +18,10 @@ import {
   type Adjacency,
   type Model,
 } from '../domain/model';
+import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
-import { IconLock, IconWarn } from '../ui/icons';
+import { IconLock, IconUser, IconWarn } from '../ui/icons';
 import { nameOf, pct, Sdot, teamName } from './bits';
 import { useLandscape } from './landscape';
 import { FlowRow } from './Panel';
@@ -76,8 +78,37 @@ function Card({
 }) {
   const { t } = useI18n();
   const { filters } = useLandscape();
+  const { me } = useAuth();
   const a = m.apps.get(id)!;
   const nav = useGo();
+  if (me?.role === 'guest') {
+    // Guests see the outline: names everywhere, the records shared with them in full.
+    const shared = !isRestrictedApp(a);
+    if (a.restricted) return null;
+    const kind = 'kind' in a ? a.kind : 'app';
+    return (
+      <button
+        type="button"
+        className={'card outline' + (shared ? ' shared' : '')}
+        data-app={id}
+        aria-label={shared ? `${a.name}, ${t.access.sharedWithYou}` : a.name}
+        onClick={() => nav(paths.app(id))}
+      >
+        <div className="c-top">
+          <span className="kind">{t.kind[kind]}</span>
+          <span className="rel" />
+        </div>
+        <div className="c-name">{a.name}</div>
+        {shared && <div className="c-team">{teamName(m, a.teamId)}</div>}
+        {shared && (
+          <span className="c-shared">
+            <IconUser size={12} />
+            {t.access.sharedWithYou}
+          </span>
+        )}
+      </button>
+    );
+  }
   if (isRestrictedApp(a))
     return (
       <button
@@ -100,10 +131,12 @@ function Card({
     );
   const st = appStats(m, id, filters);
   const p = pct(a.completeness);
-  const filtered = anyFilter(filters) && st.total === 0;
+  const filtered = anyFilter(filters) && st.total === 0 && !filters.appSens;
+  const dimmed = !appMeetsSens(a, filters.appSens);
   const cls = [
     'card',
     filtered && 'filtered',
+    dimmed && 'dimmed',
     team && a.teamId === team && 'teamon',
     rel === 'me' && 'me',
     rel && rel !== 'me' && 'related',
@@ -144,6 +177,12 @@ function Card({
         </span>
       </div>
       <div className="c-name">{a.name}</div>
+      {a.sensitivity && (
+        <div className={'c-lv lv-' + a.sensitivity}>
+          <Sdot s={a.sensitivity} />
+          {t.sens[a.sensitivity]}
+        </div>
+      )}
       <div className="c-team">{teamName(m, a.teamId)}</div>
       <div className="c-io">
         <span>

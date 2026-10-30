@@ -179,7 +179,18 @@ export function Search() {
                       <span className="ol">
                         <Hl label={it.label} q={fq} />
                       </span>
-                      <span className="os">{it.sub}</span>
+                      <span className="os">
+                        {it.sub}
+                        {it.level && (
+                          <>
+                            {it.sub && ' · '}
+                            <span className="os-lv">
+                              <Sdot s={it.level} />
+                              {t.access.levelShort[it.level]}
+                            </span>
+                          </>
+                        )}
+                      </span>
                     </span>
                     {it.flowType ? (
                       <span className={'oi t-' + it.flowType}>
