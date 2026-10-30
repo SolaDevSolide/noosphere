@@ -22,6 +22,10 @@
       "const": "full",
       "description": "The file describes the whole landscape it was exported from. An import creates or updates items by id and never deletes."
     },
+    "scope": {
+      "enum": ["visible", "full"],
+      "description": "visible: what the exporting user may see (restricted records they may not see are left out, protected notes are written only where they may read them). full: everything (administrators only). Informative: ignored on import."
+    },
     "items": {
       "type": "array",
       "items": { "$ref": "#/$defs/item" }
@@ -35,6 +39,20 @@
       "maxLength": 64
     },
     "text": { "type": "string", "maxLength": 500 },
+    "access": {
+      "type": "object",
+      "description": "Access list. On a restricted record, these teams and users see it (besides administrators and the owning team); on an application, they also read its protected notes; guests named here see the record in full. Unknown teams and users are import errors. Absent on import: the current list is kept.",
+      "additionalProperties": false,
+      "properties": {
+        "teamIds": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+        "usernames": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 100 }, "uniqueItems": true }
+      }
+    },
+    "protectedNotes": {
+      "type": "string",
+      "maxLength": 20000,
+      "description": "Markdown read only by the owning team, the access list and administrators. Exported only where the exporting user may read it; absent on import, the current notes are kept. Never a secret: write where secrets live, not their value."
+    },
     "metadata": {
       "type": "object",
       "required": ["name"],
@@ -93,8 +111,10 @@
         "visibility": {
           "enum": ["everyone", "restricted"],
           "default": "everyone",
-          "description": "restricted: only administrators see the application in full."
-        }
+          "description": "restricted: only administrators, the owning team and the access list see the application in full."
+        },
+        "access": { "$ref": "#/$defs/access" },
+        "protectedNotes": { "$ref": "#/$defs/protectedNotes" }
       }
     },
     "dataObjectSpec": {
@@ -126,7 +146,8 @@
             "summary": { "type": "string", "minLength": 1, "maxLength": 500 },
             "date": { "type": "string", "format": "date" }
           }
-        }
+        },
+        "protectedNotes": { "$ref": "#/$defs/protectedNotes" }
       }
     },
     "pageSpec": {
@@ -153,7 +174,8 @@
         },
         "ownerTeamId": { "$ref": "#/$defs/id" },
         "tags": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 50 } },
-        "visibility": { "enum": ["everyone", "restricted"], "description": "everyone (default) or restricted (administrators only)." }
+        "visibility": { "enum": ["everyone", "restricted"], "description": "everyone (default) or restricted (administrators, the owning team and the access list)." },
+        "access": { "$ref": "#/$defs/access" }
       }
     }
   }

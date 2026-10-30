@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Noosphere",
-    "description": "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals and revision history. Guide: docs/en/api.md.",
+    "description": "Application landscape API: applications, flows, data objects, teams, domains and documentation pages, with change proposals, revision history, access lists, protected notes and an access log. Guide: docs/en/api.md.",
     "version": "v1"
   },
   "paths": {
@@ -367,6 +367,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Sensitivity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -542,6 +549,13 @@
           },
           {
             "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sensitivity",
             "in": "query",
             "schema": {
               "type": "string"
@@ -797,6 +811,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Sensitivity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -813,6 +834,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/RestrictedApplicationDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GuestApplicationDto"
                       }
                     ]
                   }
@@ -877,6 +901,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/RestrictedApplicationDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestApplicationDto"
                     }
                   ]
                 }
@@ -996,6 +1023,13 @@
           },
           {
             "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sensitivity",
             "in": "query",
             "schema": {
               "type": "string"
@@ -1179,6 +1213,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Sensitivity",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1195,6 +1236,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/RestrictedFlowDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GuestFlowDto"
                       }
                     ]
                   }
@@ -1259,6 +1303,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/RestrictedFlowDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestFlowDto"
                     }
                   ]
                 }
@@ -1384,6 +1431,9 @@
                       },
                       {
                         "$ref": "#/components/schemas/RestrictedPageDto"
+                      },
+                      {
+                        "$ref": "#/components/schemas/GuestPageDto"
                       }
                     ]
                   }
@@ -1470,6 +1520,9 @@
                     },
                     {
                       "$ref": "#/components/schemas/RestrictedPageDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GuestPageDto"
                     }
                   ]
                 }
@@ -1963,6 +2016,384 @@
         }
       }
     },
+    "/api/applications/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data-objects/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessDataObject",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pages/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessPage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/domains/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessDomain",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams/{id}/access": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "operationId": "AccessTeam",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAccessDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/access-log": {
+      "get": {
+        "tags": [
+          "Access"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "what",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessLogPageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/landscape": {
       "get": {
         "tags": [
@@ -2006,6 +2437,13 @@
           },
           {
             "name": "Q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Sensitivity",
             "in": "query",
             "schema": {
               "type": "string"
@@ -2069,6 +2507,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2083,6 +2535,16 @@
               "application/yaml": {
                 "schema": {
                   "$ref": "#/components/schemas/ExchangeEnvelopeDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
                 }
               }
             }
@@ -3283,6 +3745,267 @@
   },
   "components": {
     "schemas": {
+      "AccessListDto": {
+        "required": [
+          "teamIds",
+          "usernames"
+        ],
+        "type": "object",
+        "properties": {
+          "teamIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "usernames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Access list of an application or page. On a restricted record, its teams and users see it; on any application, they\nread its protected notes; guests named here see the record in full."
+      },
+      "AccessListInput": {
+        "required": [
+          "teamIds",
+          "usernames"
+        ],
+        "type": "object",
+        "properties": {
+          "teamIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "usernames": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Access list to save. Leaving `access` out of a body keeps the current list; send empty arrays to clear it."
+      },
+      "AccessLogEntryDto": {
+        "required": [
+          "id",
+          "at",
+          "user",
+          "kind",
+          "entityId",
+          "title",
+          "what",
+          "detail",
+          "admin",
+          "why",
+          "whyTeam",
+          "owningTeam"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserRefDto"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Null for an export.",
+                "$ref": "#/components/schemas/RecordKind"
+              }
+            ]
+          },
+          "entityId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the record now (null when deleted, or for an export)."
+          },
+          "what": {
+            "description": "`record`, `protectedNotes` or `export`.",
+            "$ref": "#/components/schemas/AccessLogWhat"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "More about the read: `history v3`, `scope full`..."
+          },
+          "admin": {
+            "type": "boolean",
+            "description": "The reader was an administrator."
+          },
+          "why": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "`admin`, `owningTeam`, `listedTeam` (see `whyTeam`) or `listedUser`; null for an export by a non-administrator.",
+                "$ref": "#/components/schemas/AccessLogWhy"
+              }
+            ]
+          },
+          "whyTeam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "For `listedTeam`: the team of the access list the reader belongs to.",
+                "$ref": "#/components/schemas/TeamRefDto"
+              }
+            ]
+          },
+          "owningTeam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Owning team of the record now (null when only administrators own it, or for an export).",
+                "$ref": "#/components/schemas/TeamRefDto"
+              }
+            ]
+          }
+        },
+        "description": "One read of a restricted record, of protected notes, or an export."
+      },
+      "AccessLogPageDto": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessLogEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` for the next (older) page; null on the last page."
+          }
+        }
+      },
+      "AccessLogWhat": {
+        "enum": [
+          "record",
+          "protectedNotes",
+          "export"
+        ],
+        "description": "What an access log line records."
+      },
+      "AccessLogWhy": {
+        "enum": [
+          "admin",
+          "owningTeam",
+          "listedTeam",
+          "listedUser",
+          null
+        ]
+      },
+      "AccessPublishersDto": {
+        "required": [
+          "teams",
+          "admins"
+        ],
+        "type": "object",
+        "properties": {
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessTeamDto"
+            },
+            "description": "The owning team (empty when only administrators publish)."
+          },
+          "admins": {
+            "type": "boolean",
+            "description": "Administrators always publish."
+          }
+        }
+      },
+      "AccessReadersDto": {
+        "required": [
+          "everyoneExceptGuests",
+          "teams",
+          "users"
+        ],
+        "type": "object",
+        "properties": {
+          "everyoneExceptGuests": {
+            "type": "boolean",
+            "description": "Every member and administrator reads the record (it is not restricted)."
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccessTeamDto"
+            },
+            "description": "Teams whose members read it: the owning team (when restricted) and the teams of the access list."
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRefDto"
+            },
+            "description": "People who read it by name, outside those teams (administrators always read)."
+          }
+        }
+      },
+      "AccessTeamDto": {
+        "required": [
+          "id",
+          "name",
+          "memberCount"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "memberCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A team as shown in the \"Who can see and edit?\" window."
+      },
       "ApplicationDetailDto": {
         "type": "object",
         "properties": {
@@ -3309,6 +4032,17 @@
               "$ref": "#/components/schemas/PageRefDto"
             },
             "description": "Pages whose body links to the record."
+          },
+          "protectedNotes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none)."
+          },
+          "protectedNotesHidden": {
+            "type": "boolean",
+            "description": "The record has protected notes the reader may not read."
           },
           "id": {
             "type": "string"
@@ -3352,6 +4086,9 @@
           "visibility": {
             "$ref": "#/components/schemas/Visibility"
           },
+          "access": {
+            "$ref": "#/components/schemas/AccessListDto"
+          },
           "sourceOf": {
             "type": "array",
             "items": {
@@ -3363,6 +4100,17 @@
             "type": "number",
             "description": "Share of the recommended fields that are filled, 0 to 1.",
             "format": "double"
+          },
+          "sensitivity": {
+            "description": "Most sensitive of the data objects it is the source of and of the flows it sends or receives (internal when none).",
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "sensitivityReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SensitivityReasonDto"
+            },
+            "description": "The five most sensitive of those data objects and flows, highest first."
           },
           "version": {
             "type": "integer",
@@ -3391,8 +4139,11 @@
           "description",
           "lifecycle",
           "visibility",
+          "access",
           "sourceOf",
           "completeness",
+          "sensitivity",
+          "sensitivityReasons",
           "version",
           "createdAt",
           "updatedAt"
@@ -3441,6 +4192,9 @@
           "visibility": {
             "$ref": "#/components/schemas/Visibility"
           },
+          "access": {
+            "$ref": "#/components/schemas/AccessListDto"
+          },
           "sourceOf": {
             "type": "array",
             "items": {
@@ -3452,6 +4206,17 @@
             "type": "number",
             "description": "Share of the recommended fields that are filled, 0 to 1.",
             "format": "double"
+          },
+          "sensitivity": {
+            "description": "Most sensitive of the data objects it is the source of and of the flows it sends or receives (internal when none).",
+            "$ref": "#/components/schemas/Sensitivity"
+          },
+          "sensitivityReasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SensitivityReasonDto"
+            },
+            "description": "The five most sensitive of those data objects and flows, highest first."
           },
           "version": {
             "type": "integer",
@@ -3555,6 +4320,24 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "access": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Optional: left out, the current access list is kept.",
+                "$ref": "#/components/schemas/AccessListInput"
+              }
+            ]
+          },
+          "protectedNotes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Markdown, at most 20,000 characters. Optional: left out (or sent masked), the current notes are kept; an empty text clears them."
           }
         }
       },
@@ -4003,6 +4786,7 @@
           "formatVersion",
           "source",
           "mode",
+          "scope",
           "items"
         ],
         "type": "object",
@@ -4017,6 +4801,10 @@
           "mode": {
             "type": "string",
             "description": "Always `full`: the file describes the whole landscape it was exported from."
+          },
+          "scope": {
+            "type": "string",
+            "description": "`visible`: what the exporting user may see (restricted records left out, protected notes only where readable); `full`: everything (administrators)."
           },
           "items": {
             "type": "array",
@@ -4119,6 +4907,17 @@
               "$ref": "#/components/schemas/PageRefDto"
             },
             "description": "Pages whose body links to the record."
+          },
+          "protectedNotes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Markdown read by the owning team, the access list and administrators; null for anyone else (or when there are none)."
+          },
+          "protectedNotesHidden": {
+            "type": "boolean",
+            "description": "The record has protected notes the reader may not read."
           },
           "id": {
             "type": "string"
@@ -4428,6 +5227,13 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "protectedNotes": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Markdown, at most 20,000 characters. Optional: left out (or sent masked), the current notes are kept; an empty text clears them."
           }
         }
       },
@@ -4444,6 +5250,140 @@
           "event",
           "batch"
         ]
+      },
+      "GuestApplicationDto": {
+        "required": [
+          "id",
+          "restricted",
+          "shared",
+          "name",
+          "domainId",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "shared": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "app",
+              "bus",
+              "saas",
+              "data",
+              "file",
+              "external"
+            ],
+            "description": "What an application is: an application proper, a message bus, a SaaS, a data store, a file exchange or a third party."
+          }
+        },
+        "description": "An application not shared with a guest: its name and place in the landscape only. `shared` is always false."
+      },
+      "GuestFlowDto": {
+        "required": [
+          "id",
+          "restricted",
+          "shared",
+          "name",
+          "fromId",
+          "toId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "shared": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "fromId": {
+            "type": "string"
+          },
+          "toId": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "api",
+              "event",
+              "batch"
+            ]
+          }
+        },
+        "description": "A flow none of whose ends is shared with a guest: its name and ends only. `shared` is always false."
+      },
+      "GuestPageDto": {
+        "required": [
+          "id",
+          "restricted",
+          "shared",
+          "title",
+          "parentId",
+          "order"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "restricted": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "shared": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "order": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A page not shared with a guest: its title and place in the tree only. `shared` is always false."
       },
       "HealthDto": {
         "required": [
@@ -4652,6 +5592,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/RestrictedApplicationDto"
+                },
+                {
+                  "$ref": "#/components/schemas/GuestApplicationDto"
                 }
               ]
             }
@@ -4671,6 +5614,9 @@
                 },
                 {
                   "$ref": "#/components/schemas/RestrictedFlowDto"
+                },
+                {
+                  "$ref": "#/components/schemas/GuestFlowDto"
                 }
               ]
             }
@@ -4683,7 +5629,7 @@
             "format": "date-time"
           }
         },
-        "description": "Everything the explorer needs, in one call. `applications` holds ApplicationDto or\nRestrictedApplicationDto items, `flows` holds FlowDto or RestrictedFlowDto items\n(discriminated by `restricted`)."
+        "description": "Everything the explorer needs, in one call. `applications` holds ApplicationDto,\nRestrictedApplicationDto or (for guests) GuestApplicationDto items, `flows` holds\nFlowDto, RestrictedFlowDto or GuestFlowDto items (discriminated by\n`restricted`, then `shared`)."
       },
       "LandscapeStatsDto": {
         "required": [
@@ -4791,6 +5737,7 @@
           "ancestors",
           "children",
           "attachedTitle",
+          "attachedRestricted",
           "owningTeamId",
           "permissions"
         ],
@@ -4829,6 +5776,10 @@
               "string"
             ],
             "description": "Name of the attached record (null when missing or hidden)."
+          },
+          "attachedRestricted": {
+            "type": "boolean",
+            "description": "The attached record is restricted: a page visible to everyone may tell more than the record (pages inherit nothing)."
           },
           "owningTeamId": {
             "type": [
@@ -4894,6 +5845,10 @@
           "visibility": {
             "$ref": "#/components/schemas/Visibility"
           },
+          "access": {
+            "description": "Access list: on a restricted page, these teams and users see it; guests named here see the page in full.",
+            "$ref": "#/components/schemas/AccessListDto"
+          },
           "version": {
             "type": "integer",
             "format": "int32"
@@ -4921,6 +5876,7 @@
           "ownerTeamId",
           "tags",
           "visibility",
+          "access",
           "version",
           "createdAt",
           "updatedAt"
@@ -4980,6 +5936,10 @@
           },
           "visibility": {
             "$ref": "#/components/schemas/Visibility"
+          },
+          "access": {
+            "description": "Access list: on a restricted page, these teams and users see it; guests named here see the page in full.",
+            "$ref": "#/components/schemas/AccessListDto"
           },
           "version": {
             "type": "integer",
@@ -5085,6 +6045,17 @@
               "integer"
             ],
             "format": "int32"
+          },
+          "access": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Optional: left out, the current access list is kept.",
+                "$ref": "#/components/schemas/AccessListInput"
+              }
+            ]
           }
         }
       },
@@ -5396,7 +6367,7 @@
                 "type": "string"
               }
             },
-            "description": "Field errors (field name in camelCase, then messages), on 400 only."
+            "description": "Field errors (field name in camelCase, then messages), on 400, and on 422 when a field looks like a secret."
           },
           "outdated": {
             "type": [
@@ -5772,6 +6743,73 @@
           "withdrawn"
         ]
       },
+      "Proposers": {
+        "enum": [
+          "members",
+          "none"
+        ],
+        "description": "`members`: members who see the record send proposals; `none`: domains and teams, changed by administrators only."
+      },
+      "ProtectedNotesAccessDto": {
+        "required": [
+          "exists",
+          "readable"
+        ],
+        "type": "object",
+        "properties": {
+          "exists": {
+            "type": "boolean"
+          },
+          "readable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RecordAccessDto": {
+        "required": [
+          "visibility",
+          "owningTeam",
+          "readers",
+          "publishers",
+          "proposers",
+          "protectedNotes",
+          "canManage"
+        ],
+        "type": "object",
+        "properties": {
+          "visibility": {
+            "description": "For a flow: restricted when one of its ends is.",
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "owningTeam": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccessTeamDto"
+              }
+            ]
+          },
+          "readers": {
+            "$ref": "#/components/schemas/AccessReadersDto"
+          },
+          "publishers": {
+            "$ref": "#/components/schemas/AccessPublishersDto"
+          },
+          "proposers": {
+            "$ref": "#/components/schemas/Proposers"
+          },
+          "protectedNotes": {
+            "$ref": "#/components/schemas/ProtectedNotesAccessDto"
+          },
+          "canManage": {
+            "type": "boolean",
+            "description": "The reader may change the access list (applications and pages they may publish)."
+          }
+        },
+        "description": "Who can see and edit a record: the explanation shown by the \"Who can see and edit?\" window."
+      },
       "RecordContextDto": {
         "required": [
           "owningTeamId",
@@ -5921,7 +6959,7 @@
             "type": "string"
           }
         },
-        "description": "A restricted application, as seen by a reader who is not an administrator."
+        "description": "A restricted application, as seen by a reader who may not see it."
       },
       "RestrictedFlowDto": {
         "required": [
@@ -5956,7 +6994,7 @@
             ]
           }
         },
-        "description": "A flow from or to a restricted application, as seen by a reader who is not an administrator."
+        "description": "A flow from or to a restricted application the reader may not see."
       },
       "RestrictedPageDto": {
         "required": [
@@ -5987,7 +7025,7 @@
             "format": "int32"
           }
         },
-        "description": "A restricted page, as seen by a reader who is not an administrator."
+        "description": "A restricted page, as seen by a reader who may not see it."
       },
       "RevisionDto": {
         "required": [
@@ -6101,7 +7139,18 @@
               "null",
               "string"
             ],
-            "description": "For a page: an excerpt of the body around the match."
+            "description": "For a page: an excerpt of the body around the match. For an application: domain, team and sensitivity."
+          },
+          "sensitivity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "For applications, flows and data objects the reader sees in full.",
+                "$ref": "#/components/schemas/Sensitivity"
+              }
+            ]
           }
         }
       },
@@ -6113,6 +7162,36 @@
           "sensitive"
         ],
         "description": "Ordered from the least to the most sensitive: the sensitivity of a flow is the maximum of what it carries."
+      },
+      "SensitivityReasonDto": {
+        "required": [
+          "kind",
+          "id",
+          "name",
+          "sensitivity"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SensitivityReasonKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sensitivity": {
+            "$ref": "#/components/schemas/Sensitivity"
+          }
+        },
+        "description": "Why an application has its sensitivity: a data object it is the source of, or a flow it sends or receives."
+      },
+      "SensitivityReasonKind": {
+        "enum": [
+          "dataObject",
+          "flow"
+        ]
       },
       "SettingsDto": {
         "required": [
@@ -6635,7 +7714,7 @@
           "everyone",
           "restricted"
         ],
-        "description": "`Restricted` applications are only shown in full to administrators; others see their id and domain."
+        "description": "`Restricted` applications and pages are shown in full to administrators, members of the owning team and the\n        people on their access list; others see their id and domain only."
       }
     }
   },
@@ -6669,6 +7748,9 @@
     },
     {
       "name": "Proposals"
+    },
+    {
+      "name": "Access"
     },
     {
       "name": "Explorer"
