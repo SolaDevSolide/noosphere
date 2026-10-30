@@ -34,9 +34,9 @@ public static class CommandLine
         public const int NotFound = 5;
     }
 
-    private static readonly string[] Commands = ["migrate", "users", "export", "import", "demo", "help", "version"];
+    private static readonly string[] Commands = ["migrate", "users", "export", "import", "demo", "health", "help", "version"];
     private static readonly HashSet<string> Flags = ["--json", "--yes", "--dry-run", "--help", "-h"];
-    private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password"];
+    private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password", "--url"];
 
     public const string Usage = """
         Usage: noosphere <command> [options]
@@ -53,6 +53,7 @@ public static class CommandLine
           import <file|-> [--dry-run] [--format json|yaml]
                                                    Validate a file, then create or update its items (--dry-run: validate only)
           demo reset --yes                         Replace the landscape with the Alizé demo and reset the demo accounts (demo mode only)
+          health [--url <url>]                     Exit 0 when the running server is ready (default http://127.0.0.1:8080/health/ready)
           version                                  Print the version
           help                                     Print this help
 
@@ -111,6 +112,7 @@ public static class CommandLine
                 await Done(output, version.Split('+')[0], new { version });
                 return ExitCodes.Success;
             }
+            if (options.Positionals[0] == "health") return await Health(options, output);
             configuration ??= DefaultConfiguration();
             var settings = Settings.From(configuration);
             var services = new ServiceCollection()
@@ -149,6 +151,28 @@ public static class CommandLine
         {
             await Fail(output, ExitCodes.Failure, $"File error: {e.Message}", []);
             return ExitCodes.Failure;
+        }
+    }
+
+    /// <summary>Probe used by the Docker HEALTHCHECK (the runtime image has neither curl nor wget).</summary>
+    private static async Task<int> Health(Options o, Output output)
+    {
+        Expect(o.Positionals, 1);
+        var url = o["--url"] ?? "http://127.0.0.1:8080/health/ready";
+        try
+        {
+            using var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { Timeout = TimeSpan.FromSeconds(4) };
+            using var response = await client.GetAsync(new Uri(url));
+            if (response.IsSuccessStatusCode)
+            {
+                await Done(output, "Ready.", null);
+                return ExitCodes.Success;
+            }
+            throw new CommandException(ExitCodes.Failure, $"Not ready: HTTP {(int)response.StatusCode}.");
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or UriFormatException)
+        {
+            throw new CommandException(ExitCodes.Environment, $"Server unreachable at {url}: {e.Message}");
         }
     }
 

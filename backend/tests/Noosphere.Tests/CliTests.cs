@@ -121,6 +121,10 @@ public class CliTests : IDisposable
     }
 
     [Fact]
+    public async Task Health_probe_fails_when_no_server_answers() =>
+        Assert.Equal(CommandLine.ExitCodes.Environment, (await Run("health", "--url", "http://127.0.0.1:1/health/ready")).Code);
+
+    [Fact]
     public async Task Unreachable_database_or_missing_configuration_exit_with_3()
     {
         var down = await RunWith(new Dictionary<string, string?> { ["DATABASE"] = "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=2" }, "users", "list");
