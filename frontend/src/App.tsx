@@ -10,6 +10,11 @@ import { ImportExportPage } from './pages/ImportExportPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFound } from './pages/NotFound';
 import { UsersPage } from './pages/UsersPage';
+import { DomainRecord } from './docpages/DomainRecord';
+import { NewPageEditor, PageEditor } from './docpages/PageEditor';
+import { PagesHome } from './docpages/PagesHome';
+import { PageView } from './docpages/PageView';
+import { PagesProvider } from './docpages/store';
 import { ApplicationRecord } from './records/ApplicationRecord';
 import { FlowRecord } from './records/FlowRecord';
 import { TeamRecord } from './records/TeamRecord';
@@ -27,22 +32,29 @@ function SignedIn() {
     <RequireAuth fallback={<Booting />}>
       <LandscapeProvider>
         <InboxProvider>
-          <Routes>
-            <Route path="/" element={<Explorer />} />
-            <Route path="/applications/:id/lens" element={<Explorer />} />
-            <Route path="/flows/:id/lens" element={<Explorer />} />
-            <Route path="/data-objects/:id" element={<Explorer />} />
-            <Route path="/applications/:id" element={<ApplicationRecord />} />
-            <Route path="/flows/:id" element={<FlowRecord />} />
-            <Route path="/teams/:id" element={<TeamRecord />} />
-            <Route path="/review" element={<ReviewPage />} />
-            <Route path="/review/:id" element={<ProposalPage />} />
-            <Route path="/admin/users" element={<UsersPage />} />
-            <Route path="/admin/settings" element={<SettingsPage />} />
-            <Route path="/admin/trash" element={<TrashPage />} />
-            <Route path="/import-export" element={<ImportExportPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PagesProvider>
+            <Routes>
+              <Route path="/" element={<Explorer />} />
+              <Route path="/applications/:id/lens" element={<Explorer />} />
+              <Route path="/flows/:id/lens" element={<Explorer />} />
+              <Route path="/data-objects/:id" element={<Explorer />} />
+              <Route path="/applications/:id" element={<ApplicationRecord />} />
+              <Route path="/flows/:id" element={<FlowRecord />} />
+              <Route path="/teams/:id" element={<TeamRecord />} />
+              <Route path="/review" element={<ReviewPage />} />
+              <Route path="/review/:id" element={<ProposalPage />} />
+              <Route path="/admin/users" element={<UsersPage />} />
+              <Route path="/admin/settings" element={<SettingsPage />} />
+              <Route path="/admin/trash" element={<TrashPage />} />
+              <Route path="/import-export" element={<ImportExportPage />} />
+              <Route path="/domains/:id" element={<DomainRecord />} />
+              <Route path="/pages" element={<PagesHome />} />
+              <Route path="/pages/new" element={<NewPageEditor />} />
+              <Route path="/pages/:id" element={<PageView />} />
+              <Route path="/pages/:id/edit" element={<PageEditor />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PagesProvider>
         </InboxProvider>
       </LandscapeProvider>
     </RequireAuth>

@@ -10,6 +10,7 @@ import { LineSample, nameOf, objName, pct, Sdot, StatusTag, teamName } from './b
 import { useLandscape } from './landscape';
 import { paths } from './paths';
 import type { View } from './view';
+import { DataObjectPages } from '../docpages/RecordPages';
 
 export function flowTitle(t: Dict, m: Model, f: LandscapeFlow) {
   const from = nameOf(t, m, f.fromId);
@@ -419,6 +420,7 @@ function ObjectPanel({ id, onRestricted }: { id: string; onRestricted: () => voi
       ) : (
         <p>{t.lens.noLineage}</p>
       )}
+      <DataObjectPages id={id} />
     </>
   );
 }

@@ -9,9 +9,10 @@ import { Hl, Sdot } from '../explorer/bits';
 import { fold } from '../domain/model';
 import { useToast } from '../ui/Toast';
 import { IconSearch, TypeIcon } from '../ui/icons';
-import { buildIndex, runSearch, type SearchItem } from './searchIndex';
+import { buildIndex, pageItems, runSearch, withPages, type SearchItem } from './searchIndex';
+import { api } from '../api/client';
 
-const BADGE_CLS = { app: 'app', flow: 'flow', object: 'data', team: 'team', filter: 'filter' } as const;
+const BADGE_CLS = { app: 'app', flow: 'flow', object: 'data', team: 'team', page: 'page', filter: 'filter' } as const;
 
 export function Search() {
   const { t } = useI18n();
@@ -24,9 +25,29 @@ export function Search() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const index = useMemo(() => (model ? buildIndex(model, t) : []), [model, t]);
-  const groups = useMemo(() => (model && open ? runSearch(index, model, q) : []), [index, model, q, open]);
-  const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
   const fq = fold(q.trim());
+  const [pages, setPages] = useState<{ q: string; items: SearchItem[] }>({ q: '', items: [] });
+  useEffect(() => {
+    const text = q.trim();
+    if (!open || !text) return;
+    let alive = true;
+    const timer = setTimeout(() => {
+      api.search(text).then(
+        (hits) => alive && setPages({ q: text, items: pageItems(hits) }),
+        () => alive && setPages({ q: text, items: [] }),
+      );
+    }, 180);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [q, open]);
+  const groups = useMemo(
+    () =>
+      model && open ? withPages(runSearch(index, model, q), pages.q === q.trim() && q.trim() ? pages.items : []) : [],
+    [index, model, q, open, pages],
+  );
+  const flat = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -67,6 +88,7 @@ export function Search() {
       toast(t.filters.applied(it.label));
       if (!onExplorer) nav('/');
     } else if (it.kind === 'team') nav(paths.team(it.id));
+    else if (it.kind === 'page') nav(`/pages/${encodeURIComponent(it.id)}`);
     else if (it.kind === 'app') {
       if (searchBridge.pickApp) searchBridge.pickApp(it.id);
       else nav(paths.appLens(it.id));

@@ -537,7 +537,7 @@ export function FlowRecord() {
                 <h2 id="desc-h">{t.record.fields.description}</h2>
                 {f.description ? <Markdown text={f.description} /> : <p className="muted">{t.record.noDescription}</p>}
               </section>
-              <RecordExtensions record={f} />
+              <RecordExtensions kind="flow" record={f} />
             </div>
             <section className="box" aria-labelledby="fields-h">
               <h2 id="fields-h">{t.panel.details}</h2>
