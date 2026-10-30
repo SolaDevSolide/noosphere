@@ -333,7 +333,8 @@
         "kind": "app",
         "tech": ".NET, PostgreSQL",
         "lifecycle": "live",
-        "visibility": "everyone"
+        "visibility": "everyone",
+        "protectedNotes": "**Break-glass access.** The invoice run uses the service account `svc-billing-run`. Its password is kept in the vault at `finance/billing/run` (owner: Team Finance): rotate it after every use.\n\nThe SMTP relay credentials used for invoice emails are in the same vault folder (`finance/billing/smtp`). Never paste them here."
       }
     },
     {
@@ -482,7 +483,13 @@
         "domainId": "external",
         "kind": "external",
         "lifecycle": "live",
-        "visibility": "restricted"
+        "visibility": "restricted",
+        "access": {
+          "teamIds": [
+            "team-payments"
+          ],
+          "usernames": []
+        }
       }
     },
     {
@@ -984,7 +991,8 @@
           "customer"
         ],
         "ownerTeamId": "team-payments",
-        "status": "live"
+        "status": "live",
+        "protectedNotes": "The EBICS keys and the bank certificate are kept in the HSM of the payment platform. The renewal procedure is in the Payments runbook (vault path `payments/sepa/ebics`); renewal is due every two years, next in March 2027."
       }
     },
     {

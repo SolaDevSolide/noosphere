@@ -38,7 +38,7 @@ public class LandscapeTests : IDisposable
     [Fact]
     public async Task Restricted_applications_are_hidden_from_non_admins()
     {
-        foreach (var name in new[] { "bob", "claire" })
+        foreach (var name in new[] { "david", "claire" })
         {
             var client = await _api.SignedIn(name);
             var landscape = await client.GetJson("/api/landscape");
@@ -55,9 +55,13 @@ public class LandscapeTests : IDisposable
             Assert.Empty((await client.GetJson("/api/applications?q=scoring")).EnumerateArray());
             Assert.DoesNotContain("Fraud scoring", await client.GetStringAsync("/api/export"), StringComparison.Ordinal);
         }
+        var david = await _api.SignedIn("david");
+        await david.PutJson("/api/applications/fraud", new { name = "Mine", domainId = "external", version = 1 }, HttpStatusCode.Forbidden);
+        await david.PutJson("/api/flows/payments-fraud", new { name = "Mine", fromId = "payments", toId = "fraud", version = 1 }, HttpStatusCode.Forbidden);
+        // bob is in Team Payments, on the access list: he sees it in full.
         var bob = await _api.SignedIn("bob");
-        await bob.PutJson("/api/applications/fraud", new { name = "Mine", domainId = "external", version = 1 }, HttpStatusCode.Forbidden);
-        await bob.PutJson("/api/flows/payments-fraud", new { name = "Mine", fromId = "payments", toId = "fraud", version = 1 }, HttpStatusCode.Forbidden);
+        Assert.Equal("Fraud scoring", (await bob.GetJson("/api/applications/fraud")).Str("name"));
+        Assert.False((await bob.GetJson("/api/flows/payments-fraud")).GetProperty("restricted").GetBoolean());
 
         var alice = await _api.SignedIn("alice");
         var full = await alice.GetJson("/api/applications/fraud");
@@ -89,7 +93,7 @@ public class LandscapeTests : IDisposable
     [Fact]
     public async Task Flow_filters_keep_matching_flows_and_their_ends_only()
     {
-        var client = await _api.SignedIn("bob");
+        var client = await _api.SignedIn("david");
         var landscape = await client.GetJson("/api/landscape?type=batch&dataObjectId=payment");
         Assert.Equal(["bank-payments", "payments-acct", "payments-bank"], landscape.GetProperty("flows").Ids());
         Assert.Equal(["acct", "bank", "payments"], landscape.GetProperty("applications").Ids());

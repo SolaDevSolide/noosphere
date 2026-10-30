@@ -37,7 +37,7 @@ public class ProposalTests : IDisposable
         var billing = await david.GetJson("/api/applications/billing");
         Assert.Equal("team-finance", billing.Str("owningTeamId"));
         Assert.Equal((false, true), (billing.GetProperty("permissions").GetProperty("publish").GetBoolean(), billing.GetProperty("permissions").GetProperty("propose").GetBoolean()));
-        var forClaire = (await claire.GetJson("/api/applications/billing")).GetProperty("permissions");
+        var forClaire = (await claire.GetJson("/api/applications/portal")).GetProperty("permissions");
         Assert.Equal((false, false), (forClaire.GetProperty("publish").GetBoolean(), forClaire.GetProperty("propose").GetBoolean()));
         Assert.True((await bob.GetJson("/api/applications/billing")).GetProperty("permissions").GetProperty("publish").GetBoolean());
 
@@ -273,14 +273,21 @@ public class ProposalTests : IDisposable
     }
 
     [Fact]
-    public async Task Restricted_records_are_not_proposed_by_non_admins()
+    public async Task Restricted_records_are_proposed_only_by_those_who_see_them()
     {
         var david = await _api.SignedIn("david");
+        // Fraud scoring is restricted to Team Payments: david does not see it.
         await Propose(david, "Fraud", [Update("application", "fraud", 1, new { name = "Fraud", domainId = "external" })], expected: HttpStatusCode.Forbidden);
-        await Propose(david, "Hide it", [Update("application", "crm", 1, new { name = "CRM", domainId = "customer", teamId = "team-crm", visibility = "restricted" })],
-            expected: HttpStatusCode.Forbidden);
+        // A proposal that would hide the record from its own author is refused.
+        await Propose(david, "Hide it", [Update("application", "billing", 4, Billing(4, "Hidden.") )], expected: HttpStatusCode.Created);
+        var hidden = new { name = "Billing", domainId = "finance", teamId = "team-finance", visibility = "restricted" };
+        await Propose(david, "Hide it", [Update("application", "billing", 4, hidden)], expected: HttpStatusCode.Forbidden);
         var states = await _api.Services.GetRequiredDb(db => db.Proposals.AsNoTracking().Select(p => p.Status).ToList());
-        Assert.Equal(3, states.Count);
+        Assert.Equal(4, states.Count);
         Assert.DoesNotContain(ProposalStatus.Draft, states);
+        // bob (Team Payments, on the access list) proposes on it.
+        var bob = await _api.SignedIn("bob");
+        var fraud = await bob.GetJson("/api/applications/fraud");
+        Assert.True(fraud.GetProperty("permissions").GetProperty("propose").GetBoolean());
     }
 }

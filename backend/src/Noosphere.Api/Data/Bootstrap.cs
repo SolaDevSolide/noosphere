@@ -121,8 +121,8 @@ public static class Bootstrap
     }
 
     /// <summary>
-    /// The demo landscape (loaded as of 30 days ago), team memberships, a few revisions of Billing and proposals: two
-    /// waiting for Team Finance and one refused. The demo accounts must exist.
+    /// The demo landscape (loaded as of 30 days ago), team memberships, a few revisions of Billing, the customer portal
+    /// shared with claire (guest), and proposals: two waiting for Team Finance and one refused. The demo accounts must exist.
     /// </summary>
     public static async Task LoadDemo(NoosphereDbContext db, DateTimeOffset now)
     {
@@ -162,6 +162,10 @@ public static class Bootstrap
             "Invoices premiums and sends them by email and post. The invoice run starts every night at 05:00.");
         await Edit("billing", now.AddDays(-2), "bob", "Credit notes are issued by Billing too", b => b["description"] =
             "Invoices premiums, issues credit notes and sends them by email and post. The invoice run starts every night at 05:00.");
+
+        // The customer portal is shared with claire (guest): she sees it, and its flows, in full.
+        await Edit("portal", now.AddDays(-12), "alice", "Shared with Claire for the portal redesign audit", b =>
+            b["access"] = new JsonObject { ["teamIds"] = new JsonArray(), ["usernames"] = new JsonArray("claire") });
 
         // Proposals from david (Team CRM) on records owned by Team Finance.
         var david = new Access(new Viewer(users["david"].Id, "david", Role.Member), new HashSet<string> { "team-crm" }, await RecordFacts.Load(db));

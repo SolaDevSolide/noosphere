@@ -100,15 +100,17 @@ public class MigrationBackupTests : IDisposable
     {
         using var scope = _api.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NoosphereDbContext>();
-        // Pretend the last migration is not applied yet, with its tables already there.
-        var last = (await db.Database.GetAppliedMigrationsAsync()).Last();
-        await db.Database.ExecuteSqlAsync($"""delete from "__EFMigrationsHistory" where "MigrationId" = {last}""");
-        await db.Database.ExecuteSqlRawAsync("""drop table "ProposalApprovals", "ProposalChanges", "Proposals", "Revisions", "Pages", "TeamMembers", "InstanceSettings" """);
+        // Pretend the last two migrations (collaboration, then access) are not applied yet: drop what they created.
+        foreach (var last in (await db.Database.GetAppliedMigrationsAsync()).TakeLast(2).ToList())
+            await db.Database.ExecuteSqlAsync($"""delete from "__EFMigrationsHistory" where "MigrationId" = {last}""");
+        await db.Database.ExecuteSqlRawAsync("""drop table "ProposalApprovals", "ProposalChanges", "Proposals", "Revisions", "Pages", "TeamMembers", "InstanceSettings", "AccessLog" """);
+        await db.Database.ExecuteSqlRawAsync("""alter table "Applications" drop column "AccessTeamIds", drop column "AccessUsernames", drop column "ProtectedNotes" """);
+        await db.Database.ExecuteSqlRawAsync("""alter table "Flows" drop column "ProtectedNotes" """);
         // An older migration stays applied: the database is not new, so it is backed up.
         await db.Database.ExecuteSqlRawAsync("""insert into "__EFMigrationsHistory" values ('20200101000000_Older', '10.0.0')""");
         var directory = Path.Combine(_api.Directory, "backups");
 
-        Assert.Equal(1, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
+        Assert.Equal(2, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
         Assert.Single(Directory.GetFiles(directory, "before-migration-*.json"));
         Assert.Equal(0, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
 
@@ -117,12 +119,13 @@ public class MigrationBackupTests : IDisposable
         var billing = await db.Revisions.SingleAsync(r => r.EntityId == "billing");
         var app = await db.Applications.SingleAsync(a => a.Id == "billing");
         Assert.Equal((app.Version, "system"), (billing.Version, billing.AuthorName));
-        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(Noosphere.Api.Services.Records.Application.Snapshot(app),
-            System.Text.Json.Nodes.JsonNode.Parse(billing.Snapshot)), billing.Snapshot);
+        // Same fields (the backfill predates access lists and protected notes, which are empty here).
+        Assert.Empty(Noosphere.Api.Services.Diffs.Compare(Noosphere.Api.Services.Records.Application,
+            Noosphere.Api.Services.Records.Application.Snapshot(app), System.Text.Json.Nodes.JsonNode.Parse(billing.Snapshot)!.AsObject()));
         var flow = await db.Revisions.SingleAsync(r => r.Kind == Noosphere.Domain.RecordKind.Flow && r.EntityId == "crm-to-billing-customers");
-        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(
+        Assert.Empty(Noosphere.Api.Services.Diffs.Compare(Noosphere.Api.Services.Records.Flow,
             Noosphere.Api.Services.Records.Flow.Snapshot(await db.Flows.SingleAsync(f => f.Id == "crm-to-billing-customers")),
-            System.Text.Json.Nodes.JsonNode.Parse(flow.Snapshot)), flow.Snapshot);
+            System.Text.Json.Nodes.JsonNode.Parse(flow.Snapshot)!.AsObject()));
     }
 }
 

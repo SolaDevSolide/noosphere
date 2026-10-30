@@ -86,13 +86,18 @@ public class CatalogTests : IDisposable
     [Fact]
     public async Task List_endpoints_filter()
     {
-        var claire = await _api.SignedIn("claire");
+        var claire = await _api.SignedIn("david");
         Assert.Equal(["acct", "billing", "payments"], (await claire.GetJson("/api/applications?domainId=finance")).Ids());
         Assert.Equal(["policies"], (await claire.GetJson("/api/applications?q=ORACLE")).Ids());
         Assert.Equal(["acct-legacy"], (await claire.GetJson("/api/flows?status=deprecated")).Ids());
         Assert.Equal(13, (await claire.GetJson("/api/flows?type=batch")).GetArrayLength());
         Assert.Equal(["claims-expert", "mobile-claims", "portal-claims"],
             (await claire.GetJson("/api/flows?type=api&dataObjectId=claim&teamId=team-claims")).Ids());
+        // A guest's filters only match what she sees: names of applications not shared with her, not their tech.
+        var guest = await _api.SignedIn("claire");
+        Assert.Empty((await guest.GetJson("/api/applications?q=ORACLE")).EnumerateArray());
+        Assert.Equal(["policies"], (await guest.GetJson("/api/applications?q=POLICIES")).Ids());
+        Assert.Empty((await guest.GetJson("/api/flows?status=deprecated")).EnumerateArray());
         Assert.Equal(["team-crm"], (await claire.GetJson("/api/teams?q=crm")).Ids());
         Assert.Equal(["payment"], (await claire.GetJson("/api/data-objects?q=paym")).Ids());
         Assert.Equal(["platform"], (await claire.GetJson("/api/domains?q=PLATFORM")).Ids());
