@@ -314,5 +314,6 @@ export const accessFr: AccessDict = {
   older: 'Plus anciennes',
   logEmpty: 'Aucun accès enregistré pour ces filtres.',
   adminFlag: 'admin',
+  forbidden: 'Seuls les administrateurs voient la page Accès.',
   loadError: 'Les informations d’accès n’ont pas pu être chargées.',
 };

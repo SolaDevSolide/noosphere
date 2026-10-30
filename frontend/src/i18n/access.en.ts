@@ -300,6 +300,7 @@ export const accessEn = {
   older: 'Older',
   logEmpty: 'No access recorded for these filters.',
   adminFlag: 'admin',
+  forbidden: 'Only administrators see the Access page.',
   loadError: 'The access information could not be loaded.',
 };
 
