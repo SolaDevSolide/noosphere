@@ -1,4 +1,4 @@
-# User guide: proposals, history and settings
+# User guide: pages, proposals, history and settings
 
 [Français](../fr/guide-utilisateur.md)
 
@@ -47,6 +47,14 @@ through in red, added words are highlighted in green.
 If someone published a new version of the record after the proposal was written, the proposal is marked outdated and
 cannot be accepted as it is. Its author chooses **Update from latest**: their changed fields are kept on top of the
 latest version, and the fields that also changed in the meantime are marked **Changed on both sides**.
+
+## Documentation pages
+
+Open **Pages** in the header to read and write runbooks, decisions and overviews. Pages follow the same rule as
+records: the owning team (the page's owner team, or else the owner of the record it is attached to) publishes, and
+other members **Suggest a change**. Any member can create a page, attached to a record or owned by a team they
+choose. Type `[[` in the editor to link a record or another page; links to something that does not exist are shown
+in red but do not block publishing. See [Pages](pages.md) for the details.
 
 ## History
 

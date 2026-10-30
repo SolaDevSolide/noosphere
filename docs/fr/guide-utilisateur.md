@@ -1,4 +1,4 @@
-# Guide utilisateur : propositions, historique et réglages
+# Guide utilisateur : pages, propositions, historique et réglages
 
 [English](../en/user-guide.md)
 
@@ -50,6 +50,15 @@ Si quelqu'un a publié une nouvelle version de la fiche après l'écriture de la
 dépassée et ne peut pas être acceptée en l'état. Son auteur choisit **Mettre à jour depuis la dernière version** : ses
 champs modifiés sont conservés par-dessus la dernière version, et les champs qui ont aussi changé entre-temps sont
 marqués **Modifié des deux côtés**.
+
+## Pages de documentation
+
+Ouvrez **Pages** dans l'en-tête pour lire et écrire des procédures, des décisions et des présentations. Les pages
+suivent la même règle que les fiches : l'équipe propriétaire (celle de la page, sinon le propriétaire de la fiche à
+laquelle elle est rattachée) publie, et les autres membres **Proposent une modification**. Tout membre peut créer une
+page, rattachée à une fiche ou confiée à l'équipe de son choix. Tapez `[[` dans l'éditeur pour lier une fiche ou une
+autre page ; les liens vers ce qui n'existe pas s'affichent en rouge sans bloquer la publication. Voir
+[Pages](pages.md) pour le détail.
 
 ## Historique
 
