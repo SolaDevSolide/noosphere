@@ -285,7 +285,7 @@ public static class AgentTools
 
         var readable = current is not null ? call.Access.ReadsProtected(k, current) : readsNotes;
         var diff = ProtectedNotesMask.Mask(Diffs.Compare(type, Records.ParseObject(change.Before), Records.ParseObject(change.After), call.Access.Facts, call.Access), !readable, !readable);
-        var target = change.TargetId ?? targetKey;
+        var target = change.TargetId ?? targetKey ?? (Records.ParseObject(change.After)?["id"] as JsonValue)?.GetValue<string>();
         var warnings = new List<string>();
         if (!readable && call.Access.Facts.HasProtectedNotes(k, target ?? "")) warnings.Add("The record has protected notes above the agent ceiling: they are kept unchanged.");
         if (operation == ChangeOperation.Update && diff.Count == 0) warnings.Add("The fields given equal the current record: the draft changes nothing.");
