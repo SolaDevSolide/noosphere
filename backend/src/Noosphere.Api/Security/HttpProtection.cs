@@ -29,10 +29,14 @@ public static class HttpProtection
         {
             o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             o.OnRejected = (ctx, cancel) => new ValueTask(Problems.Write(ctx.HttpContext, 429,
-                "Too many sign-in attempts. Try again in a minute.", cancel: cancel));
+                ctx.HttpContext.Request.Path.StartsWithSegments("/oauth") ? "Too many client registrations. Try again in a minute."
+                    : "Too many sign-in attempts. Try again in a minute.", cancel: cancel));
             o.AddPolicy(LoginPolicy, ctx => RateLimitPartition.GetFixedWindowLimiter(
                 ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.LoginAttemptsPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            o.AddPolicy(Agents.OAuthEndpoints.RegistrationRateLimit, ctx => RateLimitPartition.GetFixedWindowLimiter(
+                ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.RegistrationsPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
         });
         return services;
     }
