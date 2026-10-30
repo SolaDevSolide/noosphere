@@ -17,10 +17,13 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   suggestions de liens et trois modèles de page.
 - Des applications et des pages restreintes avec des listes d'accès (équipes et personnes), des fiches partagées
   avec des invités, des notes protégées pour les détails d'exploitation et un journal des accès pour les
+  administrateurs. Une fenêtre **Qui peut voir et modifier ?** sur chaque fiche, et une page **Accès** pour les
   administrateurs.
 - Les secrets collés par erreur (jetons, clés, mots de passe) sont refusés : Noosphere documente où ils se trouvent.
-- Une sensibilité calculée pour chaque application, d'après ses données et les flux qui la touchent.
-- Un format d'échange documenté (JSON ou YAML) pour importer et exporter tout le paysage.
+- Une sensibilité calculée pour chaque application, d'après ses données et les flux qui la touchent, avec un filtre
+  du paysage sur ce niveau.
+- Un format d'échange documenté (JSON ou YAML) pour importer et exporter le paysage : ce que vous voyez ou, pour
+  les administrateurs, un export complet inscrit au journal des accès.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
 ## Démarrage rapide
