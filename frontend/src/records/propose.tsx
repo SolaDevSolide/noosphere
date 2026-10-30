@@ -86,7 +86,7 @@ export function ProposeFields({
           </span>
         </div>
       ) : (
-        <div className="banner" role="note">
+        <div className="banner info" role="note">
           <IconReview />
           <span className="bt">
             <b>{t.propose.suggesting}</b>

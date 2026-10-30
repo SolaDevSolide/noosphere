@@ -120,3 +120,17 @@ describe('DiffView', () => {
     expect(screen.getByText('No field changed.')).toBeInTheDocument();
   });
 });
+
+describe('wordSegments around line breaks', () => {
+  it('keeps the whitespace of an added block outside the highlight', () => {
+    const s = wordSegments('Intro.', 'Intro.\n\n- one\n- two');
+    const added = s.filter((x) => x.op === 'add');
+    expect(added).toHaveLength(1);
+    expect(added[0].text.startsWith('-')).toBe(true);
+    expect(s.map((x) => x.text).join('')).toBe('Intro.\n\n- one\n- two');
+  });
+  it('keeps struck words apart from their neighbours', () => {
+    const s = wordSegments('pays claims fast', 'pays claims');
+    expect(s.map((x) => x.text).join('')).toContain('claims fast');
+  });
+});

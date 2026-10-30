@@ -14,16 +14,24 @@ export interface Segment {
 /** Word-level changes between two texts; whitespace and line breaks are kept so Markdown stays readable. */
 export function wordSegments(before: string, after: string): Segment[] {
   const out: Segment[] = [];
-  for (const c of diffWordsWithSpace(before, after)) {
-    let op: Segment['op'] = c.added ? 'add' : c.removed ? 'del' : 'same';
-    // Whitespace alone is not worth a highlight: keep the new layout, drop the old one.
-    if (op !== 'same' && !c.value.trim()) {
-      if (op === 'del') continue;
-      op = 'same';
-    }
+  const push = (text: string, op: Segment['op']) => {
+    if (!text) return;
     const last = out[out.length - 1];
-    if (last && last.op === op) last.text += c.value;
-    else out.push({ text: c.value, op });
+    if (last && last.op === op) last.text += text;
+    else out.push({ text, op });
+  };
+  for (const c of diffWordsWithSpace(before, after)) {
+    if (!c.added && !c.removed) {
+      push(c.value, 'same');
+      continue;
+    }
+    // Whitespace around a change is not worth a highlight: keep the new layout, and of the old one only the spaces
+    // that keep the struck words apart.
+    const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(c.value)!;
+    const keep = (ws: string) => c.added || !ws.includes('\n');
+    if (keep(m[1])) push(m[1], 'same');
+    push(m[2], c.added ? 'add' : 'del');
+    if (keep(m[3])) push(m[3], 'same');
   }
   return out;
 }

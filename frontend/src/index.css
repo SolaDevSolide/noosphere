@@ -4499,3 +4499,11 @@ ins.d {
 .diff.one {
   grid-template-columns: minmax(0, 1fr);
 }
+.banner.info {
+  background: var(--accent-soft);
+  color: var(--fg);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.banner.info svg {
+  color: var(--accent-text);
+}
