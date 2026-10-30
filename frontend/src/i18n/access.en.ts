@@ -101,7 +101,7 @@ export const accessEn = {
     'Restricted: only the teams and people you choose see it. Pick them from « Who can see and edit? » on the record.',
 
   notSaved: 'Not saved.',
-  secretOne: (field: string, plural = false) =>
+  secretOne: (field: string, plural?: boolean) =>
     `${field} ${plural ? 'look like they contain' : 'looks like it contains'} a secret. Nothing was stored.`,
   secretMany: 'Some fields look like they contain a secret. Nothing was stored.',
   secretMessage: (kind: string) =>

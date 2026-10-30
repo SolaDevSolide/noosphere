@@ -104,7 +104,7 @@ export const accessFr: AccessDict = {
     'Restreinte : seules les équipes et personnes choisies la voient. Choisissez-les depuis « Qui peut voir et modifier ? » sur la fiche.',
 
   notSaved: 'Non enregistré.',
-  secretOne: (field: string, plural = false) =>
+  secretOne: (field: string, plural?: boolean) =>
     `${field} ${plural ? 'semblent' : 'semble'} contenir un secret. Rien n’a été enregistré.`,
   secretMany: 'Des champs semblent contenir un secret. Rien n’a été enregistré.',
   secretMessage: (kind: string) =>
