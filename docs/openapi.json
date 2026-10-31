@@ -2683,6 +2683,106 @@
         }
       }
     },
+    "/api/applications/{id}/deployments": {
+      "get": {
+        "tags": [
+          "Deployments"
+        ],
+        "operationId": "DeploymentsApplication",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/flows/{id}/deployments": {
+      "get": {
+        "tags": [
+          "Deployments"
+        ],
+        "operationId": "DeploymentsFlow",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/applications/{id}/history": {
       "get": {
         "tags": [
@@ -4523,6 +4623,375 @@
           }
         }
       }
+    },
+    "/api/links/codes": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkCodeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Links"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCodeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCodeCreatedDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}/confirm": {
+      "post": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkConfirmInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}/capabilities": {
+      "put": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCapabilitiesInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}/renew-keys": {
+      "post": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDto"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}/cut": {
+      "post": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCutInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/{id}/exchanges": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkExchangePageDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/exchanges": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkExchangePageDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5327,6 +5796,10 @@
             "type": "boolean",
             "description": "The record has protected notes the reader may not read."
           },
+          "deployments": {
+            "description": "Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones.",
+            "$ref": "#/components/schemas/DeploymentsDto"
+          },
           "id": {
             "type": "string"
           },
@@ -5408,7 +5881,7 @@
             "format": "date-time"
           }
         },
-        "description": "An application with its owner, the reader's permissions and its pages."
+        "description": "An application with its owner, the reader's permissions, its pages and its deployments."
       },
       "ApplicationDto": {
         "required": [
@@ -6407,6 +6880,179 @@
           }
         }
       },
+      "DeploymentDto": {
+        "required": [
+          "deploymentId",
+          "title",
+          "phase",
+          "outcome",
+          "postponed",
+          "plannedStart",
+          "plannedEnd",
+          "url",
+          "applicationIds",
+          "environments",
+          "updatedAt",
+          "receivedAt",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "deploymentId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/DeploymentPhase"
+          },
+          "outcome": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DeploymentOutcome"
+              }
+            ]
+          },
+          "postponed": {
+            "type": "boolean"
+          },
+          "plannedStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "plannedEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The MEP in gestion-mep; null once the link is cut."
+          },
+          "applicationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Applications it touches, among those the reader sees."
+          },
+          "environments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeploymentEnvironmentDto"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last change on the gestion-mep side.",
+            "format": "date-time"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "$ref": "#/components/schemas/DeploymentSourceDto"
+          }
+        },
+        "description": "A deployment (a MEP of gestion-mep) touching the record."
+      },
+      "DeploymentEnvironmentDto": {
+        "required": [
+          "name",
+          "production"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "production": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DeploymentOutcome": {
+        "enum": [
+          "success",
+          "success-with-incidents",
+          "rolled-back",
+          "failed",
+          null
+        ]
+      },
+      "DeploymentPhase": {
+        "enum": [
+          "preparation",
+          "execution",
+          "rollback",
+          "acceptance",
+          "closed",
+          "cancelled"
+        ]
+      },
+      "DeploymentsDto": {
+        "required": [
+          "upcoming",
+          "past"
+        ],
+        "type": "object",
+        "properties": {
+          "upcoming": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeploymentDto"
+            },
+            "description": "Not closed nor cancelled, soonest first."
+          },
+          "past": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeploymentDto"
+            },
+            "description": "Closed or cancelled, latest first (the last three in a record's detail)."
+          }
+        },
+        "description": "Deployments of a record."
+      },
+      "DeploymentSourceDto": {
+        "required": [
+          "linkId",
+          "product",
+          "instanceName",
+          "linkActive"
+        ],
+        "type": "object",
+        "properties": {
+          "linkId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product": {
+            "type": "string"
+          },
+          "instanceName": {
+            "type": "string"
+          },
+          "linkActive": {
+            "type": "boolean",
+            "description": "False once the link is cut: the deployment stays as history."
+          }
+        },
+        "description": "Where a deployment comes from."
+      },
       "DiffEntryDto": {
         "required": [
           "field",
@@ -6756,6 +7402,10 @@
             "type": "boolean",
             "description": "The record has protected notes the reader may not read."
           },
+          "deployments": {
+            "description": "Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones.",
+            "$ref": "#/components/schemas/DeploymentsDto"
+          },
           "id": {
             "type": "string"
           },
@@ -6841,7 +7491,7 @@
             "format": "date-time"
           }
         },
-        "description": "A flow with its owner (its owner team, or else the team of its source application), permissions and pages."
+        "description": "A flow with its owner (its owner team, or else the team of its source application), permissions, pages and the deployments of its two ends."
       },
       "FlowDto": {
         "required": [
@@ -7531,6 +8181,469 @@
           "retiring",
           "retired"
         ]
+      },
+      "LinkCapabilitiesInput": {
+        "required": [
+          "capabilities"
+        ],
+        "type": "object",
+        "properties": {
+          "capabilities": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Replaces the capabilities of a link."
+      },
+      "LinkCodeCreatedDto": {
+        "required": [
+          "id",
+          "code",
+          "codeId",
+          "expiresAt",
+          "capabilities",
+          "pairUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string"
+          },
+          "codeId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pairUrl": {
+            "type": "string",
+            "description": "The URL to enter in gestion-mep (this instance's public address)."
+          }
+        },
+        "description": "A pairing code just created. `code` is shown only this once: enter it in gestion-mep with the URL of this instance."
+      },
+      "LinkCodeDto": {
+        "required": [
+          "id",
+          "codeId",
+          "state",
+          "capabilities",
+          "createdAt",
+          "expiresAt",
+          "createdBy",
+          "usedAt",
+          "linkId",
+          "failedAttempts",
+          "bootstrap"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codeId": {
+            "type": "string",
+            "description": "Its first four characters, sent by gestion-mep to find it."
+          },
+          "state": {
+            "$ref": "#/components/schemas/LinkCodeState"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "usedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "failedAttempts": {
+            "type": "integer",
+            "description": "Wrong MACs so far; the fifth burns the code.",
+            "format": "int32"
+          },
+          "bootstrap": {
+            "type": "boolean",
+            "description": "Created from NOOSPHERE_LINK_BOOTSTRAP_CODE."
+          }
+        },
+        "description": "A pairing code, without its value (shown once, at creation)."
+      },
+      "LinkCodeInput": {
+        "required": [
+          "expiresInMinutes",
+          "capabilities"
+        ],
+        "type": "object",
+        "properties": {
+          "expiresInMinutes": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "1 to 1440; 15 by default.",
+            "format": "int32"
+          },
+          "capabilities": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`. All three by default."
+          }
+        },
+        "description": "A new pairing code."
+      },
+      "LinkCodeState": {
+        "enum": [
+          "active",
+          "used",
+          "expired",
+          "burnt"
+        ]
+      },
+      "LinkConfirmInput": {
+        "required": [
+          "fingerprint"
+        ],
+        "type": "object",
+        "properties": {
+          "fingerprint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Confirms a link: the fingerprint shown on gestion-mep, typed or pasted (case and extra spaces do not matter)."
+      },
+      "LinkCutInput": {
+        "required": [
+          "confirm"
+        ],
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        },
+        "description": "Cutting a link cannot be undone: `confirm` must be true."
+      },
+      "LinkDirection": {
+        "enum": [
+          "in",
+          "out"
+        ]
+      },
+      "LinkDto": {
+        "required": [
+          "id",
+          "product",
+          "instanceName",
+          "url",
+          "peerVersion",
+          "state",
+          "confirmedHere",
+          "confirmedAt",
+          "confirmedBy",
+          "peerConfirmed",
+          "peerCheckedAt",
+          "capabilities",
+          "fingerprint",
+          "pairedAt",
+          "pairedBy",
+          "keysRenewedAt",
+          "lastExchangeAt",
+          "cutAt",
+          "cutBy",
+          "demo",
+          "keys",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product": {
+            "type": "string"
+          },
+          "instanceName": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "peerVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "state": {
+            "description": "`pending` until an administrator confirms the fingerprint here, `active` after, `cut` once cut by either side.",
+            "$ref": "#/components/schemas/LinkState"
+          },
+          "confirmedHere": {
+            "type": "boolean"
+          },
+          "confirmedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "confirmedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "peerConfirmed": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the peer's administrator confirmed it, as last read from the peer; null until known."
+          },
+          "peerCheckedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "Four words, the same on both sides: compare them before confirming."
+          },
+          "pairedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pairedBy": {
+            "type": "string"
+          },
+          "keysRenewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last key renewal, by either side (\"Keys renewed on …\").",
+            "format": "date-time"
+          },
+          "lastExchangeAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cutAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cutBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The administrator who cut it here, or `peer`."
+          },
+          "demo": {
+            "type": "boolean",
+            "description": "A fictional peer of the demo: nothing is sent to it."
+          },
+          "keys": {
+            "$ref": "#/components/schemas/LinkKeyIdsDto"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A link with a gestion-mep instance."
+      },
+      "LinkExchangeDto": {
+        "required": [
+          "id",
+          "at",
+          "linkId",
+          "direction",
+          "operation",
+          "result",
+          "status",
+          "reason",
+          "detail"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "linkId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/LinkDirection"
+          },
+          "operation": {
+            "type": "string",
+            "description": "`pair`, `status`, `catalog`, `notices`, `deployments`, `rekey` or `unpair`."
+          },
+          "result": {
+            "$ref": "#/components/schemas/LinkExchangeResult"
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For a refusal: `unknown-key`, `link-cut`, `link-not-confirmed`, `clock-skew`, `replay`, `bad-digest`, `bad-signature`..."
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "One exchange with the peer, sent (`out`) or received (`in`)."
+      },
+      "LinkExchangePageDto": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkExchangeDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` for the next (older) page; null on the last page."
+          }
+        }
+      },
+      "LinkExchangeResult": {
+        "enum": [
+          "ok",
+          "refused",
+          "failed",
+          "demo"
+        ],
+        "description": "Outcome of an exchange: done, refused (by the receiver), failed (network, bad response), or skipped (demo peer)."
+      },
+      "LinkKeyIdsDto": {
+        "required": [
+          "signing",
+          "encryption",
+          "peerSigning",
+          "peerEncryption"
+        ],
+        "type": "object",
+        "properties": {
+          "signing": {
+            "type": "string"
+          },
+          "encryption": {
+            "type": "string"
+          },
+          "peerSigning": {
+            "type": "string"
+          },
+          "peerEncryption": {
+            "type": "string"
+          }
+        },
+        "description": "Key ids (RFC 7638 thumbprints) of a link's four public keys; empty once cut."
+      },
+      "LinkState": {
+        "enum": [
+          "pending",
+          "active",
+          "cut"
+        ],
+        "description": "`pending` until an administrator of this instance confirms the fingerprint, then `active`; `cut` once\n        either side cuts it (its keys are erased, its history stays)."
       },
       "LocalizedTextDto": {
         "required": [
@@ -9815,6 +10928,9 @@
       "name": "AI agents"
     },
     {
+      "name": "Deployments"
+    },
+    {
       "name": "History"
     },
     {
@@ -9822,6 +10938,9 @@
     },
     {
       "name": "Demo"
+    },
+    {
+      "name": "Links"
     }
   ]
 }
