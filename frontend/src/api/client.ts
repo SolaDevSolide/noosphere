@@ -1,4 +1,23 @@
 import type {
+  AgentActivityKind,
+  AgentActivityPage,
+  AgentCapabilities,
+  AgentConnection,
+  AgentSettings,
+  AgentSettingsInput,
+  ConsentRequest,
+  ConsentResult,
+  DemoAgentResult,
+  DemoAgentScenario,
+  DemoDecisionResult,
+  DemoEditResult,
+  DemoGuestReadResult,
+  DemoProposalResult,
+  DemoResetResult,
+  DemoState,
+  DemoSwitchResult,
+  MyAgents,
+  StopAllResult,
   AccessLogPage,
   AccessOverview,
   Person,
@@ -173,6 +192,13 @@ export interface ProposalQuery {
   toValidate?: boolean;
 }
 
+export interface AgentActivityQuery {
+  connectionId?: string;
+  kind?: AgentActivityKind;
+  cursor?: string;
+  limit?: number;
+}
+
 export const api = {
   login: (username: string, password: string) => request<Me>('POST', '/auth/login', { username, password }),
   logout: () => request<void>('POST', '/auth/logout'),
@@ -290,6 +316,43 @@ export const api = {
           limit: f.limit ? String(f.limit) : undefined,
         }),
     ),
+  agentSettings: () => request<AgentSettings>('GET', '/settings/agents'),
+  updateAgentSettings: (body: AgentSettingsInput) => request<AgentSettings>('PUT', '/settings/agents', body),
+  myAgents: () => request<MyAgents>('GET', '/me/agents'),
+  agents: () => request<AgentConnection[]>('GET', '/agents'),
+  revokeAgent: (id: string) => request<AgentConnection>('POST', `/agents/${enc(id)}/revoke`, {}),
+  approveAgent: (id: string) => request<AgentConnection>('POST', `/agents/${enc(id)}/approve`, {}),
+  agentCapabilities: (id: string) => request<AgentCapabilities>('GET', `/agents/${enc(id)}/capabilities`),
+  agentActivity: (f: AgentActivityQuery = {}) =>
+    request<AgentActivityPage>(
+      'GET',
+      '/agents/activity' +
+        q({
+          connectionId: f.connectionId,
+          kind: f.kind,
+          cursor: f.cursor,
+          limit: f.limit ? String(f.limit) : undefined,
+        }),
+    ),
+  stopAllAgents: () => request<StopAllResult>('POST', '/agents/stop-all', { confirm: true }),
+
+  consentRequest: (id: string) => request<ConsentRequest>('GET', `/oauth/requests/${enc(id)}`),
+  approveConsent: (id: string, scopes?: string[]) =>
+    request<ConsentResult>('POST', `/oauth/requests/${enc(id)}/approve`, { scopes: scopes ?? null }),
+  denyConsent: (id: string) => request<ConsentResult>('POST', `/oauth/requests/${enc(id)}/deny`, {}),
+
+  demoState: () => request<DemoState>('GET', '/demo/state'),
+  demoSwitch: (username: string) => request<DemoSwitchResult>('POST', '/demo/switch', { username }),
+  demoEdit: (kind: string, id: string) => request<DemoEditResult>('POST', '/demo/simulate/edit', { kind, id }),
+  demoProposal: (kind?: string, id?: string) =>
+    request<DemoProposalResult>('POST', '/demo/simulate/proposal', { kind: kind ?? null, id: id ?? null }),
+  demoDecision: (proposalId: string, decision: 'accept' | 'refuse') =>
+    request<DemoDecisionResult>('POST', '/demo/simulate/decision', { proposalId, decision }),
+  demoAgent: (scenario: DemoAgentScenario) => request<DemoAgentResult>('POST', '/demo/simulate/agent', { scenario }),
+  demoGuestRead: (kind: string, id: string) =>
+    request<DemoGuestReadResult>('POST', '/demo/simulate/guest-read', { kind, id }),
+  demoReset: () => request<DemoResetResult>('POST', '/demo/reset', { confirm: true }),
+
   importEnvelope: (envelope: ExchangeEnvelope | string, dryRun: boolean, contentType = 'application/json') =>
     request<ImportResult>('POST', '/import' + q({ dryRun: String(dryRun) }), undefined, {
       headers: { 'Content-Type': contentType },

@@ -7,6 +7,10 @@ changer de personnage d'un clic et faire agir « l'autre côté » (un collègue
 agent IA, l'invitée). Hors mode démo, toutes les adresses `/api/demo/*` répondent 404. N'activez jamais le mode démo
 sur un serveur partagé : n'importe qui peut s'y connecter avec n'importe quel compte de démo.
 
+Dans l'interface, l'en-tête porte un repère **Démo** et un bouton **Démo** ouvre la boîte à outils : personnages,
+scénarios ci-dessous, agent de démo et réinitialisation, chacun avec un avis et un lien **Voir**. Elle est masquée
+hors du mode démo. Voir le [guide utilisateur](guide-utilisateur.md#boîte-à-outils-de-démo).
+
 ## Personnages
 
 | Personnage | Rôle | À essayer |

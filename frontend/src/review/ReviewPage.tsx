@@ -26,7 +26,7 @@ function ProposalCard({ p, tab }: { p: Proposal; tab: ReviewTab }) {
   const targets = p.changes.map((c) => c.targetTitle || c.targetId || t.review.newRecord);
   const when = tab === 'decided' ? p.decidedAt : (p.submittedAt ?? p.createdAt);
   return (
-    <li className="pcard">
+    <li className={'pcard' + (p.authorKind === 'agent' ? ' agentcard' : '')}>
       <div className="pcard-t">
         <Link to={paths.proposal(p.id)} className="pcard-a">
           {p.title}

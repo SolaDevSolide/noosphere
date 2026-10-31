@@ -962,3 +962,46 @@ export function handleGovernance(
   }
   return null;
 }
+
+/* ---------- used by the agents and demo mocks ---------- */
+
+export type MockProposal = StoredProposal;
+
+export const demoGov = {
+  proposals,
+  view,
+  find: (ctx: GovCtx, kind: RecordKind, id: string) => find(ctx.db, kind, id),
+  title: titleOf,
+  nextId: () => 'p-' + ++seq,
+  /** Proposal changes for an update of one record, based on its current version. */
+  updateChange: (ctx: GovCtx, kind: RecordKind, id: string, patch: Rec): StoredChange | null => {
+    const cur = find(ctx.db, kind, id);
+    if (!cur) return null;
+    const before = pick(kind, cur);
+    return {
+      kind,
+      targetId: id,
+      operation: 'update',
+      baseVersion: Number(cur.version),
+      before,
+      after: { ...before, ...patch },
+      conflicts: [],
+    };
+  },
+  /** Publishes a change as `by`, creating a revision: what an owner's save does. */
+  publish: (ctx: GovCtx, kind: RecordKind, id: string, patch: Rec, by: string, summary: string) => {
+    const c = demoGov.updateChange(ctx, kind, id, patch);
+    if (c) applyChange(ctx, c, by, summary, null);
+  },
+  ownerOf: (ctx: GovCtx, kind: RecordKind, id: string) => ownerOf(ctx.db, kind, find(ctx.db, kind, id)),
+  decide: (ctx: GovCtx, p: StoredProposal, by: string, accept: boolean, reason: string) => {
+    if (accept) for (const c of p.changes) applyChange(ctx, c, p.author, p.title, p.id);
+    Object.assign(p, {
+      status: accept ? 'accepted' : 'refused',
+      refusalReason: accept ? null : reason,
+      decidedBy: by,
+      decidedAt: ctx.now(),
+      version: p.version + 1,
+    });
+  },
+};

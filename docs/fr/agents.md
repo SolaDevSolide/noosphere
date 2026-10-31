@@ -163,6 +163,9 @@ L'activité est gardée 90 jours (`NOOSPHERE_AGENT_ACTIVITY_DAYS`) ; les jetons 
 - **Console** (administrateurs) : toutes les connexions avec leur personne, l'approbation des connexions en attente,
   toute l'activité avec des filtres, et l'arrêt d'urgence.
 
+Les deux sont dans le menu du compte (**Mes agents**, et **Agents IA** pour les administrateurs) ; la page de
+consentement est `/oauth/consent`. Le [guide utilisateur](guide-utilisateur.md#agents-ia) les parcourt.
+
 API : voir [API, agents IA](api.md#agents-ia).
 
 ## llms.txt et vues Markdown

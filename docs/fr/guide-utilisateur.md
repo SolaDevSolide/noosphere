@@ -116,6 +116,51 @@ et le **journal des accès** (chaque ouverture d'une fiche restreinte ou de note
 l'équipe propriétaire, chaque lecture par un administrateur, chaque export complet). Filtrez-le par personne, fiche,
 type, nature et dates ; les lignes sont gardées 365 jours.
 
+## Agents IA
+
+Un agent IA (Claude, Claude Code, Copilot, Cursor, tout client MCP) travaille avec votre compte : il lit ce que vous
+voyez, dans la limite du plafond fixé par votre administrateur, et écrit des brouillons et des propositions. Il ne
+publie jamais seul.
+
+1. Ouvrez **Mes agents** dans le menu du compte et copiez l'**adresse du serveur MCP**. Les guides en dessous donnent
+   la configuration pour un client MCP, la ligne de commande et VS Code.
+2. L'agent ouvre une page Noosphere, **Demande de connexion**, qui liste ce qu'il pourra et ne pourra pas faire.
+   Décochez « L'autoriser à écrire des brouillons » pour ne lui donner que la lecture, puis choisissez **Autoriser** ou
+   **Refuser**.
+3. Si votre administrateur exige un accord, la page le dit et l'agent attend ; **Annuler la demande** la retire.
+   Sinon l'agent apparaît dans **Mes agents**.
+
+**Mes agents** liste chaque connexion avec son état (actif, en pause à son quota horaire, en attente d'accord), ce
+qu'elle peut faire, et **Révoquer**, qui coupe son accès tout de suite. En dessous : les brouillons et propositions
+écrits par vos agents (les soumettre, les ouvrir ou les abandonner) et chacun de leurs appels, gardés 90 jours. Les
+invités ne connectent pas d'agent.
+
+Dans l'espace de validation, une proposition écrite par un agent porte la puce **Agent IA pour** la personne, avec le
+nom de l'agent, et sa page explique qui l'a écrite. Les validateurs décident comme pour toute proposition ; le motif
+d'un refus va à l'agent et à la personne.
+
+Les administrateurs ouvrent **Agents IA** dans le menu du compte : l'**arrêt d'urgence** (révoque toutes les connexions
+d'un coup), chaque connexion avec sa personne (accepter ou refuser celles en attente, révoquer), ce que l'agent
+sélectionné peut faire, toute l'activité avec des filtres par type et par agent, et les réglages : serveur MCP actif
+ou non, plafond, quota horaire, qui peut connecter, enregistrement dynamique et llms.txt sans connexion. Voir
+[Agents IA](agents.md) pour le détail.
+
+## Boîte à outils de démo
+
+Sur une instance de démo (`NOOSPHERE_DEMO=true`), l'en-tête porte un repère **Démo** et un bouton **Démo** reste dans
+le coin bas (un panneau qui monte du bas sur téléphone). Il ouvre la boîte à outils :
+
+- **Être quelqu'un d'autre** : changer de personnage sans mot de passe. Vous restez sur la page si le nouveau
+  personnage peut la voir (décochez « Rester sur cette page quand je change » pour revenir toujours au paysage).
+- **Simuler des collègues** : un collègue modifie la fiche ouverte (votre prochain enregistrement reçoit le conflit, et
+  les propositions ouvertes dessus deviennent dépassées), un collègue vous envoie une proposition, un validateur
+  accepte ou refuse votre dernière proposition, l'invitée lit une fiche partagée.
+- **Agent IA** : un agent de démo, qui agit pour vous, écrit un brouillon, soumet une proposition, est refusé au-dessus
+  du plafond ou atteint son quota.
+- **Réinitialiser la démo**, après confirmation.
+
+Chaque action affiche un avis avec un lien **Voir** vers ce qui a changé. Voir [Boîte à outils de démo](demo.md).
+
 ## Équipes
 
 Les administrateurs gèrent l'appartenance aux équipes sur la page **Utilisateurs** (les **Équipes** de chaque compte)

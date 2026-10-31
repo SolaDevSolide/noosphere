@@ -409,3 +409,51 @@ export const IconClock = ({ size = 16, ...p }: P) => (
     <path d="M8 4.8V8l2.2 1.4" />
   </svg>
 );
+
+/* ---- AI agents and the demo toolbox ---- */
+
+export const IconFlask = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M6 1.8h4M6.6 1.8v4.3L2.6 12.6c-.5.9.1 1.9 1.1 1.9h8.6c1 0 1.6-1 1.1-1.9L9.4 6.1V1.8M4.4 9.8h7.2" />
+  </svg>
+);
+export const IconStop = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M5.3 1.8h5.4l3.5 3.5v5.4l-3.5 3.5H5.3l-3.5-3.5V5.3z" />
+    <path d="M6 6l4 4M10 6l-4 4" />
+  </svg>
+);
+export const IconHourglass = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M4 1.8h8M4 14.2h8M4.8 1.8c0 3.2 3.2 3.9 3.2 6.2S4.8 11 4.8 14.2M11.2 1.8c0 3.2-3.2 3.9-3.2 6.2s3.2 3 3.2 6.2" />
+  </svg>
+);
+export const IconPlug = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M5.5 1.8v3M10.5 1.8v3M3.8 4.8h8.4v2.4a4.2 4.2 0 0 1-8.4 0zM8 11.4v2.8" />
+  </svg>
+);
+export const IconGauge = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M2.2 11.5a6 6 0 1 1 11.6 0" />
+    <path d="M8 9.5l3-3.5" />
+  </svg>
+);
+export const IconNo = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M3.8 3.8l8.4 8.4" />
+  </svg>
+);
+export const IconArrow = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M3 8h10M9 4l4 4-4 4" />
+  </svg>
+);
+export const IconBotFull = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="2.5" y="5" width="11" height="8" rx="2.2" />
+    <path d="M8 5V2.6M6 8.6v.6M10 8.6v.6M1 9v1.6M15 9v1.6" />
+    <circle cx="8" cy="2.2" r=".6" fill="currentColor" />
+  </svg>
+);

@@ -8,13 +8,23 @@ import { IconWarn } from '../ui/icons';
 import type { Dict } from '../i18n/en';
 import { fieldKey, translateMessage } from '../access/secret';
 
-export function PageShell({ children, narrow, title }: { children: ReactNode; narrow?: boolean; title?: string }) {
+export function PageShell({
+  children,
+  narrow,
+  wide,
+  title,
+}: {
+  children: ReactNode;
+  narrow?: boolean;
+  wide?: boolean;
+  title?: string;
+}) {
   useDocumentTitle(title);
   return (
     <div className="shell">
       <TopBar />
       <main className="page" id="main">
-        <div className={'page-in' + (narrow ? ' narrow' : '')}>{children}</div>
+        <div className={'page-in' + (narrow ? ' narrow' : '') + (wide ? ' wide' : '')}>{children}</div>
       </main>
     </div>
   );

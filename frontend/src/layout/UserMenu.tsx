@@ -3,7 +3,16 @@ import { useGo } from '../ui/useGo';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
-import { IconLogo, IconReview, IconSettings, IconShield, IconTeam, IconTrash, IconUpload } from '../ui/icons';
+import {
+  IconBotFull,
+  IconLogo,
+  IconReview,
+  IconSettings,
+  IconShield,
+  IconTeam,
+  IconTrash,
+  IconUpload,
+} from '../ui/icons';
 
 export function LanguageSwitch({ small }: { small?: boolean }) {
   const { lang, t } = useI18n();
@@ -95,6 +104,13 @@ export function UserMenu() {
             <IconUpload />
             {t.top.importExport}
           </Link>
+          {me.role !== 'guest' && (
+            <Link role="menuitem" className="mi" to="/my-agents" onClick={() => setOpen(false)}>
+              <IconBotFull />
+              {t.agents.menuMine}
+              <span className="newtag">{t.agents.newTag}</span>
+            </Link>
+          )}
           {isAdmin && (
             <Link role="menuitem" className="mi" to="/admin/users" onClick={() => setOpen(false)}>
               <IconTeam />
@@ -105,6 +121,13 @@ export function UserMenu() {
             <Link role="menuitem" className="mi" to="/admin/access" onClick={() => setOpen(false)}>
               <IconShield />
               {t.top.access}
+            </Link>
+          )}
+          {isAdmin && (
+            <Link role="menuitem" className="mi" to="/admin/agents" onClick={() => setOpen(false)}>
+              <IconBotFull />
+              {t.agents.menuConsole}
+              <span className="newtag">{t.agents.newTag}</span>
             </Link>
           )}
           {isAdmin && (

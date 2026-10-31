@@ -175,3 +175,35 @@ export const PROTECTED_MASK = '••• protected';
 
 /** True for a guest's outline of a record not shared with them. */
 export const isGuestOutline = (x: object): boolean => 'shared' in x && (x as { shared?: boolean }).shared === false;
+
+/* ---- Milestone 4: AI agents, consent, demo toolbox ---- */
+
+export type AgentCeiling = S['AgentCeiling'];
+export type AgentState = S['AgentState'];
+export type AgentWhoConnects = S['AgentWhoConnects'];
+export type AgentActivityKind = S['AgentActivityKind'];
+export type AgentActivity = S['AgentActivityDto'];
+export type AgentActivityPage = S['AgentActivityPageDto'];
+export type AgentConnection = S['AgentConnectionDto'];
+export type AgentSettings = S['AgentSettingsDto'];
+export type AgentSettingsInput = S['AgentSettingsInput'];
+export type AgentCapabilities = S['AgentCapabilitiesDto'];
+export type Capability = S['CapabilityDto'];
+export type LocalizedText = S['LocalizedTextDto'];
+/** My connections, my agents' drafts and proposals, and what the page needs of the settings. */
+export type MyAgents = Omit<S['MyAgentsDto'], 'drafts' | 'proposals'> & { drafts: Proposal[]; proposals: Proposal[] };
+export type StopAllResult = S['StopAllResultDto'];
+export type ConsentRequest = S['ConsentRequestDto'];
+export type ConsentResult = S['ConsentResultDto'];
+
+export type DemoNotice = S['DemoNoticeDto'];
+export type DemoPersona = S['DemoPersonaDto'];
+export type DemoState = S['DemoStateDto'];
+export type DemoAgentScenario = 'draft' | 'submit' | 'refused' | 'quota';
+export type DemoSwitchResult = Omit<S['DemoSwitchResultDto'], 'me'> & { me: Me };
+export type DemoEditResult = S['DemoEditResultDto'];
+export type DemoProposalResult = S['DemoProposalResultDto'];
+export type DemoDecisionResult = S['DemoDecisionResultDto'];
+export type DemoAgentResult = S['DemoAgentResultDto'];
+export type DemoGuestReadResult = S['DemoGuestReadResultDto'];
+export type DemoResetResult = S['DemoResetResultDto'];

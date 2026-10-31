@@ -61,7 +61,8 @@ comptes, tous avec le mot de passe `demo` :
 
 Connectez-vous en `bob` pour valider les deux propositions que `david` a envoyées à Team Finance. La
 [boîte à outils de démo](docs/fr/demo.md) change de personnage d'un clic et fait agir un collègue, une autre équipe, un
-validateur, un agent IA ou l'invitée, pour essayer seul les fonctions collaboratives.
+validateur, un agent IA ou l'invitée, pour essayer seul les fonctions collaboratives : ouvrez-la avec le bouton
+**Démo** en bas de chaque page.
 
 N'activez jamais le mode démonstration sur un serveur partagé.
 

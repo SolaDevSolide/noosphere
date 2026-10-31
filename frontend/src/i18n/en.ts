@@ -1,3 +1,4 @@
+import { agentsEn } from './agents.en';
 import { accessEn } from './access.en';
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -562,7 +563,6 @@ export const en = {
     operation: { create: 'New record', update: 'Change', delete: 'Deletion' },
     by: (name: string) => `By ${name}`,
     agent: 'AI agent',
-    agentFor: (agent: string, person: string) => `${agent}, for ${person}`,
     submittedOn: (d: string) => `Submitted ${d}`,
     createdOn: (d: string) => `Created ${d}`,
     decidedOn: (d: string) => `Decided ${d}`,
@@ -920,6 +920,7 @@ export const en = {
   },
   notFound: { title: 'Page not found', text: 'This address does not match any page.' },
   access: accessEn,
+  agents: agentsEn,
 };
 
 export type Dict = typeof en;
