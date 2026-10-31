@@ -420,6 +420,79 @@ namespace Noosphere.Api.Data.Migrations
                     b.ToTable("DataObjects");
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.Deployment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<List<string>>("ApplicationIds")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("DeploymentId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Environments")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("LinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("PlannedEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PlannedStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Postponed")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationIds");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("ApplicationIds"), "gin");
+
+                    b.HasIndex("EndedAt");
+
+                    b.HasIndex("LinkId", "DeploymentId")
+                        .IsUnique();
+
+                    b.ToTable("Deployments");
+                });
+
             modelBuilder.Entity("Noosphere.Domain.Flow", b =>
                 {
                     b.Property<string>("Id")
@@ -534,6 +607,286 @@ namespace Noosphere.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("InstanceSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.Link", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<List<string>>("Capabilities")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConfirmedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("ConfirmedHere")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("CutAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CutBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("Demo")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("InstanceName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("KeysRenewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LastExchangeAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OwnEncryptionKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("OwnEncryptionKid")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("OwnPreviousEncryptionKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("OwnPreviousEncryptionKid")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("OwnPreviousUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OwnSigningKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("OwnSigningKid")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("PairedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PairedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("PeerCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("PeerConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PeerEncryptionKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("PeerEncryptionKid")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PeerPreviousSigningKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("PeerPreviousSigningKid")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PeerPreviousUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PeerSigningKey")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("PeerSigningKid")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PeerVersion")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Product")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PeerPreviousSigningKid");
+
+                    b.HasIndex("PeerSigningKid");
+
+                    b.ToTable("Links");
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Bootstrap")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("BurntAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<List<string>>("Capabilities")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("CodeId")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("LinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ProtectedCode")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHash");
+
+                    b.HasIndex("CodeId");
+
+                    b.HasIndex("LinkId");
+
+                    b.ToTable("LinkCodes");
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkExchange", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid?>("LinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("LinkId", "Id");
+
+                    b.ToTable("LinkExchanges", (string)null);
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkNonce", b =>
+                {
+                    b.Property<Guid>("LinkId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Nonce")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("SeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("LinkId", "Nonce");
+
+                    b.HasIndex("SeenAt");
+
+                    b.ToTable("LinkNonces");
                 });
 
             modelBuilder.Entity("Noosphere.Domain.OAuthClient", b =>
@@ -1077,6 +1430,15 @@ namespace Noosphere.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.Deployment", b =>
+                {
+                    b.HasOne("Noosphere.Domain.Link", null)
+                        .WithMany()
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Noosphere.Domain.Flow", b =>
                 {
                     b.HasOne("Noosphere.Domain.Application", null)
@@ -1094,6 +1456,31 @@ namespace Noosphere.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("ToId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkCode", b =>
+                {
+                    b.HasOne("Noosphere.Domain.Link", null)
+                        .WithMany()
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkExchange", b =>
+                {
+                    b.HasOne("Noosphere.Domain.Link", null)
+                        .WithMany()
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.LinkNonce", b =>
+                {
+                    b.HasOne("Noosphere.Domain.Link", null)
+                        .WithMany()
+                        .HasForeignKey("LinkId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

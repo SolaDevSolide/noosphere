@@ -25,6 +25,11 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<AgentToken> AgentTokens => Set<AgentToken>();
     public DbSet<OAuthClient> OAuthClients => Set<OAuthClient>();
     public DbSet<OAuthRequest> OAuthRequests => Set<OAuthRequest>();
+    public DbSet<Link> Links => Set<Link>();
+    public DbSet<LinkCode> LinkCodes => Set<LinkCode>();
+    public DbSet<LinkExchange> LinkExchanges => Set<LinkExchange>();
+    public DbSet<LinkNonce> LinkNonces => Set<LinkNonce>();
+    public DbSet<Deployment> Deployments => Set<Deployment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,6 +177,83 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.HasIndex(x => new { x.Kind, x.EntityId });
         });
         ConfigureAgents(modelBuilder);
+        ConfigureLinks(modelBuilder);
+    }
+
+    private static void ConfigureLinks(ModelBuilder modelBuilder)
+    {
+        const int Url = 2048;
+        const int Key = 4096;
+        const int Kid = 64;
+        modelBuilder.Entity<Link>(e =>
+        {
+            e.Property(x => x.Product).HasMaxLength(50);
+            e.Property(x => x.InstanceName).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Url).HasMaxLength(Url);
+            e.Property(x => x.PeerVersion).HasMaxLength(50);
+            e.Property(x => x.State).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ConfirmedBy).HasMaxLength(100);
+            e.Property(x => x.OwnSigningKey).HasMaxLength(Key);
+            e.Property(x => x.OwnSigningKid).HasMaxLength(Kid);
+            e.Property(x => x.OwnEncryptionKey).HasMaxLength(Key);
+            e.Property(x => x.OwnEncryptionKid).HasMaxLength(Kid);
+            e.Property(x => x.OwnPreviousEncryptionKey).HasMaxLength(Key);
+            e.Property(x => x.OwnPreviousEncryptionKid).HasMaxLength(Kid);
+            e.Property(x => x.PeerSigningKey).HasMaxLength(Key);
+            e.Property(x => x.PeerSigningKid).HasMaxLength(Kid);
+            e.Property(x => x.PeerEncryptionKey).HasMaxLength(Key);
+            e.Property(x => x.PeerEncryptionKid).HasMaxLength(Kid);
+            e.Property(x => x.PeerPreviousSigningKey).HasMaxLength(Key);
+            e.Property(x => x.PeerPreviousSigningKid).HasMaxLength(Kid);
+            e.Property(x => x.Fingerprint).HasMaxLength(100);
+            e.Property(x => x.PairedBy).HasMaxLength(100);
+            e.Property(x => x.CutBy).HasMaxLength(100);
+            e.Property(x => x.Version).IsConcurrencyToken();
+            e.HasIndex(x => x.PeerSigningKid);
+            e.HasIndex(x => x.PeerPreviousSigningKid);
+        });
+        modelBuilder.Entity<LinkCode>(e =>
+        {
+            e.Property(x => x.CodeId).HasMaxLength(8);
+            e.Property(x => x.ProtectedCode).HasMaxLength(Key);
+            e.Property(x => x.CodeHash).HasMaxLength(64);
+            e.Property(x => x.CreatedBy).HasMaxLength(100);
+            e.HasIndex(x => x.CodeId);
+            e.HasIndex(x => x.CodeHash);
+            e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.SetNull);
+        });
+        modelBuilder.Entity<LinkExchange>(e =>
+        {
+            e.ToTable("LinkExchanges");
+            e.Property(x => x.Direction).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Operation).HasMaxLength(30);
+            e.Property(x => x.Result).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Reason).HasMaxLength(50);
+            e.Property(x => x.Detail).HasMaxLength(Rules.MaxShortTextLength);
+            e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.LinkId, x.Id });
+            e.HasIndex(x => x.At);
+        });
+        modelBuilder.Entity<LinkNonce>(e =>
+        {
+            e.HasKey(x => new { x.LinkId, x.Nonce });
+            e.Property(x => x.Nonce).HasMaxLength(100);
+            e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.SeenAt);
+        });
+        modelBuilder.Entity<Deployment>(e =>
+        {
+            e.Property(x => x.DeploymentId).HasMaxLength(100);
+            e.Property(x => x.Title).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Phase).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Url).HasMaxLength(Url);
+            e.Property(x => x.Environments).HasColumnType("jsonb");
+            e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.LinkId, x.DeploymentId }).IsUnique();
+            e.HasIndex(x => x.ApplicationIds).HasMethod("gin");
+            e.HasIndex(x => x.EndedAt);
+        });
     }
 
     private static void ConfigureAgents(ModelBuilder modelBuilder)
