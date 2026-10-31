@@ -58,7 +58,8 @@ changed by administrators only. Every change creates a [revision](history.md). A
 cannot be deleted (409).
 
 `GET /api/{kind}/{id}` also returns, for the reader, `owningTeamId` (null: administrators only), `permissions:
-{publish, propose}`, `pages` (attached pages) and `mentionedIn` (pages linking to the record). A team also returns its
+{publish, propose}`, `pages` (attached pages) and `mentionedIn` (pages linking to the record). Applications and flows
+also return their [deployments](#deployments). A team also returns its
 `members`.
 
 | Kind | Fields (input) | Computed (output) |
@@ -162,6 +163,34 @@ See [AI agents (MCP)](agents.md) for the MCP server at `/mcp`, the OAuth endpoin
 An activity line is `{id, at, connectionId, agentName, person, tool, kind, summary, recordKind, recordId,
 recordTitle}`. Proposals written by an agent have `authorKind: "agent"`, `onBehalfOf` (the person, `{username,
 displayName}`), `agentName` and `agentConnectionId`.
+
+## Links with gestion-mep
+
+Administrators only. See [links with gestion-mep](links.md) for the protocol under `/link/v1`, which lives outside
+`/api` and is not in the OpenAPI document.
+
+| Method and path | Body, answer |
+| --------------- | ------------ |
+| `GET /api/links/codes` | Pairing codes: `{id, codeId, state, capabilities, createdAt, expiresAt, createdBy, usedAt, linkId, failedAttempts, bootstrap}`; `state` is `active`, `used`, `expired` or `burnt` |
+| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes and all capabilities by default), then 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}`: `code` is shown only this once |
+| `GET /api/links` | Every link: `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}`; `state` is `pending`, `active` or `cut` |
+| `GET /api/links/{id}?refresh=true` | One link; `refresh` asks the peer for its status first when the last check is older than a minute |
+| `POST /api/links/{id}/confirm` | `{fingerprint}`, the four words read on gestion-mep; 422 when they differ |
+| `PUT /api/links/{id}/capabilities` | `{capabilities}`, a subset of `catalog:read`, `notices:send`, `deployments:receive` |
+| `POST /api/links/{id}/renew-keys` | New keys, announced to the peer (502 when it refuses) |
+| `POST /api/links/{id}/cut` | `{confirm: true}`: tells the peer (best effort) and erases the keys |
+| `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, newest first: `{id, at, linkId, direction, operation, result, status, reason, detail}` |
+| `GET /api/links/exchanges?cursor=&limit=` | Every exchange line, refused requests of unknown keys included |
+
+## Deployments
+
+`GET /api/applications/{id}/deployments` and `GET /api/flows/{id}/deployments`, for anyone who sees the record in
+full (403 otherwise), return `{upcoming, past}`: upcoming soonest first, past latest first. A flow gets the
+deployments of both its ends. A deployment is `{deploymentId, title, phase, outcome, postponed, plannedStart,
+plannedEnd, url, applicationIds, environments: [{name, production}], updatedAt, receivedAt, source: {linkId,
+product, instanceName, linkActive}}`; `url` is null once the link is cut, and `applicationIds` lists only the
+applications the reader may see. `GET /api/applications/{id}` and `GET /api/flows/{id}` also return `deployments`,
+with the 3 latest past ones.
 
 ## Demo toolbox
 

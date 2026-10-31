@@ -6,6 +6,10 @@ Un fichier Noosphere décrit tout un paysage, en JSON ou en YAML (même contenu)
 `GET /api/export` et `noosphere export`, et ce que lisent `POST /api/import` et `noosphere import`. Les clés sont en
 anglais. Schéma : [docs/format/noosphere-v1.schema.json](../format/noosphere-v1.schema.json) (JSON Schema 2020-12).
 
+Ce format de fichier sert à l'import et à l'export. Les échanges en direct avec une instance de gestion-mep
+(catalogue, avis de changement, déploiements) passent par le [protocole de liaison](liaisons.md#résumé-du-protocole),
+signé et chiffré ; son catalogue porte les mêmes identifiants.
+
 ## Enveloppe
 
 ```yaml

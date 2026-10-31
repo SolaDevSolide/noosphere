@@ -94,7 +94,8 @@ public static class DemoEndpoints
         demo.MapPost("/simulate/agent", SimulateAgent);
         demo.MapPost("/simulate/guest-read", SimulateGuestRead).Produces<ProblemDto>(StatusCodes.Status404NotFound);
 
-        demo.MapPost("/reset", async (DemoResetInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock, Microsoft.AspNetCore.Identity.IPasswordHasher<User> hasher) =>
+        demo.MapPost("/reset", async (DemoResetInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock, Microsoft.AspNetCore.Identity.IPasswordHasher<User> hasher,
+            Links.LinkKeys keys) =>
         {
             if (input.Confirm != true) throw ApiProblem.Invalid(new Dictionary<string, string[]> { ["confirm"] = ["Confirm the reset with confirm: true."] });
             var now = clock.GetUtcNow();
@@ -107,11 +108,11 @@ public static class DemoEndpoints
                 await Bootstrap.ClearLandscape(db);
                 // The accounts stay as they are (passwords and sessions included).
                 await Bootstrap.EnsureDemoUsers(db, hasher, now);
-                await Bootstrap.LoadDemo(db, now);
+                await Bootstrap.LoadDemo(db, now, keys);
                 await transaction.CommitAsync();
             }
-            return new DemoResetResultDto(Notice(await Language(db, user), "Demo reset", "The demo landscape, proposals, agents and access log were reloaded.",
-                "Démo réinitialisée", "Le paysage, les propositions, les agents et le journal des accès de démonstration ont été rechargés.", "/"));
+            return new DemoResetResultDto(Notice(await Language(db, user), "Demo reset", "The demo landscape, proposals, agents, links and access log were reloaded.",
+                "Démo réinitialisée", "Le paysage, les propositions, les agents, les liaisons et le journal des accès de démonstration ont été rechargés.", "/"));
         });
     }
 

@@ -11,18 +11,22 @@ namespace Noosphere.Tests;
 public class ApiTestGroup;
 
 /// <summary>
-/// Starts the application against the PostgreSQL database <c>noosphere_tests</c>, created afresh for every instance
-/// (migrations and demo data loaded by the application at startup). Server: TEST_PG_SERVER, by default
-/// localhost:5432 with postgres/postgres.
+/// Starts the application against the PostgreSQL database <c>noosphere_tests</c> (TEST_PG_DATABASE), created afresh for
+/// every instance (migrations and demo data loaded by the application at startup). Server: TEST_PG_SERVER, by default
+/// localhost:5432 with postgres/postgres. A second instance running at the same time uses another database
+/// (<c>databaseSuffix</c>).
 /// </summary>
 public sealed class ApiFixture : IDisposable
 {
-    public const string Database = "noosphere_tests";
+    public static string Database => Environment.GetEnvironmentVariable("TEST_PG_DATABASE") is { Length: > 0 } name ? name : "noosphere_tests";
 
     public static string Server =>
         Environment.GetEnvironmentVariable("TEST_PG_SERVER") ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres";
 
     public static string ConnectionString => $"{Server};Database={Database}";
+
+    /// <summary>The database of this instance.</summary>
+    public string DatabaseName { get; }
 
     private readonly WebApplicationFactory<Program> _root;
     private readonly WebApplicationFactory<Program> _factory;
@@ -33,12 +37,13 @@ public sealed class ApiFixture : IDisposable
 
     /// <param name="demo">false: an empty instance outside demo mode.</param>
     /// <param name="settings">Extra NOOSPHERE_* variables (without the prefix).</param>
-    public ApiFixture(bool demo = true, IDictionary<string, string>? settings = null, Action<IWebHostBuilder>? host = null)
+    public ApiFixture(bool demo = true, IDictionary<string, string>? settings = null, Action<IWebHostBuilder>? host = null, string databaseSuffix = "")
     {
-        RecreateDatabase();
+        DatabaseName = Database + databaseSuffix;
+        RecreateDatabase(DatabaseName);
         var values = new Dictionary<string, string>
         {
-            ["DATABASE"] = ConnectionString,
+            ["DATABASE"] = $"{Server};Database={DatabaseName}",
             ["DEMO"] = demo ? "true" : "false",
             ["LOGIN_RATE_LIMIT"] = "1000",
             ["KEYS_DIR"] = Path.Combine(Directory, "keys"),
@@ -56,14 +61,15 @@ public sealed class ApiFixture : IDisposable
         _ = _factory.Server; // starts the host: migrations and demo data
     }
 
-    public static void RecreateDatabase()
+    public static void RecreateDatabase(string? name = null)
     {
+        name ??= Database;
         using var cn = new NpgsqlConnection(Server + ";Database=postgres");
         cn.Open();
         using var cmd = cn.CreateCommand();
-        cmd.CommandText = $"drop database if exists {Database} with (force)";
+        cmd.CommandText = $"drop database if exists {name} with (force)";
         cmd.ExecuteNonQuery();
-        cmd.CommandText = $"create database {Database}";
+        cmd.CommandText = $"create database {name}";
         cmd.ExecuteNonQuery();
     }
 

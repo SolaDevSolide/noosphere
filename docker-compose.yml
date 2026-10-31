@@ -33,6 +33,8 @@ services:
       NOOSPHERE_INSTANCE_NAME: ${NOOSPHERE_INSTANCE_NAME:-Noosphere}
       NOOSPHERE_PUBLIC_URL: ${NOOSPHERE_PUBLIC_URL:-}
       NOOSPHERE_TRUSTED_PROXIES: ${NOOSPHERE_TRUSTED_PROXIES:-172.16.0.0/12}
+      # Preset pairing code for a gestion-mep started together (at least 16 characters, single use): docs/en/links.md.
+      NOOSPHERE_LINK_BOOTSTRAP_CODE: ${NOOSPHERE_LINK_BOOTSTRAP_CODE:-}
     volumes:
       - keys:/data/keys
       - backups:/data/backups

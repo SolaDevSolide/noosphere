@@ -29,6 +29,9 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   administrateur et un quota horaire, et ne publient jamais. Chaque appel figure dans leur activité ; **Mes agents**
   et une console des agents les révoquent, un par un ou tous d'un coup. `/llms.txt`, `/llms-full.txt` et une vue
   Markdown de chaque fiche.
+- **Liaisons avec gestion-mep** : les instances appairées lisent le catalogue et envoient leurs déploiements
+  planifiés, affichés sur chaque fiche d'application et de flux. Les requêtes sont signées (RFC 9421) et les corps
+  chiffrés (JWE), avec des empreintes confirmées des deux côtés.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
 ## Démarrage rapide
@@ -90,6 +93,7 @@ Tous les réglages sont des variables d'environnement (voir [.env.example](.env.
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`                   | Durée de conservation du journal des accès, en jours                  |
 | `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`                 | Durée de conservation de l'activité des agents IA, en jours           |
 | `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`             | Enregistrements de clients OAuth par minute et par adresse cliente    |
+| `NOOSPHERE_LINK_BOOTSTRAP_CODE` | (aucun)          | Code d'appairage prédéfini pour gestion-mep démarré en même temps     |
 
 ## Ligne de commande
 
@@ -101,6 +105,7 @@ docker compose exec noosphere noosphere users reset-password dana
 docker compose exec noosphere noosphere export --format yaml > paysage.yaml
 docker compose exec -T noosphere noosphere import - --dry-run < paysage.yaml
 docker compose exec noosphere noosphere demo reset --yes
+docker compose exec noosphere noosphere link code --expires 30m
 ```
 
 ## Documentation
@@ -114,6 +119,7 @@ docker compose exec noosphere noosphere demo reset --yes
 - [Accès, notes protégées et journal des accès](docs/fr/acces.md)
 - [Agents IA (MCP)](docs/fr/agents.md), avec llms.txt et les vues Markdown
 - [Boîte à outils de démo](docs/fr/demo.md)
+- [Liaisons avec gestion-mep](docs/fr/liaisons.md)
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

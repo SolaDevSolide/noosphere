@@ -75,7 +75,7 @@ public static class AccessLogs
     }
 }
 
-/// <summary>Purges the access log and the agent activity (with expired tokens and requests) at startup, then once a day.</summary>
+/// <summary>Purges the access log, the agent activity (with expired tokens and requests), the link exchange log, nonces and old deployments at startup, then once a day.</summary>
 public sealed class AccessLogPurge(IServiceScopeFactory scopes, Settings settings, TimeProvider clock, ILogger<AccessLogPurge> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -91,6 +91,9 @@ public sealed class AccessLogPurge(IServiceScopeFactory scopes, Settings setting
                 if (purged > 0) logger.LogInformation("Access log: {Count} line(s) older than {Days} days purged.", purged, settings.AccessLogDays);
                 var activity = await Agents.AgentRuntime.Purge(db, settings.AgentActivityDays, clock.GetUtcNow(), stoppingToken);
                 if (activity > 0) logger.LogInformation("Agent activity: {Count} line(s) older than {Days} days purged.", activity, settings.AgentActivityDays);
+                var (exchanges, deployments) = await Links.LinkLog.Purge(db, clock.GetUtcNow(), stoppingToken);
+                if (exchanges + deployments > 0)
+                    logger.LogInformation("Links: {Exchanges} exchange line(s) older than 90 days and {Deployments} deployment(s) ended over 365 days ago purged.", exchanges, deployments);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {

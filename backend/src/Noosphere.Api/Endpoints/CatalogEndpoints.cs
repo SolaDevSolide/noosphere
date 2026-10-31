@@ -123,7 +123,10 @@ public static class CatalogEndpoints
             var notes = Notes(access, RecordKind.Application, app, app.ProtectedNotes);
             await AccessLogs.RecordRead(db, access, RecordKind.Application, app, notes.Shown, clock.GetUtcNow());
             return Results.Ok(new ApplicationDetailDto(s.Dto(app, access), await RecordContext.Of(db, access, Records.Application, app))
-                { ProtectedNotes = notes.Value, ProtectedNotesHidden = notes.Hidden });
+            {
+                ProtectedNotes = notes.Value, ProtectedNotesHidden = notes.Hidden,
+                Deployments = await Links.Deployments.Of(db, access, RecordKind.Application, id, Links.Deployments.RecentInDetail),
+            });
         }).Produces<ApplicationDetailDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
         apps.MapPost("", (ApplicationInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             Create(Records.Application, input, user, db, clock, async (e, access) => (await Snapshot.Load(db)).Dto((Application)e, access)))
@@ -174,7 +177,10 @@ public static class CatalogEndpoints
             var notes = Notes(access, RecordKind.Flow, flow, flow.ProtectedNotes);
             await AccessLogs.RecordRead(db, access, RecordKind.Flow, flow, notes.Shown, clock.GetUtcNow());
             return Results.Ok(new FlowDetailDto(s.Dto(flow), await RecordContext.Of(db, access, Records.Flow, flow))
-                { ProtectedNotes = notes.Value, ProtectedNotesHidden = notes.Hidden });
+            {
+                ProtectedNotes = notes.Value, ProtectedNotesHidden = notes.Hidden,
+                Deployments = await Links.Deployments.Of(db, access, RecordKind.Flow, id, Links.Deployments.RecentInDetail),
+            });
         }).Produces<FlowDetailDto>().Produces<ProblemDto>(StatusCodes.Status404NotFound);
         flows.MapPost("", (FlowInput input, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             Create(Records.Flow, input, user, db, clock, async (e, _) => (await Snapshot.Load(db)).Dto((Flow)e)))

@@ -11,6 +11,9 @@ In the interface, the header shows a **Demo** marker and a **Demo** button opens
 scenarios below, the demo agent and the reset, each with a notice and a **Show me** link. It is hidden when demo mode
 is off. See the [user guide](user-guide.md#demo-toolbox).
 
+The demo landscape also holds an active [link](links.md#demo) to a fictional gestion-mep instance, "MEP Alizé",
+with deployments on several applications and a few exchanges. It never calls out; the reset seeds it again.
+
 ## Personas
 
 | Persona | Role | What to try |

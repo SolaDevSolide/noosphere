@@ -2315,6 +2315,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/applications/{id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentsApplication"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/flows/{id}/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DeploymentsFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/applications/{id}/history": {
         parameters: {
             query?: never;
@@ -3671,6 +3703,403 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/links/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkCodeDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkCodeInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkCodeCreatedDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    refresh?: boolean;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkConfirmInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkCapabilitiesInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}/renew-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"];
+                    };
+                };
+                /** @description Bad Gateway */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}/cut": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LinkCutInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/{id}/exchanges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkExchangePageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/links/exchanges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkExchangePageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3899,7 +4328,7 @@ export interface components {
          * @enum {unknown}
          */
         AgentWhoConnects: "anyMember" | "approvalRequired";
-        /** @description An application with its owner, the reader's permissions and its pages. */
+        /** @description An application with its owner, the reader's permissions, its pages and its deployments. */
         ApplicationDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */
             owningTeamId?: null | string;
@@ -3912,6 +4341,8 @@ export interface components {
             protectedNotes?: null | string;
             /** @description The record has protected notes the reader may not read. */
             protectedNotesHidden?: boolean;
+            /** @description Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones. */
+            deployments?: components["schemas"]["DeploymentsDto"];
             id?: string;
             /** @enum {boolean} */
             restricted?: false;
@@ -4213,6 +4644,55 @@ export interface components {
             me: components["schemas"]["MeDto"];
             notice: components["schemas"]["DemoNoticeDto"];
         };
+        /** @description A deployment (a MEP of gestion-mep) touching the record. */
+        DeploymentDto: {
+            deploymentId: string;
+            title: string;
+            phase: components["schemas"]["DeploymentPhase"];
+            outcome: null | components["schemas"]["DeploymentOutcome"];
+            postponed: boolean;
+            /** Format: date-time */
+            plannedStart: null | string;
+            /** Format: date-time */
+            plannedEnd: null | string;
+            /** @description The MEP in gestion-mep; null once the link is cut. */
+            url: null | string;
+            /** @description Applications it touches, among those the reader sees. */
+            applicationIds: string[];
+            environments: components["schemas"]["DeploymentEnvironmentDto"][];
+            /**
+             * Format: date-time
+             * @description Last change on the gestion-mep side.
+             */
+            updatedAt: string;
+            /** Format: date-time */
+            receivedAt: string;
+            source: components["schemas"]["DeploymentSourceDto"];
+        };
+        DeploymentEnvironmentDto: {
+            name: string;
+            production: boolean;
+        };
+        /** @enum {unknown} */
+        DeploymentOutcome: "success" | "success-with-incidents" | "rolled-back" | "failed" | null;
+        /** @enum {unknown} */
+        DeploymentPhase: "preparation" | "execution" | "rollback" | "acceptance" | "closed" | "cancelled";
+        /** @description Deployments of a record. */
+        DeploymentsDto: {
+            /** @description Not closed nor cancelled, soonest first. */
+            upcoming: components["schemas"]["DeploymentDto"][];
+            /** @description Closed or cancelled, latest first (the last three in a record's detail). */
+            past: components["schemas"]["DeploymentDto"][];
+        };
+        /** @description Where a deployment comes from. */
+        DeploymentSourceDto: {
+            /** Format: uuid */
+            linkId: string;
+            product: string;
+            instanceName: string;
+            /** @description False once the link is cut: the deployment stays as history. */
+            linkActive: boolean;
+        };
         /** @description One changed field. `markdown` fields carry the raw texts, for an inline word diff. */
         DiffEntryDto: {
             field: string;
@@ -4298,7 +4778,7 @@ export interface components {
             /** Format: date-time */
             exportedAt: string;
         };
-        /** @description A flow with its owner (its owner team, or else the team of its source application), permissions and pages. */
+        /** @description A flow with its owner (its owner team, or else the team of its source application), permissions, pages and the deployments of its two ends. */
         FlowDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */
             owningTeamId?: null | string;
@@ -4311,6 +4791,8 @@ export interface components {
             protectedNotes?: null | string;
             /** @description The record has protected notes the reader may not read. */
             protectedNotesHidden?: boolean;
+            /** @description Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones. */
+            deployments?: components["schemas"]["DeploymentsDto"];
             id?: string;
             /** @enum {boolean} */
             restricted?: false;
@@ -4519,6 +5001,151 @@ export interface components {
         };
         /** @enum {unknown} */
         Lifecycle: "planned" | "live" | "retiring" | "retired";
+        /** @description Replaces the capabilities of a link. */
+        LinkCapabilitiesInput: {
+            capabilities: null | string[];
+        };
+        /** @description A pairing code just created. `code` is shown only this once: enter it in gestion-mep with the URL of this instance. */
+        LinkCodeCreatedDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            codeId: string;
+            /** Format: date-time */
+            expiresAt: string;
+            capabilities: string[];
+            /** @description The URL to enter in gestion-mep (this instance's public address). */
+            pairUrl: string;
+        };
+        /** @description A pairing code, without its value (shown once, at creation). */
+        LinkCodeDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description Its first four characters, sent by gestion-mep to find it. */
+            codeId: string;
+            state: components["schemas"]["LinkCodeState"];
+            capabilities: string[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            createdBy: string;
+            /** Format: date-time */
+            usedAt: null | string;
+            /** Format: uuid */
+            linkId: null | string;
+            /**
+             * Format: int32
+             * @description Wrong MACs so far; the fifth burns the code.
+             */
+            failedAttempts: number;
+            /** @description Created from NOOSPHERE_LINK_BOOTSTRAP_CODE. */
+            bootstrap: boolean;
+        };
+        /** @description A new pairing code. */
+        LinkCodeInput: {
+            /**
+             * Format: int32
+             * @description 1 to 1440; 15 by default.
+             */
+            expiresInMinutes: null | number;
+            /** @description Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`. All three by default. */
+            capabilities: null | string[];
+        };
+        /** @enum {unknown} */
+        LinkCodeState: "active" | "used" | "expired" | "burnt";
+        /** @description Confirms a link: the fingerprint shown on gestion-mep, typed or pasted (case and extra spaces do not matter). */
+        LinkConfirmInput: {
+            fingerprint: null | string;
+        };
+        /** @description Cutting a link cannot be undone: `confirm` must be true. */
+        LinkCutInput: {
+            confirm: null | boolean;
+        };
+        /** @enum {unknown} */
+        LinkDirection: "in" | "out";
+        /** @description A link with a gestion-mep instance. */
+        LinkDto: {
+            /** Format: uuid */
+            id: string;
+            product: string;
+            instanceName: string;
+            url: string;
+            peerVersion: null | string;
+            /** @description `pending` until an administrator confirms the fingerprint here, `active` after, `cut` once cut by either side. */
+            state: components["schemas"]["LinkState"];
+            confirmedHere: boolean;
+            /** Format: date-time */
+            confirmedAt: null | string;
+            confirmedBy: null | string;
+            /** @description Whether the peer's administrator confirmed it, as last read from the peer; null until known. */
+            peerConfirmed: null | boolean;
+            /** Format: date-time */
+            peerCheckedAt: null | string;
+            capabilities: string[];
+            /** @description Four words, the same on both sides: compare them before confirming. */
+            fingerprint: string;
+            /** Format: date-time */
+            pairedAt: string;
+            pairedBy: string;
+            /**
+             * Format: date-time
+             * @description Last key renewal, by either side ("Keys renewed on …").
+             */
+            keysRenewedAt: null | string;
+            /** Format: date-time */
+            lastExchangeAt: null | string;
+            /** Format: date-time */
+            cutAt: null | string;
+            /** @description The administrator who cut it here, or `peer`. */
+            cutBy: null | string;
+            /** @description A fictional peer of the demo: nothing is sent to it. */
+            demo: boolean;
+            keys: components["schemas"]["LinkKeyIdsDto"];
+            /** Format: int32 */
+            version: number;
+        };
+        /** @description One exchange with the peer, sent (`out`) or received (`in`). */
+        LinkExchangeDto: {
+            /** Format: int64 */
+            id: number;
+            /** Format: date-time */
+            at: string;
+            /** Format: uuid */
+            linkId: null | string;
+            direction: components["schemas"]["LinkDirection"];
+            /** @description `pair`, `status`, `catalog`, `notices`, `deployments`, `rekey` or `unpair`. */
+            operation: string;
+            result: components["schemas"]["LinkExchangeResult"];
+            /** Format: int32 */
+            status: null | number;
+            /** @description For a refusal: `unknown-key`, `link-cut`, `link-not-confirmed`, `clock-skew`, `replay`, `bad-digest`, `bad-signature`... */
+            reason: null | string;
+            detail: null | string;
+        };
+        LinkExchangePageDto: {
+            items: components["schemas"]["LinkExchangeDto"][];
+            /** @description Pass it as `cursor` for the next (older) page; null on the last page. */
+            nextCursor: null | string;
+        };
+        /**
+         * @description Outcome of an exchange: done, refused (by the receiver), failed (network, bad response), or skipped (demo peer).
+         * @enum {unknown}
+         */
+        LinkExchangeResult: "ok" | "refused" | "failed" | "demo";
+        /** @description Key ids (RFC 7638 thumbprints) of a link's four public keys; empty once cut. */
+        LinkKeyIdsDto: {
+            signing: string;
+            encryption: string;
+            peerSigning: string;
+            peerEncryption: string;
+        };
+        /**
+         * @description `pending` until an administrator of this instance confirms the fingerprint, then `active`; `cut` once
+         *             either side cuts it (its keys are erased, its history stays).
+         * @enum {unknown}
+         */
+        LinkState: "pending" | "active" | "cut";
         /** @description A text in the two languages of the interface. */
         LocalizedTextDto: {
             en: string;
@@ -5363,6 +5990,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordAccessDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    DeploymentsApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentsDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    DeploymentsFlow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentsDto"];
                 };
             };
             /** @description Forbidden */

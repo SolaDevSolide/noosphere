@@ -20,13 +20,18 @@ Outside Docker: `dotnet Noosphere.dll <command>`.
 | `noosphere export [--format json\|yaml] [--output <file>]` | Writes the whole landscape and its pages, restricted records and protected notes included (`scope: full`), to standard output or to a file. |
 | `noosphere import <file\|-> [--dry-run] [--format json\|yaml]` | Validates a file, then creates or updates its items. `-` reads standard input. The format comes from the extension, or is guessed. |
 | `noosphere demo reset --yes` | Replaces the whole landscape, its pages, history and proposals with the "Alizé" demo and resets the demo accounts. Demo mode only. |
+| `noosphere link code [--expires 15m] [--capabilities <list>]` | Creates a pairing code for gestion-mep, shown once. See [links](links.md#command-line). |
+| `noosphere link list` | Lists the links with gestion-mep instances. |
+| `noosphere link confirm <id> --fingerprint "<four words>"` | Confirms a link after comparing fingerprints. |
+| `noosphere link renew <id>` | Renews this side's keys of a link. |
+| `noosphere link cut <id> --yes` | Cuts a link and erases its keys. |
 | `noosphere health [--url <url>]` | Exits 0 when the running server is ready. Used by the image's `HEALTHCHECK`. |
 | `noosphere version` | Prints the version. |
 
 ## Output
 
 Results go to standard output, messages and errors to standard error. `--json` makes both machine-readable: data
-commands (`users list`) print their data, and the others print `{code, message, result}`. Errors are written as
+commands (`users list`, `link list`) print their data, and the others print `{code, message, result}`. Errors are written as
 `{code, error, details}`.
 
 ## Exit codes
@@ -38,7 +43,7 @@ commands (`users list`) print their data, and the others print `{code, message, 
 | 2 | Usage error: unknown command or option, missing argument |
 | 3 | Database unreachable or configuration missing |
 | 4 | Confirmation missing (`--yes`) |
-| 5 | Not found: user or file |
+| 5 | Not found: user, file or link |
 
 ## Examples
 

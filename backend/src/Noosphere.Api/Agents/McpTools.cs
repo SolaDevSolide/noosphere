@@ -33,8 +33,9 @@ public sealed class NoosphereMcpTools
         Run(context, "search", call => AgentTools.Search(call, query, kinds), cancellationToken);
 
     [McpServerTool(Name = "get_record", Title = "Read a record", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Reads one record as Markdown with a YAML front matter: its fields, flows in and out, data carried, pages, and protected notes "
-        + "when the agent may read them. Kinds: application, flow, dataObject, team, domain, page.")]
+    [Description("Reads one record as Markdown with a YAML front matter: its fields, flows in and out, data carried, pages, deployments "
+        + "(upcoming and the last three, from gestion-mep) for applications and flows, and protected notes when the agent may read them. "
+        + "Kinds: application, flow, dataObject, team, domain, page.")]
     public static Task<string> GetRecord(RequestContext<CallToolRequestParams> context,
         [Description("application, flow, dataObject, team, domain or page.")] string kind,
         [Description("The record id, a kebab-case slug such as \"billing\" or \"crm-to-billing-customers\".")] string id,

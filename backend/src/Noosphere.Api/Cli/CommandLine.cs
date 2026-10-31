@@ -17,7 +17,7 @@ namespace Noosphere.Api.Cli;
 /// (NOOSPHERE_* environment variables) and works on the database directly. Results go to standard output, messages
 /// and errors to standard error; <c>--json</c> makes both machine-readable. Exit codes: <see cref="ExitCodes"/>.
 /// </summary>
-public static class CommandLine
+public static partial class CommandLine
 {
     public static class ExitCodes
     {
@@ -34,9 +34,10 @@ public static class CommandLine
         public const int NotFound = 5;
     }
 
-    private static readonly string[] Commands = ["migrate", "users", "export", "import", "demo", "health", "help", "version"];
+    private static readonly string[] Commands = ["migrate", "users", "export", "import", "demo", "link", "health", "help", "version"];
     private static readonly HashSet<string> Flags = ["--json", "--yes", "--dry-run", "--help", "-h"];
-    private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password", "--url"];
+    private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password", "--url",
+        "--expires", "--capabilities", "--fingerprint"];
 
     public const string Usage = """
         Usage: noosphere <command> [options]
@@ -53,6 +54,13 @@ public static class CommandLine
           import <file|-> [--dry-run] [--format json|yaml]
                                                    Validate a file, then create or update its items (--dry-run: validate only)
           demo reset --yes                         Replace the landscape with the Alizé demo and reset the demo accounts (demo mode only)
+          link code [--expires 15m] [--capabilities catalog:read,notices:send,deployments:receive]
+                                                   Create a single-use pairing code for gestion-mep (shown once)
+          link list                                List the links with gestion-mep instances and their fingerprints
+          link confirm <id> --fingerprint "<four words>"
+                                                   Confirm a link once the fingerprint matches the one shown on gestion-mep
+          link renew <id>                          Renew this side's keys of a link (the peer is told)
+          link cut <id> --yes                      Cut a link: tell the peer, erase the keys (deployments stay as history)
           health [--url <url>]                     Exit 0 when the running server is ready (default http://127.0.0.1:8080/health/ready)
           version                                  Print the version
           help                                     Print this help
@@ -257,13 +265,15 @@ public static class CommandLine
                 {
                     await Bootstrap.ClearLandscape(db);
                     await Bootstrap.EnsureDemoUsers(db, sp.GetRequiredService<IPasswordHasher<User>>(), now, resetPasswords: true);
-                    await Bootstrap.LoadDemo(db, now);
+                    await Bootstrap.LoadDemo(db, now, sp.GetRequiredService<Links.LinkKeys>());
                     await transaction.CommitAsync();
                 }
                 await Done(output, "Demo landscape and demo accounts reset.", null);
                 return ExitCodes.Success;
             case "demo":
                 throw new UsageException("Expected 'demo reset --yes'.");
+            case "link":
+                return await Link(o, sp, output);
             default:
                 throw new UsageException($"Unknown command '{p[0]}'.");
         }

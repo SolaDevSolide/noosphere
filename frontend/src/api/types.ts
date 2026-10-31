@@ -207,3 +207,32 @@ export type DemoDecisionResult = S['DemoDecisionResultDto'];
 export type DemoAgentResult = S['DemoAgentResultDto'];
 export type DemoGuestReadResult = S['DemoGuestReadResultDto'];
 export type DemoResetResult = S['DemoResetResultDto'];
+
+/* ---- Milestone 5: links with gestion-mep, deployments ---- */
+
+export type LinkState = S['LinkState'];
+export type Link = S['LinkDto'];
+export type LinkKeyIds = S['LinkKeyIdsDto'];
+export type LinkCodeState = S['LinkCodeState'];
+export type LinkCode = S['LinkCodeDto'];
+export type LinkCodeInput = S['LinkCodeInput'];
+/** A new pairing code: `code` is shown only this once. */
+export type LinkCodeCreated = S['LinkCodeCreatedDto'];
+export type LinkConfirmInput = S['LinkConfirmInput'];
+export type LinkCapabilitiesInput = S['LinkCapabilitiesInput'];
+export type LinkCutInput = S['LinkCutInput'];
+export type LinkDirection = S['LinkDirection'];
+export type LinkExchangeResult = S['LinkExchangeResult'];
+export type LinkExchange = S['LinkExchangeDto'];
+export type LinkExchangePage = S['LinkExchangePageDto'];
+/** Capabilities a link may have, in protocol order. */
+export type LinkCapability = 'catalog:read' | 'notices:send' | 'deployments:receive';
+export const LINK_CAPABILITIES: LinkCapability[] = ['catalog:read', 'notices:send', 'deployments:receive'];
+
+export type DeploymentPhase = S['DeploymentPhase'];
+export type DeploymentOutcome = S['DeploymentOutcome'];
+export type Deployment = S['DeploymentDto'];
+export type DeploymentSource = S['DeploymentSourceDto'];
+export type DeploymentEnvironment = S['DeploymentEnvironmentDto'];
+/** Deployments of an application or flow: upcoming (soonest first) and past (latest first). */
+export type Deployments = S['DeploymentsDto'];

@@ -26,6 +26,9 @@ before changing this API?".
   changes with that person's rights, capped by an administrator's ceiling and an hourly quota, and never publish.
   Every call is in their activity; **My agents** and an agents console revoke them, one by one or all at once.
   `/llms.txt`, `/llms-full.txt` and a Markdown view of every record.
+- **Links with gestion-mep**: paired instances read the catalogue and send their planned deployments, shown on
+  every application and flow record. Requests are signed (RFC 9421) and bodies encrypted (JWE), with fingerprints
+  confirmed on both sides.
 - English and French interface. Runs as one container next to PostgreSQL.
 
 ## Quick start
@@ -86,6 +89,7 @@ All settings are environment variables (see [.env.example](.env.example) and
 | `NOOSPHERE_ACCESS_LOG_DAYS`  | `365`               | Days the access log is kept                                    |
 | `NOOSPHERE_AGENT_ACTIVITY_DAYS` | `90`             | Days the AI agents' activity is kept                           |
 | `NOOSPHERE_REGISTRATION_RATE_LIMIT` | `20`         | OAuth client registrations per minute and per client address   |
+| `NOOSPHERE_LINK_BOOTSTRAP_CODE` | (none)           | Preset pairing code for gestion-mep started together           |
 
 ## Command line
 
@@ -97,6 +101,7 @@ docker compose exec noosphere noosphere users reset-password dana
 docker compose exec noosphere noosphere export --format yaml > landscape.yaml
 docker compose exec -T noosphere noosphere import - --dry-run < landscape.yaml
 docker compose exec noosphere noosphere demo reset --yes
+docker compose exec noosphere noosphere link code --expires 30m
 ```
 
 ## Documentation
@@ -110,6 +115,7 @@ docker compose exec noosphere noosphere demo reset --yes
 - [Access, protected notes and the access log](docs/en/access.md)
 - [AI agents (MCP)](docs/en/agents.md), with llms.txt and the Markdown views
 - [Demo toolbox](docs/en/demo.md)
+- [Links with gestion-mep](docs/en/links.md)
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)

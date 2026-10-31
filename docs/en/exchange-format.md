@@ -6,6 +6,10 @@ A Noosphere file describes a whole landscape, in JSON or YAML (same content). It
 `noosphere export` write and what `POST /api/import` and `noosphere import` read. Schema:
 [docs/format/noosphere-v1.schema.json](../format/noosphere-v1.schema.json) (JSON Schema 2020-12).
 
+This file format is for import and export. Live exchanges with a gestion-mep instance (catalogue, change notices,
+deployments) use the signed and encrypted [link protocol](links.md#protocol-summary) instead; its catalogue carries
+the same ids.
+
 ## Envelope
 
 ```yaml

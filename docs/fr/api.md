@@ -60,7 +60,7 @@ renvoie 403). Les domaines et les équipes ne sont modifiés que par les adminis
 
 `GET /api/{kind}/{id}` renvoie aussi, pour le lecteur, `owningTeamId` (null : administrateurs seulement),
 `permissions: {publish, propose}`, `pages` (pages rattachées) et `mentionedIn` (pages qui pointent vers
-l'enregistrement). Une équipe renvoie aussi ses `members`.
+l'enregistrement). Les applications et les flux renvoient aussi leurs [déploiements](#déploiements). Une équipe renvoie aussi ses `members`.
 
 | Type | Champs (saisie) | Calculés (réponse) |
 | ---- | --------------- | ------------------ |
@@ -166,6 +166,34 @@ Voir [Agents IA (MCP)](agents.md) pour le serveur MCP à `/mcp`, les points d'ac
 Une ligne d'activité vaut `{id, at, connectionId, agentName, person, tool, kind, summary, recordKind, recordId,
 recordTitle}`. Les propositions écrites par un agent ont `authorKind: "agent"`, `onBehalfOf` (la personne,
 `{username, displayName}`), `agentName` et `agentConnectionId`.
+
+## Liaisons avec gestion-mep
+
+Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le protocole sous `/link/v1`, hors de
+`/api` et absent du document OpenAPI.
+
+| Méthode et chemin | Corps, réponse |
+| ----------------- | -------------- |
+| `GET /api/links/codes` | Codes d'appairage : `{id, codeId, state, capabilities, createdAt, expiresAt, createdBy, usedAt, linkId, failedAttempts, bootstrap}` ; `state` vaut `active`, `used`, `expired` ou `burnt` |
+| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes et toutes les capacités par défaut), puis 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}` : `code` n'est montré que cette fois |
+| `GET /api/links` | Toutes les liaisons : `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}` ; `state` vaut `pending`, `active` ou `cut` |
+| `GET /api/links/{id}?refresh=true` | Une liaison ; `refresh` demande d'abord son état au pair si la dernière vérification date de plus d'une minute |
+| `POST /api/links/{id}/confirm` | `{fingerprint}`, les quatre mots lus dans gestion-mep ; 422 s'ils diffèrent |
+| `PUT /api/links/{id}/capabilities` | `{capabilities}`, parmi `catalog:read`, `notices:send`, `deployments:receive` |
+| `POST /api/links/{id}/renew-keys` | De nouvelles clés, annoncées au pair (502 s'il refuse) |
+| `POST /api/links/{id}/cut` | `{confirm: true}` : prévient le pair (au mieux) et efface les clés |
+| `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, du plus récent au plus ancien : `{id, at, linkId, direction, operation, result, status, reason, detail}` |
+| `GET /api/links/exchanges?cursor=&limit=` | Toutes les lignes d'échange, y compris les requêtes refusées de clés inconnues |
+
+## Déploiements
+
+`GET /api/applications/{id}/deployments` et `GET /api/flows/{id}/deployments`, pour qui voit la fiche en entier
+(403 sinon), renvoient `{upcoming, past}` : les prochains du plus proche au plus lointain, les passés du plus récent
+au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un déploiement est `{deploymentId, title,
+phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds, environments: [{name, production}],
+updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url` est null une fois la liaison
+coupée, et `applicationIds` ne liste que les applications visibles du lecteur. `GET /api/applications/{id}` et
+`GET /api/flows/{id}` renvoient aussi `deployments`, avec les 3 derniers passés.
 
 ## Boîte à outils de démo
 

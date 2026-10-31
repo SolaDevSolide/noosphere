@@ -21,16 +21,22 @@ public sealed class MarkdownViews
     private readonly string _base;
     private readonly Dictionary<string, string> _teams;
     private readonly Dictionary<string, string> _domains;
+    private readonly IReadOnlyList<Deployment> _deployments;
+    private readonly IReadOnlyDictionary<Guid, Link> _links;
 
-    private MarkdownViews(Snapshot s, IReadOnlyList<Page> pages, Access access, string baseUrl)
+    private MarkdownViews(Snapshot s, IReadOnlyList<Page> pages, Access access, string baseUrl, IReadOnlyList<Deployment> deployments, IReadOnlyDictionary<Guid, Link> links)
     {
-        (_s, _pages, _access, _base) = (s, pages, access, baseUrl);
+        (_s, _pages, _access, _base, _deployments, _links) = (s, pages, access, baseUrl, deployments, links);
         _teams = s.Teams.ToDictionary(t => t.Id, t => t.Name);
         _domains = s.Domains.ToDictionary(d => d.Id, d => d.Name);
     }
 
-    public static async Task<MarkdownViews> Load(NoosphereDbContext db, Access access, string baseUrl, CancellationToken cancel = default) =>
-        new(await Snapshot.Load(db, cancel), await db.Pages.AsNoTracking().OrderBy(p => p.Title).ToListAsync(cancel), access, baseUrl);
+    public static async Task<MarkdownViews> Load(NoosphereDbContext db, Access access, string baseUrl, CancellationToken cancel = default)
+    {
+        var deployments = await db.Deployments.AsNoTracking().ToListAsync(cancel);
+        return new(await Snapshot.Load(db, cancel), await db.Pages.AsNoTracking().OrderBy(p => p.Title).ToListAsync(cancel), access, baseUrl,
+            deployments, await Links.Deployments.Sources(db, deployments, cancel));
+    }
 
     public Snapshot Snapshot => _s;
 
@@ -86,6 +92,8 @@ public sealed class MarkdownViews
         Field(b, "lifecycle", Lower(a.Lifecycle));
         Field(b, "visibility", Lower(a.Visibility));
         Field(b, "sensitivity", Lower(level));
+        var deployments = DeploymentsOf([a.Id]);
+        if (deployments.Upcoming.FirstOrDefault(d => d.PlannedStart is not null)?.PlannedStart is { } next) Field(b, "nextDeployment", Day(next));
         End(b, RecordKind.Application, a.Id);
         b.Append("# ").Append(a.Name).Append("\n\n");
         Line(b, $"Application of {Domain(a.DomainId)}" + (a.TeamId is null ? "" : $", owned by {Team(a.TeamId)}") + $". Lifecycle: {Lower(a.Lifecycle)}.");
@@ -107,6 +115,7 @@ public sealed class MarkdownViews
             b.Append('\n');
         }
         Pages(b, RecordKind.Application, a.Id);
+        DeploymentSection(b, deployments, "## Deployments\n\n");
         Notes(b, RecordKind.Application, a, a.ProtectedNotes);
         return b.ToString();
     }
@@ -138,6 +147,7 @@ public sealed class MarkdownViews
         if (f.PlannedChangeSummary is { } change)
             b.Append("## Planned change\n\n").Append(change).Append(f.PlannedChangeDate is { } date ? $" ({date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)})" : "").Append("\n\n");
         Pages(b, RecordKind.Flow, f.Id);
+        DeploymentSection(b, DeploymentsOf([f.FromId, f.ToId]), "## Deployments of its applications\n\n");
         Notes(b, RecordKind.Flow, f, f.ProtectedNotes);
         return b.ToString();
     }
@@ -286,6 +296,42 @@ public sealed class MarkdownViews
         foreach (var p in pages) b.Append("- ").Append(Link(RecordKind.Page, p.Id, p.Title)).Append('\n');
         b.Append('\n');
     }
+
+    private Contracts.DeploymentsDto DeploymentsOf(string[] apps) =>
+        Links.Deployments.Split(_deployments.Where(d => d.ApplicationIds.Any(apps.Contains)), _links, _access, Links.Deployments.RecentInDetail);
+
+    /// <summary>Deployments from gestion-mep: the upcoming ones, then the last three past ones.</summary>
+    private static void DeploymentSection(StringBuilder b, Contracts.DeploymentsDto deployments, string heading)
+    {
+        if (deployments.Upcoming.Count + deployments.Past.Count == 0) return;
+        b.Append(heading);
+        var sources = deployments.Upcoming.Concat(deployments.Past).Select(d => d.Source).DistinctBy(s => s.LinkId)
+            .Select(s => $"{s.InstanceName} ({s.Product}{(s.LinkActive ? "" : ", link cut")})");
+        b.Append("From ").Append(string.Join(", ", sources)).Append(".\n\n");
+        foreach (var d in deployments.Upcoming)
+            b.Append("- ").Append(d.PlannedStart is { } start ? $"Planned {Moment(start)}" : "Not scheduled yet").Append(": ").Append(Title(d))
+                .Append(" (").Append(Lower(d.Phase)).Append(d.Postponed ? ", postponed" : "").Append(Environments(d)).Append(")\n");
+        foreach (var d in deployments.Past)
+            b.Append("- ").Append((d.PlannedEnd ?? d.PlannedStart) is { } when ? Day(when) : "Past").Append(": ").Append(Title(d))
+                .Append(" (").Append(Lower(d.Phase)).Append(d.Outcome is { } o ? ", " + Outcome(o) : "").Append(Environments(d)).Append(")\n");
+        b.Append('\n');
+    }
+
+    private static string Title(Contracts.DeploymentDto d) => d.Url is { } url ? $"[{Escape(d.Title)}]({url})" : Escape(d.Title);
+
+    private static string Environments(Contracts.DeploymentDto d) =>
+        d.Environments.Count == 0 ? "" : ", " + string.Join(", ", d.Environments.Select(e => e.Production ? $"{e.Name} (production)" : e.Name));
+
+    private static string Outcome(DeploymentOutcome o) => o switch
+    {
+        DeploymentOutcome.SuccessWithIncidents => "success with incidents",
+        DeploymentOutcome.RolledBack => "rolled back",
+        _ => Lower(o),
+    };
+
+    private static string Day(DateTimeOffset t) => t.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static string Moment(DateTimeOffset t) => t.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) + " UTC";
 
     private void Notes(StringBuilder b, RecordKind kind, VersionedEntity e, string? notes)
     {
