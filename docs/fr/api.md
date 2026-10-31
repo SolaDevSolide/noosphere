@@ -188,7 +188,7 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 ## Déploiements
 
 `GET /api/applications/{id}/deployments` et `GET /api/flows/{id}/deployments`, pour qui voit la fiche en entier
-(403 sinon), renvoient `{upcoming, past}` : les prochains du plus proche au plus lointain, les passés du plus récent
+(403 sinon ; les invités reçoivent des listes vides), renvoient `{upcoming, past}` : les prochains du plus proche au plus lointain, les passés du plus récent
 au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un déploiement est `{deploymentId, title,
 phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds, environments: [{name, production}],
 updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url` reste une fois la liaison

@@ -308,6 +308,10 @@ public sealed class LinkTests : IAsyncLifetime, IDisposable
         // A flow shows the deployments of its ends.
         var flow = await bob.GetJson("/api/flows/crm-to-billing-customers/deployments");
         Assert.Contains(flow.GetProperty("upcoming").EnumerateArray(), d => d.Str("deploymentId") == mep);
+        // Guests do not see deployments, even on a record shared with them.
+        var claire = await _api.SignedIn("claire");
+        Assert.Equal(0, (await claire.GetJson("/api/flows/portal-billing")).GetProperty("deployments").GetProperty("upcoming").GetArrayLength());
+        Assert.Equal(0, (await claire.GetJson("/api/flows/portal-billing/deployments")).GetProperty("upcoming").GetArrayLength());
 
         // Same id: updated; an older event changes nothing.
         await _peer.Call(client, HttpMethod.Post, "/link/v1/deployments", new JsonObject
