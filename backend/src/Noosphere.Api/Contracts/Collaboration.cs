@@ -25,7 +25,7 @@ public sealed record PageRefDto(string Id, string Title);
 
 // ---------- Record details ----------
 
-/// <summary>An application with its owner, the reader's permissions and its pages.</summary>
+/// <summary>An application with its owner, the reader's permissions, its pages and its deployments.</summary>
 public sealed record ApplicationDetailDto : ApplicationDto
 {
     public ApplicationDetailDto(ApplicationDto record, RecordContextDto context) : base(record) =>
@@ -42,9 +42,11 @@ public sealed record ApplicationDetailDto : ApplicationDto
     public string? ProtectedNotes { get; init; }
     /// <summary>The record has protected notes the reader may not read.</summary>
     public bool ProtectedNotesHidden { get; init; }
+    /// <summary>Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones.</summary>
+    public DeploymentsDto Deployments { get; init; } = new([], []);
 }
 
-/// <summary>A flow with its owner (its owner team, or else the team of its source application), permissions and pages.</summary>
+/// <summary>A flow with its owner (its owner team, or else the team of its source application), permissions, pages and the deployments of its two ends.</summary>
 public sealed record FlowDetailDto : FlowDto
 {
     public FlowDetailDto(FlowDto record, RecordContextDto context) : base(record) =>
@@ -61,6 +63,8 @@ public sealed record FlowDetailDto : FlowDto
     public string? ProtectedNotes { get; init; }
     /// <summary>The record has protected notes the reader may not read.</summary>
     public bool ProtectedNotesHidden { get; init; }
+    /// <summary>Deployments received from linked gestion-mep instances: the upcoming ones and the last three past ones.</summary>
+    public DeploymentsDto Deployments { get; init; } = new([], []);
 }
 
 /// <summary>A data object with its owner (the team of its source application), permissions and pages.</summary>
