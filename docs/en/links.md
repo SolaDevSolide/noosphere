@@ -116,10 +116,10 @@ for those of unknown keys), kept 90 days.
 | `bad-mac` | 401 | The code is wrong after its first 4 characters. 5 failures burn it. |
 | `code-used` / `code-burnt` | 409 / 410 | Create a new code. |
 | `unknown-key` | 401 | The peer uses a key this side does not know: link cut or never paired here, or keys renewed while the peer was unreachable. Pair again. |
-| `link-cut` | 410 | The link was cut on this side. Pair again. |
+| `link-cut` | 401 | The link was cut on this side. Pair again. |
 | `link-not-confirmed` | 403 | Confirm the fingerprint on both sides. |
 | `clock-skew` | 401 | The clocks differ by more than 5 minutes: check NTP on both hosts. |
-| `bad-digest` | 400 | The body changed on the way (a proxy rewriting bodies?). |
+| `bad-digest` | 401 | The body changed on the way (a proxy rewriting bodies?). |
 | `bad-signature` | 401 | Usually a proxy changing the path or query: set `NOOSPHERE_PUBLIC_URL` with the public prefix, and do not rewrite the query. |
 | `replay` | 401 | A nonce was sent twice: a retrying proxy, or a replayed request. |
 | `capability-missing` | 403 | Grant the capability (`PUT /api/links/{id}/capabilities`). |

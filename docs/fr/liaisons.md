@@ -120,10 +120,10 @@ Les requêtes refusées sont inscrites au journal des échanges (`GET /api/links
 | `bad-mac` | 401 | Le code est faux après ses 4 premiers caractères. 5 échecs le grillent. |
 | `code-used` / `code-burnt` | 409 / 410 | Créez un nouveau code. |
 | `unknown-key` | 401 | Le pair utilise une clé inconnue ici : liaison coupée ou jamais appairée ici, ou clés renouvelées pendant que le pair était injoignable. Appairez à nouveau. |
-| `link-cut` | 410 | La liaison a été coupée de ce côté. Appairez à nouveau. |
+| `link-cut` | 401 | La liaison a été coupée de ce côté. Appairez à nouveau. |
 | `link-not-confirmed` | 403 | Confirmez l'empreinte des deux côtés. |
 | `clock-skew` | 401 | Les horloges diffèrent de plus de 5 minutes : vérifiez NTP sur les deux hôtes. |
-| `bad-digest` | 400 | Le corps a changé en route (un proxy qui réécrit les corps ?). |
+| `bad-digest` | 401 | Le corps a changé en route (un proxy qui réécrit les corps ?). |
 | `bad-signature` | 401 | En général un proxy qui change le chemin ou la requête : indiquez le préfixe public dans `NOOSPHERE_PUBLIC_URL`, et ne réécrivez pas la query. |
 | `replay` | 401 | Un nonce envoyé deux fois : un proxy qui réessaie, ou une requête rejouée. |
 | `capability-missing` | 403 | Accordez la capacité (`PUT /api/links/{id}/capabilities`). |

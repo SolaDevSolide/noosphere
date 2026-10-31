@@ -190,6 +190,40 @@ public sealed class LinkTests : IAsyncLifetime, IDisposable
         Assert.Contains(await Exchanges(), e => e.Str("reason") == "unknown-key" && e.GetProperty("linkId").ValueKind == JsonValueKind.Null);
     }
 
+    [Fact]
+    public async Task Troubleshooting_tables_give_the_statuses_the_server_answers()
+    {
+        // The interop test with gestion-mep found link-cut documented as 410 and bad-digest as 400, while both are
+        // answered 401 as the contract says. The tables in both languages must give the status actually answered.
+        var id = await Paired();
+        var client = _api.Client();
+        var answered = new Dictionary<string, int>();
+        void Seen(PeerReply reply) => answered[reply.Reason!] = (int)reply.Status;
+
+        using var stranger = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        Seen(await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog", o: new SignOptions { Key = stranger, KeyId = Jwk(stranger) }));
+        Seen(await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog", o: new SignOptions { CreatedOffset = -400 }));
+        Seen(await _peer.Call(client, HttpMethod.Post, "/link/v1/deployments", new JsonObject { ["events"] = new JsonArray() },
+            new SignOptions { TamperBody = true }));
+        Seen(await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog", o: new SignOptions { Key = stranger }));
+        var nonce = LinkCrypto.NewNonce();
+        await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog", o: new SignOptions { Nonce = nonce });
+        Seen(await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog", o: new SignOptions { Nonce = nonce }));
+        await (await Alice()).PostJson($"/api/links/{id}/cut", new { confirm = true });
+        Seen(await _peer.Call(client, HttpMethod.Get, "/link/v1/catalog"));
+        Assert.Equal(["bad-digest", "bad-signature", "clock-skew", "link-cut", "replay", "unknown-key"], answered.Keys.Order(StringComparer.Ordinal));
+
+        foreach (var doc in new[] { Path.Combine("en", "links.md"), Path.Combine("fr", "liaisons.md") })
+        {
+            var rows = File.ReadAllLines(Path.Combine(OpenApiTests.RepositoryRoot(), "docs", doc))
+                .Select(line => System.Text.RegularExpressions.Regex.Match(line, @"^\| `([a-z-]+)` \| (\d{3}) \|"))
+                .Where(m => m.Success).ToDictionary(m => m.Groups[1].Value, m => int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture));
+            foreach (var (reason, status) in answered)
+                Assert.True(rows.TryGetValue(reason, out var documented) && documented == status,
+                    $"{doc}: `{reason}` is answered {status}, documented {(rows.TryGetValue(reason, out var d) ? d : "nowhere")}.");
+        }
+    }
+
     private static string Jwk(ECDsa key) => LinkCrypto.Jwk.From(key).Kid();
 
     [Fact]
