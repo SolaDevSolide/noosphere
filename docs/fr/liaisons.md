@@ -1,10 +1,11 @@
-# Liaisons avec gestion-mep
+# Liaisons avec d'autres applications
 
 [English](../en/links.md)
 
-Une liaison relie cette instance de Noosphere à une instance de
-[gestion-mep](https://github.com/SolaDevSolide/gestion-mep), qui planifie les mises en production (MEP). Une fois
-liées :
+Une liaison relie cette instance de Noosphere à une autre application qui parle le protocole de liaison décrit
+ci-dessous : un outil de mise en production, une chaîne de livraison, un catalogue de services. La première est
+[gestion-mep](https://github.com/SolaDevSolide/gestion-mep), qui planifie les mises en production (MEP) ; cette page
+la prend en exemple. Une fois liées :
 
 - gestion-mep lit le **catalogue** de Noosphere (applications, flux, domaines, équipes) et suit les applications
   choisies par son administrateur ;
@@ -12,7 +13,8 @@ liées :
 - gestion-mep envoie les **déploiements** touchant les applications suivies. Chaque fiche d'application et de flux
   montre les déploiements à venir et passés, et les agents IA les voient dans `get_record` et les vues Markdown.
 
-Seuls les administrateurs gèrent les liaisons. Les applications restreintes (avec une liste d'accès) ne sont jamais
+Seuls les administrateurs gèrent les liaisons. Les déploiements sont montrés aux membres et aux administrateurs,
+jamais aux invités. Les applications restreintes (avec une liste d'accès) ne sont jamais
 envoyées, ni les flux qui les touchent, ni les notes protégées, les pages ou l'historique.
 
 ## Appairage
@@ -41,11 +43,38 @@ Les capacités se choisissent avec le code (les trois par défaut) et se modifie
 | `notices:send` | à Noosphere d'envoyer des avis de changement à gestion-mep |
 | `deployments:receive` | à gestion-mep d'envoyer des déploiements (`POST /link/v1/deployments`) |
 
-**Renouveler les clés** (`noosphere link renew <id>`) crée de nouvelles clés et prévient le pair, par une requête
-signée avec l'ancienne clé : l'empreinte change, sans nouvelle confirmation. Les requêtes signées avec l'ancienne
-clé restent acceptées 5 minutes. **Couper** (`noosphere link cut <id> --yes`) prévient le pair (au mieux) et efface
-les clés ; c'est définitif. Les déploiements reçus restent comme historique :
-leur page chez le pair reste liée, et la liaison est indiquée comme coupée.
+**Renouveler les clés** (`noosphere link renew <id>`) crée de nouvelles clés et prévient le pair, par une requête signée
+avec l'ancienne clé : l'empreinte change, sans nouvelle confirmation. Les requêtes signées avec l'ancienne clé restent
+acceptées 5 minutes. **Couper** (`noosphere link cut <id> --yes`) prévient le pair (au mieux) et efface les clés ; c'est
+définitif. Les déploiements reçus restent comme historique : leur page chez le pair reste liée, et la liaison est
+indiquée comme coupée.
+
+## Dans l'interface
+
+Les administrateurs ouvrent **Liaisons** dans le menu du compte (`/admin/links`).
+
+- **Applications liées** liste chaque liaison avec ce que l'autre application a annoncé à l'appairage : son nom, son
+  produit, sa version et son adresse, sous une tuile à ses initiales. Puis son état ici (active, en attente de votre
+  confirmation, coupée à une date), son état de l'autre côté (confirmée, en attente de sa confirmation), ce qu'elle
+  peut faire et son dernier échange. Les liaisons coupées restent listées, pour l'historique. Un bandeau signale un
+  code d'appairage encore ouvert.
+- **Appairer une application** crée un code : cochez ce que l'autre application peut faire, puis **Créer le code**.
+  Le code n'est montré qu'une fois, avec son compte à rebours et **Copier** ; la page attend l'autre application et
+  avance d'elle-même quand elle utilise le code. Quitter la page n'annule pas le code : il reste valable jusqu'à son
+  expiration.
+- **Comparer l'empreinte** montre l'application qui a utilisé le code et les quatre mots. S'ils sont identiques à
+  ceux de l'autre écran, choisissez **Ils sont identiques : confirmer** ; si un seul diffère, **Ils diffèrent :
+  couper** efface les clés.
+- La page d'une liaison montre ses **échanges** dans les deux sens, refus compris, avec des filtres (catalogue, avis,
+  événements, refus, clés) et des pages de 50 ; ce qui a été **annoncé à l'appairage** ; l'**empreinte** et la date du
+  dernier renouvellement des clés ; des interrupteurs pour **ce qu'elle peut faire** ; et ce qui est **partagé**.
+  **Renouveler les clés** et **Couper la liaison** (après une confirmation dans la page) agissent aussitôt.
+
+Les fiches d'application et de flux montrent un bloc **Déploiements et changements** après la description : les
+déploiements à venir et les trois derniers passés, chacun avec sa date, sa phase ou son résultat, ses environnements,
+les autres applications qu'il touche et l'application qui l'a envoyé. Chaque entrée ouvre la page du déploiement dans
+cette application ; après une coupure l'entrée reste, marquée « liaison coupée ». Un flux les regroupe par source et
+cible. Le prochain déploiement prévu s'affiche aussi sous le titre de l'application.
 
 ## Résumé du protocole
 

@@ -187,13 +187,14 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 
 ## Déploiements
 
-`GET /api/applications/{id}/deployments` et `GET /api/flows/{id}/deployments`, pour qui voit la fiche en entier
-(403 sinon ; les invités reçoivent des listes vides), renvoient `{upcoming, past}` : les prochains du plus proche au plus lointain, les passés du plus récent
-au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un déploiement est `{deploymentId, title,
-phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds, environments: [{name, production}],
-updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url` reste une fois la liaison
-coupée (`linkActive` vaut alors false), et `applicationIds` ne liste que les applications visibles du lecteur. `GET /api/applications/{id}` et
-`GET /api/flows/{id}` renvoient aussi `deployments`, avec les 3 derniers passés.
+`GET /api/applications/{id}/deployments` et `GET /api/flows/{id}/deployments`, pour qui voit la fiche en entier (403
+sinon ; les invités reçoivent des listes vides), renvoient `{upcoming, past}` : les prochains du plus proche au plus
+lointain, les passés du plus récent au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un
+déploiement est `{deploymentId, title, phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds,
+environments: [{name, production}], updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url`
+reste une fois la liaison coupée (`linkActive` vaut alors false), et `applicationIds` ne liste que les applications
+visibles du lecteur. `GET /api/applications/{id}` et `GET /api/flows/{id}` renvoient aussi `deployments`, avec les 3
+derniers passés.
 
 ## Boîte à outils de démo
 

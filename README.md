@@ -26,9 +26,10 @@ before changing this API?".
   changes with that person's rights, capped by an administrator's ceiling and an hourly quota, and never publish.
   Every call is in their activity; **My agents** and an agents console revoke them, one by one or all at once.
   `/llms.txt`, `/llms-full.txt` and a Markdown view of every record.
-- **Links with gestion-mep**: paired instances read the catalogue and send their planned deployments, shown on
-  every application and flow record. Requests are signed (RFC 9421) and bodies encrypted (JWE), with fingerprints
-  confirmed on both sides.
+- **Links with other applications**, gestion-mep first: paired applications read the catalogue and send their
+  deployments, shown in a "Deployments and changes" block on application and flow records. Administrators pair,
+  confirm, restrict and cut links on the Links page. Requests are signed (RFC 9421) and bodies encrypted (JWE), with
+  fingerprints confirmed on both sides.
 - English and French interface. Runs as one container next to PostgreSQL.
 
 ## Quick start
@@ -115,7 +116,7 @@ docker compose exec noosphere noosphere link code --expires 30m
 - [Access, protected notes and the access log](docs/en/access.md)
 - [AI agents (MCP)](docs/en/agents.md), with llms.txt and the Markdown views
 - [Demo toolbox](docs/en/demo.md)
-- [Links with gestion-mep](docs/en/links.md)
+- [Links with other applications (gestion-mep first)](docs/en/links.md)
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)

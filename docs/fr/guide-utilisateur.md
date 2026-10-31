@@ -145,6 +145,19 @@ sélectionné peut faire, toute l'activité avec des filtres par type et par age
 ou non, plafond, quota horaire, qui peut connecter, enregistrement dynamique et llms.txt sans connexion. Voir
 [Agents IA](agents.md) pour le détail.
 
+## Liaisons et déploiements
+
+Noosphere peut être lié à d'autres applications, comme un outil de mise en production ou une chaîne de livraison.
+Leurs déploiements s'affichent alors sur les fiches d'application et de flux, dans un bloc **Déploiements et
+changements** après la description : ceux à venir d'abord, puis les trois derniers, chacun nommant l'application qui
+l'a envoyé. Choisissez une entrée pour l'ouvrir dans cette application ; les entrées sont en lecture seule ici. Les
+invités ne voient pas ce bloc.
+
+Les administrateurs gèrent les liaisons sur la page **Liaisons** du menu du compte : appairer une application avec un
+code à usage unique, comparer l'empreinte de quatre mots affichée sur les deux écrans avant de confirmer, choisir ce
+que chaque application peut faire, lire le journal des échanges, renouveler les clés ou couper une liaison. Voir
+[Liaisons](liaisons.md).
+
 ## Boîte à outils de démo
 
 Sur une instance de démo (`NOOSPHERE_DEMO=true`), l'en-tête porte un repère **Démo** et un bouton **Démo** reste dans

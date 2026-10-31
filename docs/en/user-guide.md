@@ -131,6 +131,17 @@ connection with its person (approve or refuse waiting ones, revoke), what the se
 with filters by kind and by agent, and the settings: MCP server on or off, the ceiling, the hourly quota, who may
 connect, dynamic registration and llms.txt without signing in. See [AI agents](agents.md) for the details.
 
+## Links and deployments
+
+Noosphere can be linked to other applications, such as a deployment tool or a release pipeline. Their deployments
+then show on application and flow records, in a **Deployments and changes** block after the description: upcoming
+ones first, then the last three, each naming the application that sent it. Select an entry to open it in that
+application; entries are read only here. Guests do not see this block.
+
+Administrators manage links on the **Links** page of the account menu: pair an application with a single-use code,
+compare the four-word fingerprint shown on both screens before confirming, choose what each application may do,
+read the exchange log, renew keys or cut a link. See [Links](links.md).
+
 ## Demo toolbox
 
 On a demo instance (`NOOSPHERE_DEMO=true`) the header shows a **Demo** marker and a **Demo** button stays in the
