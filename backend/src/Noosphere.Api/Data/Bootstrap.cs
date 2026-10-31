@@ -4,6 +4,7 @@ using Noosphere.Api.Auth;
 using System.Text.Json.Nodes;
 using Noosphere.Api.Contracts;
 using Noosphere.Api.Exchange;
+using Noosphere.Api.Links;
 using Noosphere.Api.Services;
 using Noosphere.Domain;
 
@@ -45,6 +46,11 @@ public static class Bootstrap
         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Noosphere.Startup");
 
         await DatabaseMigrator.Migrate(db, settings.BackupsDirectory, logger);
+        if (await sp.GetRequiredService<LinkAdmin>().LoadBootstrapCode(settings.LinkBootstrapCode) is { } bootstrapCode)
+        {
+            if (bootstrapCode.Refused) logger.LogError("{Message}", bootstrapCode.Message);
+            else logger.LogInformation("{Message}", bootstrapCode.Message);
+        }
 
         if (settings.Demo)
         {
@@ -53,7 +59,7 @@ public static class Bootstrap
                 logger.LogInformation("{Count} demo account(s) created.", created);
             if (!await db.Applications.AnyAsync() && !await db.Domains.AnyAsync())
             {
-                await LoadDemo(db, now);
+                await LoadDemo(db, now, sp.GetRequiredService<LinkKeys>());
                 logger.LogInformation("Demo landscape \"Alizé\" loaded.");
             }
             return;
@@ -122,12 +128,14 @@ public static class Bootstrap
 
     /// <summary>
     /// The demo landscape (loaded as of 30 days ago), team memberships, a few revisions of Billing, the customer portal
-    /// shared with claire (guest), and proposals: two waiting for Team Finance and one refused. The demo accounts must exist.
+    /// shared with claire (guest), proposals (two waiting for Team Finance and one refused) and, given the link keys, an
+    /// active link with a fictional gestion-mep and its deployments. The demo accounts must exist.
     /// </summary>
-    public static async Task LoadDemo(NoosphereDbContext db, DateTimeOffset now)
+    public static async Task LoadDemo(NoosphereDbContext db, DateTimeOffset now, LinkKeys? keys = null)
     {
         await LoadDemoLandscape(db, now.AddDays(-30));
         await SeedDemoActivity(db, now);
+        if (keys is not null) await LinkDemo.Seed(db, keys, now);
     }
 
     public static async Task LoadDemoLandscape(NoosphereDbContext db, DateTimeOffset now)
@@ -215,9 +223,12 @@ public static class Bootstrap
             }));
     }
 
-    /// <summary>Deletes the whole landscape, its pages, history and proposals (not the accounts).</summary>
+    /// <summary>Deletes the whole landscape, its pages, history, proposals, links and deployments (not the accounts).</summary>
     public static async Task ClearLandscape(NoosphereDbContext db)
     {
+        await db.LinkCodes.ExecuteDeleteAsync();
+        await db.Links.ExecuteDeleteAsync();
+        await db.LinkExchanges.ExecuteDeleteAsync();
         await db.Proposals.ExecuteDeleteAsync();
         await db.Revisions.ExecuteDeleteAsync();
         await db.Pages.ExecuteDeleteAsync();
