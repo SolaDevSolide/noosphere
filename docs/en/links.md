@@ -1,9 +1,11 @@
-# Links with gestion-mep
+# Links with other applications
 
 [Français](../fr/liaisons.md)
 
-A link joins this Noosphere instance to a [gestion-mep](https://github.com/SolaDevSolide/gestion-mep) instance,
-which plans deployments (MEP). Once linked:
+A link joins this Noosphere instance to another application that speaks the link protocol described below: a
+deployment tool, a release pipeline, a service catalogue. The first one is
+[gestion-mep](https://github.com/SolaDevSolide/gestion-mep), which plans deployments (MEP); this page uses it as the
+example. Once linked:
 
 - gestion-mep reads Noosphere's **catalogue** (applications, flows, domains, teams) and follows the applications its
   administrator chooses;
@@ -11,7 +13,8 @@ which plans deployments (MEP). Once linked:
 - gestion-mep sends the **deployments** touching the followed applications. Each application and flow record shows
   the upcoming and past deployments, and AI agents see them in `get_record` and the Markdown views.
 
-Only administrators manage links. Restricted applications (any access list) are never sent, nor the flows touching
+Only administrators manage links. Deployments are shown to members and administrators, never to guests. Restricted
+applications (any access list) are never sent, nor the flows touching
 them, nor protected notes, pages or history.
 
 ## Pairing
@@ -39,9 +42,33 @@ Capabilities are chosen with the code (all three by default) and changed later
 | `deployments:receive` | gestion-mep posts deployments (`POST /link/v1/deployments`) |
 
 **Renew keys** (`noosphere link renew <id>`) creates new keys and tells the peer, signed with the old key: the
-fingerprint changes and no new confirmation is needed. Requests signed with the old key are still accepted for
-5 minutes. **Cut** (`noosphere link cut <id> --yes`) tells the peer (best effort) and erases the keys; it cannot be
-undone. Received deployments stay as history, without their link to gestion-mep.
+fingerprint changes and no new confirmation is needed. Requests signed with the old key are still accepted for 5
+minutes. **Cut** (`noosphere link cut <id> --yes`) tells the peer (best effort) and erases the keys; it cannot be
+undone. Received deployments stay as history: their page in the peer is still linked, and the link is shown as cut.
+
+## In the interface
+
+Administrators open **Links** in the account menu (`/admin/links`).
+
+- **Linked applications** lists each link with what the other application announced at pairing: its name, product,
+  version and address, under a tile with its initials. Then its state here (active, waiting for your confirmation,
+  cut on a date), its state on the other side (confirmed, waiting for its confirmation), what it may do and its last
+  exchange. Cut links stay listed, for history. A banner shows a pairing code that is still open.
+- **Pair an application** creates a code: tick what the other application may do, then **Create the code**. The code
+  is shown once, with its countdown and **Copy**; the page waits for the other application and moves on by itself
+  when it uses the code. Leaving the page does not cancel the code: it stays valid until it expires.
+- **Compare the fingerprint** shows the application that used the code and the four words. If they match the words
+  on the other screen, choose **They match: confirm**; if even one differs, **They differ: cut** erases the keys.
+- A link's page shows its **exchanges** in both directions, refusals included, with filters (catalogue, notices,
+  events, refused, keys) and pages of 50; what was **announced at pairing**; the **fingerprint** and the date keys
+  were last renewed; switches for **what it may do**; and what is **shared**. **Renew keys** and **Cut the link**
+  (after an in-page confirmation) act at once.
+
+Application and flow records show a **Deployments and changes** block after the description: the upcoming
+deployments and the last three past ones, each with its date, phase or outcome, its environments, the other
+applications it touches and the application that sent it. Each entry opens the deployment's page in that
+application; after a cut the entry stays, marked "link cut". A flow groups them by its source and target. The next
+planned deployment also shows under the application's title.
 
 ## Protocol summary
 

@@ -29,9 +29,10 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   administrateur et un quota horaire, et ne publient jamais. Chaque appel figure dans leur activité ; **Mes agents**
   et une console des agents les révoquent, un par un ou tous d'un coup. `/llms.txt`, `/llms-full.txt` et une vue
   Markdown de chaque fiche.
-- **Liaisons avec gestion-mep** : les instances appairées lisent le catalogue et envoient leurs déploiements
-  planifiés, affichés sur chaque fiche d'application et de flux. Les requêtes sont signées (RFC 9421) et les corps
-  chiffrés (JWE), avec des empreintes confirmées des deux côtés.
+- **Liaisons avec d'autres applications**, gestion-mep d'abord : les applications appairées lisent le catalogue et
+  envoient leurs déploiements, affichés dans un bloc « Déploiements et changements » sur les fiches d'application et
+  de flux. Les administrateurs appairent, confirment, restreignent et coupent les liaisons sur la page Liaisons. Les
+  requêtes sont signées (RFC 9421) et les corps chiffrés (JWE), avec des empreintes confirmées des deux côtés.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
 ## Démarrage rapide
@@ -119,7 +120,7 @@ docker compose exec noosphere noosphere link code --expires 30m
 - [Accès, notes protégées et journal des accès](docs/fr/acces.md)
 - [Agents IA (MCP)](docs/fr/agents.md), avec llms.txt et les vues Markdown
 - [Boîte à outils de démo](docs/fr/demo.md)
-- [Liaisons avec gestion-mep](docs/fr/liaisons.md)
+- [Liaisons avec d'autres applications (gestion-mep d'abord)](docs/fr/liaisons.md)
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

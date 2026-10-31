@@ -11,6 +11,7 @@ import {
   type Application,
   type ApplicationInput,
   type NotesExtras,
+  type DeploymentExtras,
   type Proposal,
   type RecordExtras,
   type Visibility,
@@ -53,6 +54,7 @@ import {
   type EditMode,
 } from './propose';
 import { RecordExtensions } from './RecordExtensions';
+import { ApplicationDeployments, DeploymentHint } from './Deployments';
 
 type Draft = Pick<Application, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'visibility'> & {
   teamId: string;
@@ -61,7 +63,7 @@ type Draft = Pick<Application, 'name' | 'domainId' | 'kind' | 'lifecycle' | 'vis
   protectedNotes: string;
 };
 
-type AppDetail = Application & RecordExtras & NotesExtras;
+type AppDetail = Application & RecordExtras & NotesExtras & DeploymentExtras;
 
 /** The body of a PUT that changes nothing but `patch`; the access list and protected notes are kept when left out. */
 export const appInput = (a: Application, patch: Partial<ApplicationInput> = {}): ApplicationInput => ({
@@ -455,6 +457,7 @@ export function ApplicationRecord() {
           <span className="kb app">{t.search.badge.app}</span> <span className="muted">{t.kindName[a.kind]}</span>
           <h1>{a.name}</h1>
           <p>{[domain?.name, teamName(m, a.teamId), a.tech].filter(Boolean).join(' · ')}</p>
+          {!guest && <DeploymentHint deployments={a.deployments} />}
         </div>
         {!editing && (
           <div className="page-actions">
@@ -573,6 +576,7 @@ export function ApplicationRecord() {
               <h2 id="desc-h">{t.record.fields.description}</h2>
               {a.description ? <Markdown text={a.description} /> : <p className="muted">{t.record.noDescription}</p>}
             </section>
+            {!guest && <ApplicationDeployments appId={a.id} deployments={a.deployments} />}
             <ProtectedNotesSection
               record={a}
               ownerId={owner}

@@ -114,7 +114,7 @@ public static class Deployments
 
     /// <summary>
     /// Deployments of an application, or of a flow (those touching either end), split into upcoming and past;
-    /// <paramref name="pastLimit"/> keeps the latest past ones only.
+    /// <paramref name="pastLimit"/> keeps the latest past ones only. Guests get none.
     /// </summary>
     public static async Task<DeploymentsDto> Of(NoosphereDbContext db, Access access, RecordKind kind, string id, int? pastLimit = null, CancellationToken cancel = default)
     {
@@ -132,6 +132,8 @@ public static class Deployments
 
     public static DeploymentsDto Split(IEnumerable<Deployment> rows, IReadOnlyDictionary<Guid, Link> links, Access access, int? pastLimit = null)
     {
+        // Guests do not see deployments: they are for members and administrators.
+        if (access.IsGuest) return new DeploymentsDto([], []);
         var list = rows.ToList();
         var upcoming = list.Where(d => !Ended(d.Phase))
             .OrderBy(d => d.PlannedStart ?? DateTimeOffset.MaxValue).ThenBy(d => d.Title, StringComparer.OrdinalIgnoreCase);
@@ -146,7 +148,7 @@ public static class Deployments
         var link = links.GetValueOrDefault(d.LinkId);
         var active = link is { State: not LinkState.Cut };
         var environments = JsonSerializer.Deserialize<List<DeploymentEnvironment>>(d.Environments, EnvironmentJson) ?? [];
-        return new DeploymentDto(d.DeploymentId, d.Title, d.Phase, d.Outcome, d.Postponed, d.PlannedStart, d.PlannedEnd, active ? d.Url : null,
+        return new DeploymentDto(d.DeploymentId, d.Title, d.Phase, d.Outcome, d.Postponed, d.PlannedStart, d.PlannedEnd, d.Url,
             [.. d.ApplicationIds.Where(a => access.Facts.Exists(RecordKind.Application, a) && !access.Hidden(RecordKind.Application, a))],
             [.. environments.Select(e => new DeploymentEnvironmentDto(e.Name, e.Production))], d.UpdatedAt, d.ReceivedAt,
             new DeploymentSourceDto(d.LinkId, link?.Product ?? "gestion-mep", link?.InstanceName ?? "", active));

@@ -317,7 +317,7 @@ public sealed class MarkdownViews
         b.Append('\n');
     }
 
-    private static string Title(Contracts.DeploymentDto d) => d.Url is { } url ? $"[{Escape(d.Title)}]({url})" : Escape(d.Title);
+    private static string Title(Contracts.DeploymentDto d) => $"[{Escape(d.Title)}]({d.Url})";
 
     private static string Environments(Contracts.DeploymentDto d) =>
         d.Environments.Count == 0 ? "" : ", " + string.Join(", ", d.Environments.Select(e => e.Production ? $"{e.Name} (production)" : e.Name));

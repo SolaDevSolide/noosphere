@@ -4655,8 +4655,8 @@ export interface components {
             plannedStart: null | string;
             /** Format: date-time */
             plannedEnd: null | string;
-            /** @description The MEP in gestion-mep; null once the link is cut. */
-            url: null | string;
+            /** @description The page of the deployment in the application that sent it; kept once the link is cut, so the history still points to it. */
+            url: string;
             /** @description Applications it touches, among those the reader sees. */
             applicationIds: string[];
             environments: components["schemas"]["DeploymentEnvironmentDto"][];

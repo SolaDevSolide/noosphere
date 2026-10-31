@@ -64,11 +64,11 @@ public sealed record DeploymentEnvironmentDto(string Name, bool Production);
 public sealed record DeploymentSourceDto(Guid LinkId, string Product, string InstanceName, bool LinkActive);
 
 /// <summary>A deployment (a MEP of gestion-mep) touching the record.</summary>
-/// <param name="Url">The MEP in gestion-mep; null once the link is cut.</param>
+/// <param name="Url">The page of the deployment in the application that sent it; kept once the link is cut, so the history still points to it.</param>
 /// <param name="ApplicationIds">Applications it touches, among those the reader sees.</param>
 /// <param name="UpdatedAt">Last change on the gestion-mep side.</param>
 public sealed record DeploymentDto(string DeploymentId, string Title, DeploymentPhase Phase, DeploymentOutcome? Outcome, bool Postponed,
-    DateTimeOffset? PlannedStart, DateTimeOffset? PlannedEnd, string? Url, IReadOnlyList<string> ApplicationIds,
+    DateTimeOffset? PlannedStart, DateTimeOffset? PlannedEnd, string Url, IReadOnlyList<string> ApplicationIds,
     IReadOnlyList<DeploymentEnvironmentDto> Environments, DateTimeOffset UpdatedAt, DateTimeOffset ReceivedAt, DeploymentSourceDto Source);
 
 /// <summary>Deployments of a record.</summary>

@@ -10,6 +10,7 @@ import {
   type Flow,
   type FlowInput,
   type NotesExtras,
+  type DeploymentExtras,
   type Proposal,
   type RecordExtras,
 } from '../api/types';
@@ -50,6 +51,7 @@ import {
   type EditMode,
 } from './propose';
 import { RecordExtensions } from './RecordExtensions';
+import { FlowDeployments } from './Deployments';
 
 interface Draft {
   name: string;
@@ -67,7 +69,7 @@ interface Draft {
   changeDate: string;
 }
 
-type FlowDetail = Flow & RecordExtras & NotesExtras;
+type FlowDetail = Flow & RecordExtras & NotesExtras & DeploymentExtras;
 
 const toDraft = (f: FlowDetail): Draft => ({
   protectedNotes: f.protectedNotes ?? '',
@@ -619,6 +621,15 @@ export function FlowRecord() {
                 <h2 id="desc-h">{t.record.fields.description}</h2>
                 {f.description ? <Markdown text={f.description} /> : <p className="muted">{t.record.noDescription}</p>}
               </section>
+              {!guest && (
+                <FlowDeployments
+                  key={`${f.id}-${f.version}`}
+                  flowId={f.id}
+                  fromId={f.fromId}
+                  toId={f.toId}
+                  initial={f.deployments}
+                />
+              )}
               <ProtectedNotesSection
                 record={f}
                 ownerId={owner}
