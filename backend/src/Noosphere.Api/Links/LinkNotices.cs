@@ -16,31 +16,42 @@ namespace Noosphere.Api.Links;
 public sealed record ChangeCandidate(RecordKind Kind, string Id, bool Added, DateTimeOffset At,
     Visibility? OriginalVisibility = null, bool VisibilityChanged = false, string? OriginalFromId = null, string? OriginalToId = null);
 
-/// <summary>Saved changes waiting to be turned into change notices (singleton, filled by <see cref="LinkChangeInterceptor"/>).</summary>
+/// <summary>
+/// The changes of one logical write, released once they are committed: one <c>SaveChanges</c>, or every save of an
+/// explicit transaction. <paramref name="CommittedAt"/> is when they became visible to other connections.
+/// </summary>
+public sealed record ChangeBatch(DateTimeOffset CommittedAt, IReadOnlyList<ChangeCandidate> Candidates);
+
+/// <summary>Committed changes waiting to be turned into change notices (singleton, filled by <see cref="LinkChangeInterceptor"/>).</summary>
 public sealed class LinkChangeFeed
 {
-    private readonly ConcurrentQueue<ChangeCandidate> _candidates = new();
+    private readonly ConcurrentQueue<ChangeBatch> _batches = new();
 
-    public void Enqueue(IEnumerable<ChangeCandidate> candidates)
+    public void Enqueue(ChangeBatch batch)
     {
-        foreach (var c in candidates) _candidates.Enqueue(c);
+        if (batch.Candidates.Count > 0) _batches.Enqueue(batch);
     }
 
-    public List<ChangeCandidate> Drain()
+    public List<ChangeBatch> Drain()
     {
-        var list = new List<ChangeCandidate>();
-        while (_candidates.TryDequeue(out var c)) list.Add(c);
+        var list = new List<ChangeBatch>();
+        while (_batches.TryDequeue(out var b)) list.Add(b);
         return list;
     }
 }
 
 /// <summary>
 /// Watches every save of the catalogue's records (whatever the path: API, proposals, restore, import, demo) and queues
-/// the changes of the fields the catalogue carries once the save succeeded.
+/// the changes of the fields the catalogue carries once they are committed: at the end of the save, or, inside an
+/// explicit transaction, when it commits (all its saves as one batch; nothing when it rolls back). The notices are
+/// resolved on another connection, which only sees committed rows.
 /// </summary>
-public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clock) : SaveChangesInterceptor
+public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clock) : SaveChangesInterceptor, IDbTransactionInterceptor
 {
+    // Collected in SavingChanges, until the save ends.
     private readonly ConditionalWeakTable<DbContext, List<ChangeCandidate>> _pending = [];
+    // Saved inside an explicit transaction, until it ends.
+    private readonly ConditionalWeakTable<DbContext, List<ChangeCandidate>> _uncommitted = [];
 
     private static readonly string[] AppFields = [nameof(Application.Name), nameof(Application.Description), nameof(Application.DomainId),
         nameof(Application.TeamId), nameof(Application.Kind), nameof(Application.Lifecycle), nameof(Application.Tech), nameof(Application.Visibility)];
@@ -77,6 +88,30 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
     public override Task SaveChangesFailedAsync(DbContextErrorEventData eventData, CancellationToken cancellationToken = default)
     {
         Release(eventData.Context, saved: false);
+        return Task.CompletedTask;
+    }
+
+    public void TransactionCommitted(System.Data.Common.DbTransaction transaction, TransactionEndEventData eventData) => EndTransaction(eventData.Context, committed: true);
+
+    public Task TransactionCommittedAsync(System.Data.Common.DbTransaction transaction, TransactionEndEventData eventData, CancellationToken cancellationToken = default)
+    {
+        EndTransaction(eventData.Context, committed: true);
+        return Task.CompletedTask;
+    }
+
+    public void TransactionRolledBack(System.Data.Common.DbTransaction transaction, TransactionEndEventData eventData) => EndTransaction(eventData.Context, committed: false);
+
+    public Task TransactionRolledBackAsync(System.Data.Common.DbTransaction transaction, TransactionEndEventData eventData, CancellationToken cancellationToken = default)
+    {
+        EndTransaction(eventData.Context, committed: false);
+        return Task.CompletedTask;
+    }
+
+    public void TransactionFailed(System.Data.Common.DbTransaction transaction, TransactionErrorEventData eventData) => EndTransaction(eventData.Context, committed: false);
+
+    public Task TransactionFailedAsync(System.Data.Common.DbTransaction transaction, TransactionErrorEventData eventData, CancellationToken cancellationToken = default)
+    {
+        EndTransaction(eventData.Context, committed: false);
         return Task.CompletedTask;
     }
 
@@ -129,7 +164,30 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
             if (!_pending.TryGetValue(context, out list)) return;
             _pending.Remove(context);
         }
-        if (saved) queue.Enqueue(list);
+        if (!saved) return;
+        // Inside an explicit transaction, the rows are not visible to other connections yet (and may be rolled back).
+        if (context.Database.CurrentTransaction is not null)
+        {
+            lock (_pending)
+            {
+                if (_uncommitted.TryGetValue(context, out var held)) held.AddRange(list);
+                else _uncommitted.Add(context, list);
+            }
+            return;
+        }
+        queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), list));
+    }
+
+    private void EndTransaction(DbContext? context, bool committed)
+    {
+        if (context is null) return;
+        List<ChangeCandidate>? held;
+        lock (_pending)
+        {
+            if (!_uncommitted.TryGetValue(context, out held)) return;
+            _uncommitted.Remove(context);
+        }
+        if (committed) queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), held));
     }
 }
 
@@ -224,10 +282,38 @@ public sealed class NoticeBuckets
 /// <summary>Turns saved changes into notices: shared now → upsert; shared before but not any more (deleted, restricted) → delete.</summary>
 public static class NoticeResolver
 {
-    public static async Task<List<NoticeChange>> Resolve(NoosphereDbContext db, IReadOnlyList<ChangeCandidate> candidates, CancellationToken cancel = default)
+    /// <summary>The notices of one batch (one logical write): "before" is the state just before it.</summary>
+    public static async Task<List<NoticeChange>> Resolve(NoosphereDbContext db, IReadOnlyList<ChangeCandidate> candidates, CancellationToken cancel = default) =>
+        candidates.Count == 0 ? [] : Resolve(await State.Load(db, cancel), candidates);
+
+    /// <summary>
+    /// The notices of each batch, in order, against the same committed state. Each batch is resolved on its own: the
+    /// original values of one write never stand for the state before another one.
+    /// </summary>
+    public static async Task<List<(DateTimeOffset CommittedAt, List<NoticeChange> Changes)>> Resolve(NoosphereDbContext db, IReadOnlyList<ChangeBatch> batches,
+        CancellationToken cancel = default)
     {
-        if (candidates.Count == 0) return [];
-        var visibility = await db.Applications.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Visibility, cancel);
+        if (batches.All(b => b.Candidates.Count == 0)) return [];
+        var state = await State.Load(db, cancel);
+        return [.. batches.Select(b => (b.CommittedAt, Resolve(state, b.Candidates)))];
+    }
+
+    private sealed record State(Dictionary<string, Visibility> Visibility, List<(string Id, string FromId, string ToId)> Flows,
+        HashSet<string> Domains, HashSet<string> Teams)
+    {
+        public static async Task<State> Load(NoosphereDbContext db, CancellationToken cancel)
+        {
+            var visibility = await db.Applications.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Visibility, cancel);
+            var flows = (await db.Flows.AsNoTracking().Select(f => new { f.Id, f.FromId, f.ToId }).ToListAsync(cancel)).Select(f => (f.Id, f.FromId, f.ToId)).ToList();
+            var domains = (await db.Domains.AsNoTracking().Select(d => d.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
+            var teams = (await db.Teams.AsNoTracking().Select(t => t.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
+            return new State(visibility, flows, domains, teams);
+        }
+    }
+
+    private static List<NoticeChange> Resolve(State state, IReadOnlyList<ChangeCandidate> candidates)
+    {
+        var visibility = state.Visibility;
         // Before this batch: the original visibility of the applications it changed, the current one of the others.
         var before = new Dictionary<string, Visibility?>(StringComparer.Ordinal);
         foreach (var c in candidates.Where(c => c.Kind == RecordKind.Application))
@@ -240,10 +326,8 @@ public static class NoticeResolver
         }
         bool SharedNow(string? app) => app is not null && visibility.TryGetValue(app, out var v) && v == Visibility.Everyone;
 
-        var flows = await db.Flows.AsNoTracking().Select(f => new { f.Id, f.FromId, f.ToId }).ToListAsync(cancel);
+        var flows = state.Flows;
         var flowEnds = flows.ToDictionary(f => f.Id, f => (f.FromId, f.ToId));
-        var domains = (await db.Domains.AsNoTracking().Select(d => d.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
-        var teams = (await db.Teams.AsNoTracking().Select(t => t.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
 
         var changes = new Dictionary<(string, string), NoticeChange>();
         void Emit(string kind, string id, bool was, bool now, DateTimeOffset at)
@@ -268,10 +352,10 @@ public static class NoticeResolver
                         exists && SharedNow(ends.FromId) && SharedNow(ends.ToId), c.At);
                     break;
                 case RecordKind.Domain:
-                    Emit("domain", c.Id, !c.Added, domains.Contains(c.Id), c.At);
+                    Emit("domain", c.Id, !c.Added, state.Domains.Contains(c.Id), c.At);
                     break;
                 case RecordKind.Team:
-                    Emit("team", c.Id, !c.Added, teams.Contains(c.Id), c.At);
+                    Emit("team", c.Id, !c.Added, state.Teams.Contains(c.Id), c.At);
                     break;
             }
         }
@@ -281,7 +365,7 @@ public static class NoticeResolver
 
 /// <summary>
 /// Posts change notices to the linked peers that receive them (active, confirmed here, with <c>notices:send</c>): every
-/// second, it resolves the saved changes and posts what is due.
+/// second, it resolves the committed changes and posts what is due.
 /// </summary>
 public sealed class LinkNoticeSender(IServiceScopeFactory scopes, LinkChangeFeed queue, NoticeBuckets buckets, TimeProvider clock, ILogger<LinkNoticeSender> logger)
     : BackgroundService
@@ -305,15 +389,18 @@ public sealed class LinkNoticeSender(IServiceScopeFactory scopes, LinkChangeFeed
     /// <summary>One round: resolve the queued changes, then post the notices that are due.</summary>
     public async Task Flush(CancellationToken cancel = default)
     {
-        var candidates = queue.Drain();
+        var batches = queue.Drain();
         using var scope = scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NoosphereDbContext>();
-        if (candidates.Count > 0)
+        if (batches.Count > 0)
         {
-            var changes = await NoticeResolver.Resolve(db, candidates, cancel);
-            if (changes.Count > 0)
-                foreach (var id in await db.Links.AsNoTracking().Where(Receives).Select(l => l.Id).ToListAsync(cancel))
-                    buckets.Add(id, changes);
+            var resolved = (await NoticeResolver.Resolve(db, batches, cancel)).Where(r => r.Changes.Count > 0).ToList();
+            if (resolved.Count > 0)
+                foreach (var link in await db.Links.AsNoTracking().Where(Receives).Select(l => new { l.Id, l.ConfirmedAt }).ToListAsync(cancel))
+                    // A write committed before the link was confirmed here is already in the catalogue the peer reads
+                    // once confirmed: it is not noticed (nor taken as the state before the later writes).
+                    foreach (var (committedAt, changes) in resolved.Where(r => link.ConfirmedAt is not { } confirmed || r.CommittedAt >= confirmed))
+                        buckets.Add(link.Id, changes);
         }
         var now = clock.GetUtcNow();
         var due = buckets.TakeDue(now);

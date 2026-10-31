@@ -461,6 +461,33 @@ public sealed class LinkTests : IAsyncLifetime, IDisposable
     public async Task Changes_to_shared_records_are_noticed_to_the_peer()
     {
         await Paired();
+        await RestrictingThePortalIsNoticedInFull();
+        // The demo link is never called: its notices are logged as "demo".
+        var demo = Db(db => db.Links.Single(l => l.Demo).Id);
+        Assert.Contains(await Exchanges(demo), e => e.Str("operation") == "notices" && e.Str("result") == "demo");
+    }
+
+    [Fact]
+    public async Task Writes_committed_before_the_confirmation_are_neither_noticed_nor_mixed_with_later_ones()
+    {
+        var id = await Paired();
+        // Writes committed before the link was confirmed (the demo landscape loaded at startup, say) and not resolved
+        // yet: the peer reads them with the catalogue. Here, the portal and its flows created, and billing.
+        var confirmed = Db(db => db.Links.Single(l => l.Id == id).ConfirmedAt!.Value);
+        var earlier = confirmed.AddSeconds(-1);
+        var portalFlows = Db(db => db.Flows.Where(f => f.FromId == "portal" || f.ToId == "portal").Select(f => f.Id).ToList());
+        _api.Services.GetRequiredService<LinkChangeFeed>().Enqueue(new ChangeBatch(earlier,
+        [
+            new ChangeCandidate(RecordKind.Application, "portal", true, earlier),
+            new ChangeCandidate(RecordKind.Application, "billing", true, earlier),
+            .. portalFlows.Select(f => new ChangeCandidate(RecordKind.Flow, f, true, earlier)),
+        ]));
+        await RestrictingThePortalIsNoticedInFull();
+    }
+
+    /// <summary>Restricts the portal: the first notice has a delete for it and for each of its shared flows, and nothing else.</summary>
+    private async Task RestrictingThePortalIsNoticedInFull()
+    {
         var alice = await Alice();
         var portal = await alice.GetJson("/api/applications/portal");
         // Restricting the portal: a delete for it and for its flows, in one notice.
@@ -480,9 +507,53 @@ public sealed class LinkTests : IAsyncLifetime, IDisposable
         Assert.DoesNotContain(changes, c => c["operation"]!.GetValue<string>() == "upsert");
         Assert.All(changes, c => Assert.EndsWith("Z", c["at"]!.GetValue<string>(), StringComparison.Ordinal));
         Assert.Empty(_peer.Errors);
-        // The demo link is never called: its notices are logged as "demo".
-        var demo = Db(db => db.Links.Single(l => l.Demo).Id);
-        Assert.Contains(await Exchanges(demo), e => e.Str("operation") == "notices" && e.Str("result") == "demo");
+    }
+
+    [Fact]
+    public async Task Changes_saved_in_a_transaction_are_released_once_it_commits()
+    {
+        var feed = new LinkChangeFeed();
+        var options = new DbContextOptionsBuilder<NoosphereDbContext>()
+            .UseNpgsql($"{ApiFixture.Server};Database={_api.DatabaseName}")
+            .AddInterceptors(new LinkChangeInterceptor(feed, TimeProvider.System)).Options;
+        async Task Rename(NoosphereDbContext db, string name)
+        {
+            (await db.Teams.FirstAsync(t => t.Id == "team-finance")).Name = name;
+            await db.SaveChangesAsync();
+        }
+
+        // Without a transaction: released by the save.
+        await using (var db = new NoosphereDbContext(options))
+            await Rename(db, "Finance 1");
+        Assert.Equal("team-finance", Assert.Single(Assert.Single(feed.Drain()).Candidates).Id);
+
+        // In a transaction: every save of it, in one batch, once it commits.
+        await using (var db = new NoosphereDbContext(options))
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            await Rename(db, "Finance 2");
+            (await db.Applications.FirstAsync(a => a.Id == "billing")).Name = "Billing 2";
+            await db.SaveChangesAsync();
+            Assert.Empty(feed.Drain());
+            await transaction.CommitAsync();
+        }
+        Assert.Equal([(RecordKind.Team, "team-finance"), (RecordKind.Application, "billing")],
+            Assert.Single(feed.Drain()).Candidates.Select(c => (c.Kind, c.Id)));
+
+        // Rolled back, or never committed: nothing.
+        await using (var db = new NoosphereDbContext(options))
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            await Rename(db, "Finance 3");
+            await transaction.RollbackAsync();
+        }
+        await using (var db = new NoosphereDbContext(options))
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            await Rename(db, "Finance 4");
+        }
+        Assert.Empty(feed.Drain());
+        Assert.Equal("Finance 2", Db(db => db.Teams.Single(t => t.Id == "team-finance").Name));
     }
 
     private async Task<JsonObject> WaitForNotice()
