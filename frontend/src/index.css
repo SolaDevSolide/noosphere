@@ -8855,4 +8855,8 @@ a.wl:hover {
   .atable .rowpick {
     min-height: 40px;
   }
+  .afilt .seg button,
+  .login-top .seg button {
+    min-height: 40px;
+  }
 }
