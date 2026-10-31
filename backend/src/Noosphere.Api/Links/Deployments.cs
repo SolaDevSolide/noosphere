@@ -146,7 +146,7 @@ public static class Deployments
         var link = links.GetValueOrDefault(d.LinkId);
         var active = link is { State: not LinkState.Cut };
         var environments = JsonSerializer.Deserialize<List<DeploymentEnvironment>>(d.Environments, EnvironmentJson) ?? [];
-        return new DeploymentDto(d.DeploymentId, d.Title, d.Phase, d.Outcome, d.Postponed, d.PlannedStart, d.PlannedEnd, active ? d.Url : null,
+        return new DeploymentDto(d.DeploymentId, d.Title, d.Phase, d.Outcome, d.Postponed, d.PlannedStart, d.PlannedEnd, d.Url,
             [.. d.ApplicationIds.Where(a => access.Facts.Exists(RecordKind.Application, a) && !access.Hidden(RecordKind.Application, a))],
             [.. environments.Select(e => new DeploymentEnvironmentDto(e.Name, e.Production))], d.UpdatedAt, d.ReceivedAt,
             new DeploymentSourceDto(d.LinkId, link?.Product ?? "gestion-mep", link?.InstanceName ?? "", active));

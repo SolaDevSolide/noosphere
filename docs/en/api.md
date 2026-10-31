@@ -188,7 +188,8 @@ Administrators only. See [links with gestion-mep](links.md) for the protocol und
 full (403 otherwise), return `{upcoming, past}`: upcoming soonest first, past latest first. A flow gets the
 deployments of both its ends. A deployment is `{deploymentId, title, phase, outcome, postponed, plannedStart,
 plannedEnd, url, applicationIds, environments: [{name, production}], updatedAt, receivedAt, source: {linkId,
-product, instanceName, linkActive}}`; `url` is null once the link is cut, and `applicationIds` lists only the
+product, instanceName, linkActive}}`; `url` stays once the link is cut (`linkActive` is then false), and
+`applicationIds` lists only the
 applications the reader may see. `GET /api/applications/{id}` and `GET /api/flows/{id}` also return `deployments`,
 with the 3 latest past ones.
 

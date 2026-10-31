@@ -44,7 +44,8 @@ Les capacités se choisissent avec le code (les trois par défaut) et se modifie
 **Renouveler les clés** (`noosphere link renew <id>`) crée de nouvelles clés et prévient le pair, par une requête
 signée avec l'ancienne clé : l'empreinte change, sans nouvelle confirmation. Les requêtes signées avec l'ancienne
 clé restent acceptées 5 minutes. **Couper** (`noosphere link cut <id> --yes`) prévient le pair (au mieux) et efface
-les clés ; c'est définitif. Les déploiements reçus restent comme historique, sans lien vers gestion-mep.
+les clés ; c'est définitif. Les déploiements reçus restent comme historique :
+leur page chez le pair reste liée, et la liaison est indiquée comme coupée.
 
 ## Résumé du protocole
 

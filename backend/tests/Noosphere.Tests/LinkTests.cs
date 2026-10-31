@@ -440,7 +440,7 @@ public sealed class LinkTests : IAsyncLifetime, IDisposable
         var deployment = (await (await _api.SignedIn("bob")).GetJson("/api/applications/billing/deployments")).GetProperty("upcoming").EnumerateArray()
             .Single(d => d.Str("deploymentId") == mep);
         Assert.False(deployment.GetProperty("source").GetProperty("linkActive").GetBoolean());
-        Assert.Equal(JsonValueKind.Null, deployment.GetProperty("url").ValueKind);
+        Assert.Equal($"{FakePeer.Url}/meps/{mep}", deployment.Str("url"));
         Assert.Equal("link-cut", (await _peer.Call(client, HttpMethod.Get, "/link/v1/status")).Reason);
         await (await Alice()).PostJson($"/api/links/{id}/confirm", new { fingerprint = link.Fingerprint }, HttpStatusCode.Conflict);
         Assert.Contains(await Exchanges(id), e => e.Str("operation") == "unpair" && e.Str("result") == "ok");

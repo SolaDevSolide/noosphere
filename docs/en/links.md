@@ -41,7 +41,8 @@ Capabilities are chosen with the code (all three by default) and changed later
 **Renew keys** (`noosphere link renew <id>`) creates new keys and tells the peer, signed with the old key: the
 fingerprint changes and no new confirmation is needed. Requests signed with the old key are still accepted for
 5 minutes. **Cut** (`noosphere link cut <id> --yes`) tells the peer (best effort) and erases the keys; it cannot be
-undone. Received deployments stay as history, without their link to gestion-mep.
+undone. Received deployments stay as history: their
+page in the peer is still linked, and the link is shown as cut.
 
 ## Protocol summary
 
