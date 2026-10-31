@@ -111,7 +111,7 @@ Names and descriptions are written for models; each call writes one line of acti
 | Tool | Arguments | Answer |
 | ---- | --------- | ------ |
 | `search` | `query`, `kinds?` (application, flow, dataObject, team, domain, page) | `{query, count, results: [{kind, id, title, subtitle, url}]}` (top 20) |
-| `get_record` | `kind`, `id` | Markdown with a YAML front matter: fields, flows in and out, data, pages, protected notes when allowed |
+| `get_record` | `kind`, `id` | Markdown with a YAML front matter: fields, flows in and out, data, pages, protected notes when allowed, deployments received from [gestion-mep](links.md) |
 | `get_page` | `id` | The page as Markdown with a front matter; wiki links stay `[[kind:id]]` |
 | `list_landscape` | `domain?`, `team?` | Domains, teams, applications and flows (ids, names, lifecycle, sensitivity) |
 | `data_lineage` | `dataObjectId` | Source application, flows carrying it, receiving applications |

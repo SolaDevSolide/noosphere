@@ -21,13 +21,18 @@ Hors Docker : `dotnet Noosphere.dll <commande>`.
 | `noosphere export [--format json\|yaml] [--output <fichier>]` | Écrit tout le paysage et ses pages, enregistrements restreints et notes protégées compris (`scope: full`), sur la sortie standard ou dans un fichier. |
 | `noosphere import <fichier\|-> [--dry-run] [--format json\|yaml]` | Vérifie un fichier, puis crée ou met à jour ses éléments. `-` lit l'entrée standard. Le format vient de l'extension, ou est deviné. |
 | `noosphere demo reset --yes` | Remplace tout le paysage, ses pages, son historique et ses propositions par la démonstration « Alizé » et réinitialise les comptes de démonstration. Mode démonstration seulement. |
+| `noosphere link code [--expires 15m] [--capabilities <liste>]` | Crée un code d'appairage pour gestion-mep, affiché une fois. Voir [liaisons](liaisons.md#ligne-de-commande). |
+| `noosphere link list` | Liste les liaisons avec des instances de gestion-mep. |
+| `noosphere link confirm <id> --fingerprint "<quatre mots>"` | Confirme une liaison après comparaison des empreintes. |
+| `noosphere link renew <id>` | Renouvelle les clés de ce côté d'une liaison. |
+| `noosphere link cut <id> --yes` | Coupe une liaison et efface ses clés. |
 | `noosphere health [--url <url>]` | Renvoie 0 quand le serveur en marche est prêt. Sert au `HEALTHCHECK` de l'image. |
 | `noosphere version` | Affiche la version. |
 
 ## Sorties
 
 Les résultats vont sur la sortie standard, les messages et les erreurs sur la sortie d'erreur. `--json` rend les deux
-lisibles par un programme : les commandes de données (`users list`) écrivent leurs données, les autres
+lisibles par un programme : les commandes de données (`users list`, `link list`) écrivent leurs données, les autres
 `{code, message, result}`. Les erreurs sont écrites sous la forme `{code, error, details}`.
 
 ## Codes de retour
@@ -39,7 +44,7 @@ lisibles par un programme : les commandes de données (`users list`) écrivent l
 | 2 | Commande mal formée : commande ou option inconnue, argument manquant |
 | 3 | Base injoignable ou configuration absente |
 | 4 | Confirmation manquante (`--yes`) |
-| 5 | Introuvable : compte ou fichier |
+| 5 | Introuvable : compte, fichier ou liaison |
 
 ## Exemples
 

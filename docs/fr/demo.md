@@ -11,6 +11,10 @@ Dans l'interface, l'en-tête porte un repère **Démo** et un bouton **Démo** o
 scénarios ci-dessous, agent de démo et réinitialisation, chacun avec un avis et un lien **Voir**. Elle est masquée
 hors du mode démo. Voir le [guide utilisateur](guide-utilisateur.md#boîte-à-outils-de-démo).
 
+Le paysage de démo comprend aussi une [liaison](liaisons.md#démo) active avec une instance fictive de gestion-mep,
+« MEP Alizé », avec des déploiements sur plusieurs applications et quelques échanges. Elle n'appelle jamais
+l'extérieur ; la réinitialisation la recrée.
+
 ## Personnages
 
 | Personnage | Rôle | À essayer |

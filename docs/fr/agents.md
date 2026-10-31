@@ -115,7 +115,7 @@ Les noms et descriptions sont écrits pour les modèles (en anglais) ; chaque ap
 | Outil | Arguments | Réponse |
 | ----- | --------- | ------- |
 | `search` | `query`, `kinds?` (application, flow, dataObject, team, domain, page) | `{query, count, results: [{kind, id, title, subtitle, url}]}` (20 premiers) |
-| `get_record` | `kind`, `id` | Markdown avec un en-tête YAML : champs, flux entrants et sortants, données, pages, notes protégées si permis |
+| `get_record` | `kind`, `id` | Markdown avec un en-tête YAML : champs, flux entrants et sortants, données, pages, notes protégées si permis, déploiements reçus de [gestion-mep](liaisons.md) |
 | `get_page` | `id` | La page en Markdown avec un en-tête ; les liens wiki restent `[[kind:id]]` |
 | `list_landscape` | `domain?`, `team?` | Domaines, équipes, applications et flux (ids, noms, cycle de vie, sensibilité) |
 | `data_lineage` | `dataObjectId` | Application source, flux qui la portent, applications qui la reçoivent |
