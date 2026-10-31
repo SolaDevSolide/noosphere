@@ -17,7 +17,8 @@ public sealed record Settings(
     string TrustedProxies,
     int AccessLogDays = 365,
     int AgentActivityDays = 90,
-    int RegistrationsPerMinute = 20)
+    int RegistrationsPerMinute = 20,
+    string? LinkBootstrapCode = null)
 {
     public const string EnvironmentPrefix = "NOOSPHERE_";
 
@@ -34,7 +35,8 @@ public sealed record Settings(
         TrustedProxies: config["TRUSTED_PROXIES"] ?? "",
         AccessLogDays: Math.Max(1, config.GetValue("ACCESS_LOG_DAYS", 365)),
         AgentActivityDays: Math.Max(1, config.GetValue("AGENT_ACTIVITY_DAYS", 90)),
-        RegistrationsPerMinute: Math.Max(1, config.GetValue("REGISTRATION_RATE_LIMIT", 20)));
+        RegistrationsPerMinute: Math.Max(1, config.GetValue("REGISTRATION_RATE_LIMIT", 20)),
+        LinkBootstrapCode: Blank(config["LINK_BOOTSTRAP_CODE"]));
 
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
