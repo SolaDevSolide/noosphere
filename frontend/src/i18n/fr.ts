@@ -1,3 +1,4 @@
+import { deploymentsFr, linksFr } from './links.fr';
 import { agentsFr } from './agents.fr';
 import { accessFr } from './access.fr';
 import type { Dict } from './en';
@@ -944,4 +945,6 @@ export const fr: Dict = {
   notFound: { title: 'Page introuvable', text: 'Cette adresse ne correspond à aucune page.' },
   access: accessFr,
   agents: agentsFr,
+  links: linksFr,
+  deployments: deploymentsFr,
 };

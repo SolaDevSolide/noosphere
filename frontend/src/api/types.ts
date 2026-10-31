@@ -236,3 +236,7 @@ export type DeploymentSource = S['DeploymentSourceDto'];
 export type DeploymentEnvironment = S['DeploymentEnvironmentDto'];
 /** Deployments of an application or flow: upcoming (soonest first) and past (latest first). */
 export type Deployments = S['DeploymentsDto'];
+/** The `deployments` member of an application or flow detail (absent from older answers). */
+export interface DeploymentExtras {
+  deployments?: Deployments;
+}

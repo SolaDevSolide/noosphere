@@ -1,3 +1,4 @@
+import { deploymentsEn, linksEn } from './links.en';
 import { agentsEn } from './agents.en';
 import { accessEn } from './access.en';
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -921,6 +922,8 @@ export const en = {
   notFound: { title: 'Page not found', text: 'This address does not match any page.' },
   access: accessEn,
   agents: agentsEn,
+  links: linksEn,
+  deployments: deploymentsEn,
 };
 
 export type Dict = typeof en;

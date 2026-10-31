@@ -8,6 +8,12 @@ import type {
   ConsentRequest,
   ConsentResult,
   DemoAgentResult,
+  Deployments,
+  Link,
+  LinkCapability,
+  LinkCode,
+  LinkCodeCreated,
+  LinkExchangePage,
   DemoAgentScenario,
   DemoDecisionResult,
   DemoEditResult,
@@ -340,6 +346,25 @@ export const api = {
   approveConsent: (id: string, scopes?: string[]) =>
     request<ConsentResult>('POST', `/oauth/requests/${enc(id)}/approve`, { scopes: scopes ?? null }),
   denyConsent: (id: string) => request<ConsentResult>('POST', `/oauth/requests/${enc(id)}/deny`, {}),
+
+  linkCodes: () => request<LinkCode[]>('GET', '/links/codes'),
+  createLinkCode: (capabilities: LinkCapability[], expiresInMinutes?: number) =>
+    request<LinkCodeCreated>('POST', '/links/codes', { capabilities, expiresInMinutes: expiresInMinutes ?? null }),
+  links: () => request<Link[]>('GET', '/links'),
+  link: (id: string, refresh?: boolean) =>
+    request<Link>('GET', `/links/${enc(id)}` + q({ refresh: refresh === undefined ? undefined : String(refresh) })),
+  confirmLink: (id: string, fingerprint: string) => request<Link>('POST', `/links/${enc(id)}/confirm`, { fingerprint }),
+  setLinkCapabilities: (id: string, capabilities: LinkCapability[]) =>
+    request<Link>('PUT', `/links/${enc(id)}/capabilities`, { capabilities }),
+  renewLinkKeys: (id: string) => request<Link>('POST', `/links/${enc(id)}/renew-keys`, {}),
+  cutLink: (id: string) => request<Link>('POST', `/links/${enc(id)}/cut`, { confirm: true }),
+  linkExchanges: (id: string, cursor?: string | null, limit?: number) =>
+    request<LinkExchangePage>(
+      'GET',
+      `/links/${enc(id)}/exchanges` + q({ cursor: cursor ?? undefined, limit: limit ? String(limit) : undefined }),
+    ),
+  deployments: (kind: 'application' | 'flow', id: string) =>
+    request<Deployments>('GET', `/${KIND_PATH[kind]}/${enc(id)}/deployments`),
 
   demoState: () => request<DemoState>('GET', '/demo/state'),
   demoSwitch: (username: string) => request<DemoSwitchResult>('POST', '/demo/switch', { username }),

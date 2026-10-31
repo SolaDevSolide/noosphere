@@ -5,6 +5,7 @@ import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
 import {
   IconBotFull,
+  IconLink,
   IconLogo,
   IconReview,
   IconSettings,
@@ -127,6 +128,13 @@ export function UserMenu() {
             <Link role="menuitem" className="mi" to="/admin/agents" onClick={() => setOpen(false)}>
               <IconBotFull />
               {t.agents.menuConsole}
+              <span className="newtag">{t.agents.newTag}</span>
+            </Link>
+          )}
+          {isAdmin && (
+            <Link role="menuitem" className="mi" to="/admin/links" onClick={() => setOpen(false)}>
+              <IconLink />
+              {t.links.menu}
               <span className="newtag">{t.agents.newTag}</span>
             </Link>
           )}

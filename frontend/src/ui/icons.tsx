@@ -457,3 +457,39 @@ export const IconBotFull = ({ size = 16, ...p }: P) => (
     <circle cx="8" cy="2.2" r=".6" fill="currentColor" />
   </svg>
 );
+export const IconKey = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="5.2" cy="10.8" r="2.7" />
+    <path d="M7.2 8.8 13.5 2.5M11.2 4.8l1.6 1.6M9.6 6.4l1.2 1.2" />
+  </svg>
+);
+export const IconScissors = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <circle cx="4.2" cy="4.4" r="1.9" />
+    <circle cx="4.2" cy="11.6" r="1.9" />
+    <path d="M5.8 5.6 13.5 12M5.8 10.4 13.5 4" />
+  </svg>
+);
+export const IconRocket = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M9.5 2.2c2.3-.6 4.2-.4 4.3-.3.1.1.3 2-.3 4.3-.6 2.2-2.6 4.2-4.6 5.3L6.5 9.1 4.4 6.6c1.1-2 3-3.9 5.1-4.4z" />
+    <circle cx="10.2" cy="5.8" r="1.1" />
+    <path d="M4.4 6.6 2 6.9l1.9-2.3 2.4-.3M9.4 11.6l-.3 2.4 2.3-1.9.3-2.4M4.2 11.8c-.8.8-1 2.2-1 2.2s1.4-.2 2.2-1" />
+  </svg>
+);
+export const IconExternal = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M9.5 2.5h4v4M13.5 2.5 7.5 8.5M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3" />
+  </svg>
+);
+export const IconBack = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M13 8H3M7 4 3 8l4 4" />
+  </svg>
+);
+export const IconTerminal = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <rect x="1.8" y="2.5" width="12.4" height="11" rx="1.8" />
+    <path d="M4.5 6.5l2 1.8-2 1.8M8.5 10.5h3" />
+  </svg>
+);

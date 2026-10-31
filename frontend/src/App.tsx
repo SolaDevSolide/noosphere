@@ -27,6 +27,9 @@ import { ConsentPage } from './agents/ConsentPage';
 import { ConsolePage } from './agents/ConsolePage';
 import { MyAgentsPage } from './agents/MyAgentsPage';
 import { DemoProvider, useDemo } from './demo/context';
+import { LinkPage } from './links/LinkPage';
+import { LinksPage } from './links/LinksPage';
+import { PairPage } from './links/PairPage';
 import { DemoToolbox } from './demo/DemoToolbox';
 
 function Booting() {
@@ -62,6 +65,9 @@ function SignedInPages() {
             <Route path="/pages/:id/edit" element={<PageEditor />} />
             <Route path="/my-agents" element={<MyAgentsPage />} />
             <Route path="/admin/agents" element={<ConsolePage />} />
+            <Route path="/admin/links" element={<LinksPage />} />
+            <Route path="/admin/links/pair" element={<PairPage />} />
+            <Route path="/admin/links/:id" element={<LinkPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <DemoToolbox />
