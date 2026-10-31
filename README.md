@@ -58,7 +58,8 @@ password `demo`:
 
 Sign in as `bob` to validate the two proposals that `david` sent to Team Finance. The
 [demo toolbox](docs/en/demo.md) switches persona in one click and makes a colleague, another team, a validator, an AI
-agent or the guest act, to try the collaboration features alone.
+agent or the guest act, to try the collaboration features alone: open it with the **Demo** button at the bottom of
+every page.
 
 Never turn demo mode on for a shared server.
 

@@ -7,6 +7,10 @@ click and make the "other side" act (a colleague, another team, a validator, an 
 mode every `/api/demo/*` address answers 404. Never turn demo mode on for a shared server: anyone can sign in as
 any demo account.
 
+In the interface, the header shows a **Demo** marker and a **Demo** button opens the toolbox: personas, the
+scenarios below, the demo agent and the reset, each with a notice and a **Show me** link. It is hidden when demo mode
+is off. See the [user guide](user-guide.md#demo-toolbox).
+
 ## Personas
 
 | Persona | Role | What to try |

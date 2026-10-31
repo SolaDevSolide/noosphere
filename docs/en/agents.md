@@ -157,6 +157,9 @@ Activity is kept 90 days (`NOOSPHERE_AGENT_ACTIVITY_DAYS`); expired tokens are d
 - **Console** (administrators): every connection with its person, approval of waiting connections, all activity
   with filters, and the emergency stop.
 
+Both are in the account menu (**My agents**, and **AI agents** for administrators); the consent page is
+`/oauth/consent`. The [user guide](user-guide.md#ai-agents) walks through them.
+
 API: see [API, AI agents](api.md#ai-agents).
 
 ## llms.txt and Markdown views

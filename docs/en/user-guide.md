@@ -106,6 +106,47 @@ hold each, the records shared with each guest, what each team owns and restricte
 opening of a restricted record or of protected notes by someone outside the owning team, every administrator read,
 every full export). Filter it by person, record, kind, what and dates; lines are kept 365 days.
 
+## AI agents
+
+An AI agent (Claude, Claude Code, Copilot, Cursor, any MCP client) works with your account: it reads what you see,
+within the ceiling set by your administrator, and writes drafts and proposals. It never publishes on its own.
+
+1. Open **My agents** in the account menu and copy the **MCP server address**. The guides under it show the
+   configuration for an MCP client, the command line and VS Code.
+2. The agent opens a Noosphere page, **Connection request**, that lists what it will and will not be able to do.
+   Untick "Let it write drafts" to give it reading only, then choose **Allow** or **Deny**.
+3. If your administrator requires an approval, the page says so and the agent waits; **Cancel the request** withdraws
+   it. Otherwise the agent shows up in **My agents**.
+
+**My agents** lists each connection with its state (active, paused at its hourly quota, waiting for approval), what
+it can do, and **Revoke**, which cuts its access at once. Below are the drafts and proposals your agents wrote (submit,
+open or discard them) and every call they made, kept 90 days. Guests cannot connect agents.
+
+In the review area, a proposal written by an agent carries the chip **AI agent for** the person, with the agent's name,
+and its page explains who wrote it. Validators decide as for any proposal; a refusal reason goes to the agent and to
+the person.
+
+Administrators open **AI agents** in the account menu: the **emergency stop** (revokes every connection at once), every
+connection with its person (approve or refuse waiting ones, revoke), what the selected agent can do, all activity
+with filters by kind and by agent, and the settings: MCP server on or off, the ceiling, the hourly quota, who may
+connect, dynamic registration and llms.txt without signing in. See [AI agents](agents.md) for the details.
+
+## Demo toolbox
+
+On a demo instance (`NOOSPHERE_DEMO=true`) the header shows a **Demo** marker and a **Demo** button stays in the
+bottom corner (a bottom sheet on phones). It opens the toolbox:
+
+- **Be someone else**: switch persona without a password. You stay on the page when the new persona may see it
+  (untick "Stay on this page when I switch" to always go back to the landscape).
+- **Simulate colleagues**: a colleague edits the record you are on (your next save gets the conflict, and open
+  proposals on it become outdated), a colleague sends you a proposal, a validator accepts or refuses your latest
+  proposal, the guest reads a shared record.
+- **AI agent**: a demo agent acting for you writes a draft, submits a proposal, is refused above the ceiling, or hits
+  its quota.
+- **Reset demo data**, after a confirmation.
+
+Each action shows a notice with a **Show me** link to what changed. See [Demo toolbox](demo.md).
+
 ## Teams
 
 Administrators manage team memberships on the **Users** page (the **Teams** of each account) and on a team record
