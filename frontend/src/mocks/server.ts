@@ -32,6 +32,7 @@ import {
 } from './governance';
 import { handlePages, seedPages } from './pages';
 import { handleAgents, seedAgents } from './agents';
+import { deploymentsFor, handleLinks } from './links';
 import { slugify } from '../docpages/model';
 
 const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
@@ -296,6 +297,19 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     },
   );
   if (ag) return ag;
+  const lk = handleLinks(
+    gov,
+    u,
+    method,
+    url,
+    path,
+    () => parse<Rec>(),
+    (flowId) => {
+      const f = db.flows.find((x) => x.id === flowId);
+      return f && viewFlow(f, u) ? [f.fromId, f.toId] : null;
+    },
+  );
+  if (lk) return lk;
   const can = (r: Role[]) => r.includes(u.role);
 
   if (path === '/auth/me')
@@ -390,6 +404,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         ...v,
         ...recordExtras(gov, u, 'application', cur as unknown as Rec),
         ...acc.notesFor(db, u, 'application', cur, logAccess),
+        deployments: deploymentsFor(u, [cur.id], 3),
       });
     }
     if (method === 'PUT') {
@@ -451,6 +466,7 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
         completeness: flowCompleteness(cur),
         ...recordExtras(gov, u, 'flow', cur as unknown as Rec),
         ...acc.notesFor(db, u, 'flow', cur, logAccess),
+        deployments: deploymentsFor(u, [cur.fromId, cur.toId], 3),
       });
     }
     if (method === 'PUT') {
