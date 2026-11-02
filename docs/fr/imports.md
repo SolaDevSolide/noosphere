@@ -30,7 +30,11 @@ Noosphere s'importe avec l'[import du format d'échange](exchange-format.md).
    au nom proche) et l'origine de l'entrée : fichier (avec son chemin dans l'archive), ligne et emplacement
    (`documents[3]`, `channels.billing.invoice.issued.subscribe`, `Applications!A4`). Les avertissements disent ce qui
    a été laissé de côté ou déduit ; les erreurs, ce qui empêche l'import.
-3. **Application.** `POST /api/imports/{id}/apply` écrit exactement le plan qui a été montré.
+3. **Application.** `POST /api/imports/{id}/apply` écrit exactement le plan qui a été montré, ou une partie : le corps
+   `{ "skip": [3, 7] }` écarte les entrées de ces index (créations et mises à jour). Une entrée liste dans `requires`
+   les entrées qui créent les enregistrements auxquels elle renvoie (son domaine, son équipe, les extrémités d'un
+   flux...) : une entrée gardée ne peut pas dépendre d'une entrée écartée. Le plan appliqué liste les entrées écartées
+   dans `skipped`.
 
 Un plan s'applique une seule fois, par la personne qui l'a fait, dans les **30 minutes**, et seulement si le catalogue
 n'a pas changé depuis la simulation :
@@ -43,6 +47,7 @@ n'a pas changé depuis la simulation :
 | Un enregistrement a été créé, modifié, supprimé ou restauré depuis la simulation (par qui que ce soit) | `409`, et le plan passe à `rejected` : relancez la simulation |
 | Plus de 30 minutes après la simulation | `410`, le plan passe à `expired` |
 | Le plan a des erreurs | `422` |
+| Une entrée gardée dépend d'une entrée écartée, ou tous les changements sont écartés | `422`, le plan reste `planned` |
 
 ## Correspondance
 
@@ -128,7 +133,7 @@ chaque plan, chaque application et chaque refus.
 | ------- | ---- |
 | `POST /api/imports?format=&domainId=&teamId=&applicationId=&parentPageId=` | Simulation : lit les fichiers, enregistre et renvoie le plan (`201`). |
 | `GET /api/imports/{id}` | Le plan (pour son auteur seulement). |
-| `POST /api/imports/{id}/apply` | Applique le plan. |
+| `POST /api/imports/{id}/apply` | Applique le plan ; `{ "skip": [3, 7] }` écarte des entrées. |
 | `GET /api/imports?limit=50` | Les imports récents. |
 | `GET /api/imports/template.xlsx` | Le [modèle Excel](imports-excel.md#modèle). |
 
@@ -155,7 +160,8 @@ Une entrée du plan :
   ],
   "possibleMatches": [],
   "source": { "file": "catalog-info.yaml", "line": 49, "place": "documents[4]" },
-  "hasErrors": false
+  "hasErrors": false,
+  "requires": []
 }
 ```
 
@@ -163,7 +169,7 @@ Une entrée du plan :
 
 ```sh
 docker compose exec noosphere noosphere imports plan /data/catalog-info.yaml /data/adr.zip --team team-crm
-docker compose exec noosphere noosphere imports apply <id-du-plan>
+docker compose exec noosphere noosphere imports apply <id-du-plan> --skip 3,7
 docker compose exec noosphere noosphere imports template --output /data/modele.xlsx
 ```
 

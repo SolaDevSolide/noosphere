@@ -24,8 +24,10 @@ public sealed record ImportPossibleMatchDto(string Id, string Name);
 /// <param name="Changes">Field-level diff: every field set on a creation, the changed fields on an update.</param>
 /// <param name="PossibleMatches">Existing records whose name is close: check them before applying (never merged).</param>
 /// <param name="HasErrors">The entry has errors (see the plan's errors): the plan cannot be applied.</param>
+/// <param name="Requires">Indexes of the entries creating records this one refers to (its domain, team, the ends of a flow...): leaving one of them out leaves this one out too.</param>
 public sealed record ImportEntryDto(int Index, string Action, RecordKind Kind, string Id, string Name, string? MatchedBy,
-    IReadOnlyList<DiffEntryDto> Changes, IReadOnlyList<ImportPossibleMatchDto> PossibleMatches, ImportSourceDto Source, bool HasErrors);
+    IReadOnlyList<DiffEntryDto> Changes, IReadOnlyList<ImportPossibleMatchDto> PossibleMatches, ImportSourceDto Source, bool HasErrors,
+    IReadOnlyList<int> Requires);
 
 /// <summary>A warning (something left out or guessed) or an error (the plan cannot be applied).</summary>
 /// <param name="Entry">Index of the entry concerned, when there is one.</param>
@@ -38,9 +40,15 @@ public sealed record ImportCountsDto(int Create, int Update, int Unchanged, int 
 /// <param name="Status"><c>planned</c>, <c>applied</c>, <c>rejected</c> or <c>expired</c>.</param>
 /// <param name="Outcome">Why applying was refused, for a rejected plan.</param>
 /// <param name="CanApply">The plan is planned, not expired and without errors.</param>
+/// <param name="Skipped">Indexes of the entries left out when the plan was applied (empty before).</param>
 public sealed record ImportPlanDto(Guid Id, ImportStatus Status, string Username, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt,
     DateTimeOffset? ClosedAt, string? Outcome, IReadOnlyList<string> Formats, IReadOnlyList<ImportFileDto> Files, ImportCountsDto Counts,
-    IReadOnlyList<ImportEntryDto> Entries, IReadOnlyList<ImportMessageDto> Warnings, IReadOnlyList<ImportMessageDto> Errors, bool CanApply);
+    IReadOnlyList<ImportEntryDto> Entries, IReadOnlyList<ImportMessageDto> Warnings, IReadOnlyList<ImportMessageDto> Errors, bool CanApply,
+    IReadOnlyList<int> Skipped);
+
+/// <summary>What to apply of a plan.</summary>
+/// <param name="Skip">Indexes of the entries to leave out (creations and updates). The entries that require one of them must be left out too.</param>
+public sealed record ImportApplyInput(IReadOnlyList<int>? Skip = null);
 
 /// <summary>An import in the list of imports (without its entries).</summary>
 public sealed record ImportSummaryDto(Guid Id, ImportStatus Status, string Username, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt,

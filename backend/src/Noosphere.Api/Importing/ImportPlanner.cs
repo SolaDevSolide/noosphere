@@ -11,7 +11,8 @@ namespace Noosphere.Api.Importing;
 
 /// <summary>One write of an applied plan: the whole record after the change, in the shape of its API input.</summary>
 /// <param name="BaseVersion">Version of the record the update was planned against; null for a creation.</param>
-public sealed record PlannedOperation(RecordKind Kind, string Id, bool Create, int? BaseVersion, JsonObject After);
+/// <param name="Entry">Index of the entry of the preview it writes.</param>
+public sealed record PlannedOperation(RecordKind Kind, string Id, bool Create, int? BaseVersion, JsonObject After, int? Entry = null);
 
 /// <summary>A dry run: the preview, and the writes that applying it makes.</summary>
 public sealed record PlanOutcome(IReadOnlyList<string> Formats, IReadOnlyList<ImportFileDto> Files, IReadOnlyList<ImportEntryDto> Entries,
@@ -375,9 +376,12 @@ public sealed partial class ImportPlanner(NoosphereDbContext db, Access access)
     {
         var entries = new List<ImportEntryDto>();
         var operations = new List<PlannedOperation>();
-        var refs = PlannedReferences();
+        var lookups = new List<(RecordKind Kind, string Id)>();
+        var refs = Watched(PlannedReferences(), lookups);
+        var looked = new List<List<(RecordKind Kind, string Id)>>();
         foreach (var p in OrderedForWrite())
         {
+            lookups.Clear();
             var c = p.Candidate;
             var type = Records.Of(c.Kind);
             var index = entries.Count;
@@ -401,6 +405,7 @@ public sealed partial class ImportPlanner(NoosphereDbContext db, Access access)
             entity.Id = p.Id;
             var fieldErrors = new FieldErrors();
             type.Apply(entity, after, fieldErrors, refs);
+            looked.Add([.. lookups]);
             var errorCount = _errors.Count;
             foreach (var (field, message) in fieldErrors.All) _errors.Add(new($"{Label(c)}: {field}: {message}", c.Source, index, field));
             foreach (var (field, message) in c.Errors) _errors.Add(new($"{Label(c)}: {message}", c.Source, index, field));
@@ -412,10 +417,54 @@ public sealed partial class ImportPlanner(NoosphereDbContext db, Access access)
                 if (problem is not null) _errors.Add(new($"{Label(c)}: {problem}", c.Source, index, null));
             }
             entries.Add(new ImportEntryDto(index, action, c.Kind, p.Id, c.Kind == RecordKind.Page ? ReaderKit.Str(after["title"]) ?? c.Name : ReaderKit.Str(after["name"]) ?? c.Name,
-                p.MatchedBy, diff, p.Possible, c.Source, _errors.Count > errorCount));
-            if (action != "unchanged") operations.Add(new PlannedOperation(c.Kind, p.Id, p.Match is null, p.Match?.Entity.Version, after));
+                p.MatchedBy, diff, p.Possible, c.Source, _errors.Count > errorCount, []));
+            if (action != "unchanged") operations.Add(new PlannedOperation(c.Kind, p.Id, p.Match is null, p.Match?.Entity.Version, after, index));
+        }
+        // An entry requires the creations it refers to: leaving one out would leave a reference to nothing.
+        var created = entries.Where(e => e.Action == "create").ToDictionary(e => (e.Kind, e.Id), e => e.Index);
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].Action == "unchanged") continue;
+            var requires = looked[i].Select(l => created.TryGetValue(l, out var at) ? at : -1).Where(at => at >= 0 && at != i).Distinct().Order().ToList();
+            if (requires.Count > 0) entries[i] = entries[i] with { Requires = requires };
         }
         return (entries, operations);
+    }
+
+    /// <summary>The references, noting every id the validation looks up (the records an entry refers to).</summary>
+    private static References Watched(References refs, List<(RecordKind Kind, string Id)> lookups) => new(
+        new LookedUp(refs.Domains, RecordKind.Domain, lookups), new LookedUp(refs.Teams, RecordKind.Team, lookups),
+        new LookedUp(refs.Applications, RecordKind.Application, lookups), new LookedUp(refs.DataObjects, RecordKind.DataObject, lookups),
+        new LookedUp(refs.Flows, RecordKind.Flow, lookups), new LookedUp(refs.Pages, RecordKind.Page, lookups), refs.PageParents, refs.Users);
+
+    /// <summary>A set of ids that notes the ids it is asked about.</summary>
+    private sealed class LookedUp(ISet<string> inner, RecordKind kind, List<(RecordKind Kind, string Id)> lookups) : ISet<string>
+    {
+        public bool Contains(string item)
+        {
+            lookups.Add((kind, item));
+            return inner.Contains(item);
+        }
+
+        public int Count => inner.Count;
+        public bool IsReadOnly => inner.IsReadOnly;
+        public bool Add(string item) => inner.Add(item);
+        void ICollection<string>.Add(string item) => inner.Add(item);
+        public void Clear() => inner.Clear();
+        public void CopyTo(string[] array, int arrayIndex) => inner.CopyTo(array, arrayIndex);
+        public bool Remove(string item) => inner.Remove(item);
+        public IEnumerator<string> GetEnumerator() => inner.GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => inner.GetEnumerator();
+        public void ExceptWith(IEnumerable<string> other) => inner.ExceptWith(other);
+        public void IntersectWith(IEnumerable<string> other) => inner.IntersectWith(other);
+        public bool IsProperSubsetOf(IEnumerable<string> other) => inner.IsProperSubsetOf(other);
+        public bool IsProperSupersetOf(IEnumerable<string> other) => inner.IsProperSupersetOf(other);
+        public bool IsSubsetOf(IEnumerable<string> other) => inner.IsSubsetOf(other);
+        public bool IsSupersetOf(IEnumerable<string> other) => inner.IsSupersetOf(other);
+        public bool Overlaps(IEnumerable<string> other) => inner.Overlaps(other);
+        public bool SetEquals(IEnumerable<string> other) => inner.SetEquals(other);
+        public void SymmetricExceptWith(IEnumerable<string> other) => inner.SymmetricExceptWith(other);
+        public void UnionWith(IEnumerable<string> other) => inner.UnionWith(other);
     }
 
     private static JsonArray Union(JsonNode? current, JsonArray added)

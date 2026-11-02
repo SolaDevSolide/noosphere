@@ -102,10 +102,40 @@ public static class ImportEndpoints
             .RequireEditor()
             .Produces<ProblemDto>(StatusCodes.Status404NotFound);
 
-        imports.MapPost("/{id:guid}/apply", async (Guid id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock, ILoggerFactory loggers) =>
-            await ImportService.Apply(db, await Access.Load(db, user), id, clock.GetUtcNow(), loggers.CreateLogger("Noosphere.Imports")))
+        // The body is optional (no body applies the whole plan), so it is read by hand: a declared body would make the
+        // route refuse requests without a JSON content type.
+        imports.MapPost("/{id:guid}/apply", async (Guid id, HttpRequest request, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock,
+            ILoggerFactory loggers) =>
+        {
+            ImportApplyInput? input = null;
+            if (request.HasJsonContentType())
+            {
+                try
+                {
+                    input = await request.ReadFromJsonAsync<ImportApplyInput>(Records.Json, request.HttpContext.RequestAborted);
+                }
+                catch (System.Text.Json.JsonException)
+                {
+                    throw ApiProblem.BadRequest("Send { \"skip\": [entry indexes] }, or no body to apply the whole plan.");
+                }
+            }
+            return await ImportService.Apply(db, await Access.Load(db, user), id, clock.GetUtcNow(), loggers.CreateLogger("Noosphere.Imports"), input?.Skip);
+        })
             .RequireEditor()
-            .WithSummary("Applies the plan of a dry run (same person, before it expires, catalogue unchanged)")
+            .AddOpenApiOperationTransformer(async (operation, context, cancel) =>
+            {
+                operation.RequestBody = new OpenApiRequestBody
+                {
+                    Required = false,
+                    Description = "Entries to leave out; no body applies the whole plan.",
+                    Content = new Dictionary<string, OpenApiMediaType>
+                    {
+                        ["application/json"] = new() { Schema = await context.GetOrCreateSchemaAsync(typeof(ImportApplyInput), null, cancel) },
+                    },
+                };
+            })
+            .Produces<ImportPlanDto>()
+            .WithSummary("Applies the plan of a dry run (same person, before it expires, catalogue unchanged), leaving out the entries in skip")
             .Produces<ProblemDto>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDto>(StatusCodes.Status404NotFound)
             .Produces<ProblemDto>(StatusCodes.Status409Conflict)

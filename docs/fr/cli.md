@@ -21,7 +21,7 @@ Hors Docker : `dotnet Noosphere.dll <commande>`.
 | `noosphere export [--format json\|yaml] [--output <fichier>]` | Écrit tout le paysage et ses pages, enregistrements restreints et notes protégées compris (`scope: full`), sur la sortie standard ou dans un fichier. |
 | `noosphere import <fichier\|-> [--dry-run] [--format json\|yaml]` | Vérifie un fichier, puis crée ou met à jour ses éléments. `-` lit l'entrée standard. Le format vient de l'extension, ou est deviné. |
 | `noosphere imports plan <fichier>... [--format <format>] [--domain <id>] [--team <id>] [--application <id>] [--parent-page <id>]` | Simulation d'un [import depuis d'autres formats](imports.md) (Backstage, OpenAPI, AsyncAPI, ADR, Mermaid, Excel ; fichiers ou archives zip) : affiche le plan et son id. Sort avec le code 1 si le plan a des erreurs. |
-| `noosphere imports apply <id-du-plan>` | Applique ce plan, dans les 30 minutes et si le catalogue n'a pas changé depuis. |
+| `noosphere imports apply <id-du-plan> [--skip 3,7]` | Applique ce plan, dans les 30 minutes et si le catalogue n'a pas changé depuis ; `--skip` écarte les entrées de ces index (affichés `#3` par `imports plan`). |
 | `noosphere imports template [--output <fichier>]` | Écrit le modèle Excel de l'import (`noosphere-import-template.xlsx` par défaut). |
 | `noosphere demo reset --yes` | Remplace tout le paysage, ses pages, son historique et ses propositions par la démonstration « Alizé » et réinitialise les comptes de démonstration. Mode démonstration seulement. |
 | `noosphere link code [--expires 15m] [--capabilities <liste>]` | Crée un code d'appairage pour gestion-mep, affiché une fois. Voir [liaisons](liaisons.md#ligne-de-commande). |

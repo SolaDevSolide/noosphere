@@ -20,7 +20,7 @@ Outside Docker: `dotnet Noosphere.dll <command>`.
 | `noosphere export [--format json\|yaml] [--output <file>]` | Writes the whole landscape and its pages, restricted records and protected notes included (`scope: full`), to standard output or to a file. |
 | `noosphere import <file\|-> [--dry-run] [--format json\|yaml]` | Validates a file, then creates or updates its items. `-` reads standard input. The format comes from the extension, or is guessed. |
 | `noosphere imports plan <file>... [--format <format>] [--domain <id>] [--team <id>] [--application <id>] [--parent-page <id>]` | Dry run of an [import from other formats](imports.md) (Backstage, OpenAPI, AsyncAPI, ADR, Mermaid, Excel; files or zip archives): prints the plan and its id. Exits 1 when the plan has errors. |
-| `noosphere imports apply <plan-id>` | Applies that plan, within 30 minutes and if the catalogue has not changed since. |
+| `noosphere imports apply <plan-id> [--skip 3,7]` | Applies that plan, within 30 minutes and if the catalogue has not changed since; `--skip` leaves out the entries with those indexes (shown as `#3` by `imports plan`). |
 | `noosphere imports template [--output <file>]` | Writes the Excel template of the import (`noosphere-import-template.xlsx` by default). |
 | `noosphere demo reset --yes` | Replaces the whole landscape, its pages, history and proposals with the "Alizé" demo and resets the demo accounts. Demo mode only. |
 | `noosphere link code [--expires 15m] [--capabilities <list>]` | Creates a pairing code for gestion-mep, shown once. See [links](links.md#command-line). |

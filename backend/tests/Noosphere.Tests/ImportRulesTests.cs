@@ -66,6 +66,47 @@ public class ImportRulesTests : IDisposable
     }
 
     [Fact]
+    public async Task Entries_can_be_left_out_with_the_entries_that_require_them()
+    {
+        var alice = await _api.SignedIn("alice");
+        var plan = await Plan(alice, File("catalog-info.yaml"));
+        var portal = Entry(plan, "application", "portal-v2");
+        var coaching = Entry(plan, "application", "coaching");
+        var lookup = Entry(plan, "flow", "coaching-crm-crm-api");
+        var crm = Entry(plan, "application", "crm");
+        var imported = Entry(plan, "domain", "imported");
+        int Index(JsonElement e) => e.GetProperty("index").GetInt32();
+        int[] Requires(JsonElement e) => [.. e.GetProperty("requires").EnumerateArray().Select(r => r.GetInt32())];
+        // The new portal goes to the new "Imported" domain; the lookup flow needs the new coaching application.
+        Assert.Contains(Index(imported), Requires(portal));
+        Assert.Contains(Index(coaching), Requires(lookup));
+        Assert.Empty(Requires(crm));
+        Assert.Empty(plan.GetProperty("skipped").EnumerateArray());
+
+        async Task<JsonElement> ApplySkipping(HttpStatusCode expected, params int[] skip) =>
+            await alice.PostJson($"/api/imports/{plan.Str("id")}/apply", new { skip }, expected);
+
+        var refused = await ApplySkipping(HttpStatusCode.UnprocessableEntity, Index(coaching));
+        Assert.Contains("requires entry " + Index(coaching), refused.Str("detail"), StringComparison.Ordinal);
+        await ApplySkipping(HttpStatusCode.UnprocessableEntity, Index(crm) + 1000);
+        var unchanged = plan.GetProperty("entries").EnumerateArray().Count(e => e.Str("action") == "unchanged");
+        Assert.Equal("planned", (await alice.GetJson($"/api/imports/{plan.Str("id")}")).Str("status"));
+
+        // Leaving out the portal, with what requires it, and the update of the CRM.
+        var skip = plan.GetProperty("entries").EnumerateArray()
+            .Where(e => Index(e) == Index(portal) || Index(e) == Index(crm) || Requires(e).Contains(Index(portal)))
+            .Select(Index).ToArray();
+        var description = (await alice.GetJson("/api/applications/crm")).Str("description");
+        var applied = await ApplySkipping(HttpStatusCode.OK, skip);
+        Assert.Equal("applied", applied.Str("status"));
+        Assert.Equal(skip.Order(), applied.GetProperty("skipped").EnumerateArray().Select(i => i.GetInt32()));
+        Assert.Equal(HttpStatusCode.NotFound, (await alice.GetAsync("/api/applications/portal-v2")).StatusCode);
+        Assert.Equal(description, (await alice.GetJson("/api/applications/crm")).Str("description"));
+        Assert.Equal("coaching", (await alice.GetJson("/api/flows/coaching-crm-crm-api")).Str("fromId"));
+        Assert.Equal(0, unchanged);
+    }
+
+    [Fact]
     public async Task An_expired_plan_cannot_be_applied()
     {
         var alice = await _api.SignedIn("alice");

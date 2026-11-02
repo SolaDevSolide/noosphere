@@ -37,7 +37,7 @@ public static partial class CommandLine
     private static readonly string[] Commands = ["migrate", "users", "export", "import", "imports", "demo", "link", "health", "help", "version"];
     private static readonly HashSet<string> Flags = ["--json", "--yes", "--dry-run", "--help", "-h"];
     private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password", "--url",
-        "--expires", "--capabilities", "--fingerprint", "--domain", "--team", "--application", "--parent-page"];
+        "--expires", "--capabilities", "--fingerprint", "--domain", "--team", "--application", "--parent-page", "--skip"];
 
     public const string Usage = """
         Usage: noosphere <command> [options]
@@ -56,7 +56,8 @@ public static partial class CommandLine
           imports plan <file>... [--format backstage|openapi|asyncapi|adr|mermaid|excel] [--domain <id>] [--team <id>]
                        [--application <id>] [--parent-page <id>]
                                                    Dry run of an import from other formats (files or zip archives): print the plan
-          imports apply <plan-id>                  Apply that plan (within 30 minutes, if the catalogue has not changed)
+          imports apply <plan-id> [--skip 3,7]     Apply that plan (within 30 minutes, if the catalogue has not changed),
+                                                   leaving out the entries given by index
           imports template [--output <file>]       Write the Excel template of the import
           demo reset --yes                         Replace the landscape with the Alizé demo and reset the demo accounts (demo mode only)
           link code [--expires 15m] [--capabilities catalog:read,notices:send,deployments:receive,directory:read]
