@@ -33,6 +33,7 @@ import {
 import { handlePages, seedPages } from './pages';
 import { handleAgents, seedAgents } from './agents';
 import { deploymentsFor, handleLinks } from './links';
+import { handleImports } from './imports';
 import { slugify } from '../docpages/model';
 
 const RANK: Record<Sensitivity, number> = { public: 0, internal: 1, personal: 2, sensitive: 3 };
@@ -249,7 +250,7 @@ function toYaml(v: unknown, indent = ''): string {
   return JSON.stringify(v);
 }
 
-async function handle(method: string, url: URL, body: string | null): Promise<Response> {
+async function handle(method: string, url: URL, body: string | null, files: File[] = []): Promise<Response> {
   await delay();
   const path = url.pathname.replace(/^\/api/, '');
   const parse = <T>() => (body ? (JSON.parse(body) as T) : ({} as T));
@@ -310,6 +311,8 @@ async function handle(method: string, url: URL, body: string | null): Promise<Re
     },
   );
   if (lk) return lk;
+  const im = handleImports(u, method, url, path, () => parse<{ skip?: number[] }>(), files);
+  if (im) return im;
   const can = (r: Role[]) => r.includes(u.role);
 
   if (path === '/auth/me')
@@ -634,7 +637,8 @@ export function installMockApi() {
         status: 403,
         headers: { 'Content-Type': 'application/problem+json' },
       });
-    return handle(method, url, body);
+    const files = init?.body instanceof FormData ? init.body.getAll('files').filter((f) => f instanceof File) : [];
+    return handle(method, url, body, files);
   };
   console.warn('Noosphere: mock API enabled (VITE_MOCK=1).');
 }
