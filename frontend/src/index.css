@@ -10055,3 +10055,66 @@ a.wl:hover {
     padding: 0 16px 14px;
   }
 }
+
+/* shared directory */
+.dd-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin-top: 4px;
+}
+.dd-cols .can li small {
+  display: block;
+}
+.dd-cols .can code {
+  font-size: 11.5px;
+}
+.dd-emails {
+  margin-top: 12px;
+}
+.dd-peek {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 13px;
+}
+.dd-peek th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-subtle);
+  background: var(--surface-2);
+  padding: 7px 12px;
+}
+.dd-peek td {
+  padding: 7px 12px;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.dd-peek td .mono {
+  font-size: 11.5px;
+  margin-left: 4px;
+}
+.dd-peek tr.no td {
+  color: var(--fg-subtle);
+  font-style: italic;
+}
+.swrow.dd-row b .tl-new {
+  vertical-align: 1px;
+}
+.swrow .dd-chk {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  white-space: normal;
+}
+@media (max-width: 560px) {
+  .dd-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

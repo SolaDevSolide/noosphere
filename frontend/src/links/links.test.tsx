@@ -2,7 +2,13 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, vi } from 'vitest';
 import { api } from '../api/client';
-import type { Link, LinkCode, LinkExchange } from '../api/types';
+import {
+  DEFAULT_LINK_CAPABILITIES,
+  type DirectoryPreview,
+  type Link,
+  type LinkCode,
+  type LinkExchange,
+} from '../api/types';
 import { en } from '../i18n/en';
 import { ME, renderPage } from '../test/render';
 import { exchangeChip, exchangeMatches, exchangeSentence, initialsOf, tileVariant } from './bits';
@@ -13,6 +19,18 @@ import { PairPage } from './PairPage';
 afterEach(() => vi.restoreAllMocks());
 
 const L = en.links;
+
+const PREVIEW: DirectoryPreview = {
+  teams: 4,
+  people: 7,
+  guests: 2,
+  withoutTeam: 1,
+  contactEmails: 3,
+  sample: [
+    { username: 'bob', displayName: 'Bob Martin', teams: ['Payments'] },
+    { username: 'david', displayName: 'David Roux', teams: ['Payments', 'Search'] },
+  ],
+};
 
 const link = (x: Partial<Link> = {}): Link => ({
   id: 'l-1',
@@ -171,12 +189,37 @@ describe('PairPage', () => {
     await waitFor(() => expect(api.linkCodes).toHaveBeenCalled());
   });
 
+  it('leaves the directory unticked and asks before ticking it', async () => {
+    vi.spyOn(api, 'people').mockResolvedValue([]);
+    vi.spyOn(api, 'directoryPreview').mockResolvedValue(PREVIEW);
+    vi.spyOn(api, 'createLinkCode').mockResolvedValue({
+      id: 'c-9',
+      code: 'AB12-CD34-EF56',
+      codeId: 'AB12',
+      expiresAt: new Date(Date.now() + 900000).toISOString(),
+      capabilities: [...DEFAULT_LINK_CAPABILITIES, 'directory:read'],
+      pairUrl: 'https://docs.example',
+    });
+    vi.spyOn(api, 'linkCodes').mockResolvedValue([]);
+    renderPage(<PairPage />, { path: '/admin/links/pair', route: '/admin/links/pair', me: ME.alice });
+    const box = await screen.findByRole('checkbox', { name: new RegExp(L.cap['directory:read'][0]) });
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+    const dlg = await screen.findByRole('dialog', { name: L.dir.titlePair });
+    expect(within(dlg).getByText(L.dir.emailsPair)).toBeInTheDocument();
+    expect(within(dlg).queryByRole('checkbox')).not.toBeInTheDocument();
+    await userEvent.click(within(dlg).getByRole('button', { name: L.dir.confirm }));
+    expect(box).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: L.code.create }));
+    expect(api.createLinkCode).toHaveBeenCalledWith([...DEFAULT_LINK_CAPABILITIES, 'directory:read']);
+  });
+
   it('refuses a code with no capability', async () => {
     vi.spyOn(api, 'people').mockResolvedValue([]);
     vi.spyOn(api, 'createLinkCode');
     renderPage(<PairPage />, { path: '/admin/links/pair', route: '/admin/links/pair', me: ME.alice });
-    for (const [name] of Object.values(L.cap))
-      await userEvent.click(await screen.findByRole('checkbox', { name: new RegExp(name) }));
+    for (const c of DEFAULT_LINK_CAPABILITIES)
+      await userEvent.click(await screen.findByRole('checkbox', { name: new RegExp(L.cap[c][0]) }));
     await userEvent.click(screen.getByRole('button', { name: L.code.create }));
     expect(await screen.findByText(L.code.noneChosen)).toBeInTheDocument();
     expect(api.createLinkCode).not.toHaveBeenCalled();
@@ -188,6 +231,7 @@ describe('LinkPage', () => {
     vi.spyOn(api, 'link').mockResolvedValue(l);
     vi.spyOn(api, 'people').mockResolvedValue([]);
     vi.spyOn(api, 'linkExchanges').mockResolvedValue({ items: exchanges, nextCursor: null });
+    vi.spyOn(api, 'directoryPreview').mockResolvedValue(PREVIEW);
     return renderPage(<LinkPage />, { path: '/admin/links/l-1', route: '/admin/links/:id', me: ME.alice });
   };
 
@@ -223,7 +267,7 @@ describe('LinkPage', () => {
     expect(screen.getByText('bad-signature', { exact: false })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('switch', { name: L.cap['notices:send'][0] }));
-    expect(api.setLinkCapabilities).toHaveBeenCalledWith('l-1', ['catalog:read', 'deployments:receive']);
+    expect(api.setLinkCapabilities).toHaveBeenCalledWith('l-1', ['catalog:read', 'deployments:receive'], undefined);
 
     await userEvent.click(screen.getByRole('button', { name: L.detail.cut }));
     const alert = screen.getByRole('alert');
@@ -233,5 +277,45 @@ describe('LinkPage', () => {
     expect(api.cutLink).toHaveBeenCalledWith('l-1');
     expect(await screen.findByText(/This link was cut on/)).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: L.cap['catalog:read'][0] })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('shares the directory after a preview, e-mails unticked, and changes e-mails afterwards', async () => {
+    const shared = link({ capabilities: ['catalog:read', 'notices:send', 'deployments:receive', 'directory:read'] });
+    vi.spyOn(api, 'setLinkCapabilities')
+      .mockResolvedValueOnce(shared)
+      .mockResolvedValueOnce({ ...shared, shareEmails: true });
+    open(link());
+    expect(await screen.findByText(L.dir.offHint)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('switch', { name: L.cap['directory:read'][0] }));
+    const dlg = await screen.findByRole('dialog', { name: L.dir.title('Alizé CI') });
+    expect(api.setLinkCapabilities).not.toHaveBeenCalled();
+    expect(await within(dlg).findByText('Bob Martin')).toBeInTheDocument();
+    expect(within(dlg).getByText(L.dir.noTeam(1))).toBeInTheDocument();
+    expect(within(dlg).getByText(L.dir.emailNo)).toBeInTheDocument();
+    const emails = within(dlg).getByRole('checkbox', { name: new RegExp(L.dir.emails) });
+    expect(emails).not.toBeChecked();
+    await userEvent.click(within(dlg).getByRole('button', { name: L.dir.confirm }));
+    expect(api.setLinkCapabilities).toHaveBeenCalledWith(
+      'l-1',
+      ['catalog:read', 'notices:send', 'deployments:receive', 'directory:read'],
+      false,
+    );
+    expect(await screen.findByText(L.dir.sharedOn(4, 7))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: new RegExp(L.dir.emails) }));
+    expect(api.setLinkCapabilities).toHaveBeenLastCalledWith(
+      'l-1',
+      ['catalog:read', 'notices:send', 'deployments:receive', 'directory:read'],
+      true,
+    );
+  });
+
+  it('cancels the directory dialog without saving', async () => {
+    vi.spyOn(api, 'setLinkCapabilities');
+    open(link());
+    await userEvent.click(await screen.findByRole('switch', { name: L.cap['directory:read'][0] }));
+    await userEvent.click(await screen.findByRole('button', { name: L.dir.cancel }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: L.cap['directory:read'][0] })).toHaveAttribute('aria-checked', 'false');
+    expect(api.setLinkCapabilities).not.toHaveBeenCalled();
   });
 });

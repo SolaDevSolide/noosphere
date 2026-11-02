@@ -12,7 +12,7 @@ import type {
   LinkExchange,
   UserM2,
 } from '../api/types';
-import { LINK_CAPABILITIES } from '../api/types';
+import { DEFAULT_LINK_CAPABILITIES, LINK_CAPABILITIES } from '../api/types';
 import type { GovCtx } from './governance';
 
 type Rec = Record<string, unknown>;
@@ -72,7 +72,7 @@ function link(n: number, l: Partial<Link> & Pick<Link, 'product' | 'instanceName
     confirmedBy: 'alice',
     peerConfirmed: true,
     peerCheckedAt: ago(30),
-    capabilities: [...LINK_CAPABILITIES],
+    capabilities: [...DEFAULT_LINK_CAPABILITIES],
     shareEmails: false,
     fingerprint: words(n),
     pairedAt: ago(60 * 24 * 9),
@@ -442,7 +442,7 @@ export function handleLinks(
       return json(200, [...codes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(codeDto));
     if (method === 'POST') {
       const b = body();
-      const caps = Array.isArray(b.capabilities) ? (b.capabilities as string[]) : [...LINK_CAPABILITIES];
+      const caps = Array.isArray(b.capabilities) ? (b.capabilities as string[]) : [...DEFAULT_LINK_CAPABILITIES];
       const unknown = caps.filter((c) => !(LINK_CAPABILITIES as string[]).includes(c));
       if (unknown.length)
         return problem(400, 'Validation failed.', undefined, {
@@ -520,7 +520,9 @@ export function handleLinks(
   if (op === 'capabilities' && method === 'PUT') {
     const blocked = notCut();
     if (blocked) return blocked;
-    const caps = body().capabilities;
+    const b = body();
+    const caps = b.capabilities;
+    if (typeof b.shareEmails === 'boolean') l.shareEmails = b.shareEmails;
     if (!Array.isArray(caps))
       return problem(400, 'Validation failed.', undefined, { capabilities: ['This field is required.'] });
     l.capabilities = LINK_CAPABILITIES.filter((c) => (caps as string[]).includes(c));

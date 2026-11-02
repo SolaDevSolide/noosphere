@@ -27,6 +27,7 @@ import {
   Switch,
   type ExchangeKind,
 } from './bits';
+import { DirectoryDialog, useDirectoryPreview } from './DirectoryDialog';
 import { AdminOnly, LinksHeader, usePeopleNames } from './LinksPage';
 
 const PAGE = 50;
@@ -151,6 +152,8 @@ function SharedBox({ link }: { link: Link }) {
   const { t } = useI18n();
   const { model } = useLandscape();
   const d = t.links.detail;
+  const directory = link.state !== 'cut' && link.capabilities.includes('directory:read');
+  const { preview } = useDirectoryPreview(directory);
   if (!link.capabilities.includes('catalog:read') || link.state === 'cut')
     return (
       <section className="box" aria-labelledby="sc-h">
@@ -188,9 +191,21 @@ function SharedBox({ link }: { link: Link }) {
               <small>{d.sharedHint}</small>
             </span>
           </li>
+          {directory && (
+            <li className="ok">
+              <IconCheck />
+              <span>
+                {preview ? t.links.dir.sharedOn(preview.teams, preview.people) : '…'}
+                <small>{t.links.dir.sharedOnText(link.shareEmails)}</small>
+              </span>
+            </li>
+          )}
           <li className="lock">
             <IconLock size={16} />
-            <span>{d.notShared(restricted)}</span>
+            <span>
+              {d.notShared(restricted)}
+              {directory ? t.links.dir.notSharedOn(link.shareEmails) : t.links.dir.notSharedDir}
+            </span>
           </li>
         </ul>
       )}
@@ -374,7 +389,8 @@ function DetailView({ link, onChanged }: { link: Link; onChanged: (l: Link) => v
       setExKey((k) => k + 1);
     }
   };
-  const setCap = async (cap: LinkCapability, on: boolean) => {
+  const [sharing, setSharing] = useState(false);
+  const setCap = async (cap: LinkCapability, on: boolean, shareEmails?: boolean, done = d.saved) => {
     const next = LINK_CAPABILITIES.filter((c) => (c === cap ? on : link.capabilities.includes(c)));
     if (next.length === 0) {
       toast(d.lastOne);
@@ -382,8 +398,23 @@ function DetailView({ link, onChanged }: { link: Link; onChanged: (l: Link) => v
     }
     setBusy('caps');
     try {
-      onChanged(await api.setLinkCapabilities(link.id, next));
-      toast(d.saved);
+      onChanged(await api.setLinkCapabilities(link.id, next, shareEmails));
+      setSharing(false);
+      toast(done);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(null);
+    }
+  };
+  // Switching the directory on goes through its summary first; off is immediate.
+  const flip = (cap: LinkCapability, on: boolean) =>
+    cap === 'directory:read' && on ? setSharing(true) : void setCap(cap, on);
+  const setEmails = async (on: boolean) => {
+    setBusy('caps');
+    try {
+      onChanged(await api.setLinkCapabilities(link.id, link.capabilities as LinkCapability[], on));
+      toast(t.links.dir.emailsSaved(on));
     } catch (e) {
       fail(e);
     } finally {
@@ -501,28 +532,48 @@ function DetailView({ link, onChanged }: { link: Link; onChanged: (l: Link) => v
             </div>
             {LINK_CAPABILITIES.map((cap) => {
               const [name, text] = capText(t, cap);
+              const dir = cap === 'directory:read';
+              const on = !cut && link.capabilities.includes(cap);
               return (
-                <div key={cap} className="swrow">
-                  <b>{name}</b>
+                <div key={cap} className={'swrow' + (dir ? ' dd-row' : '')}>
+                  <b>
+                    {name}
+                    {dir && <span className="tl-new">{t.links.newBadge}</span>}
+                  </b>
                   <small>
                     {text} <span className="mono">{cap}</span>
                   </small>
-                  <Switch
-                    label={name}
-                    checked={!cut && link.capabilities.includes(cap)}
-                    disabled={cut || busy !== null}
-                    onChange={(v) => void setCap(cap, v)}
-                  />
+                  <Switch label={name} checked={on} disabled={cut || busy !== null} onChange={(v) => flip(cap, v)} />
+                  {dir && on && (
+                    <label className="chk dd-chk">
+                      <input
+                        type="checkbox"
+                        checked={link.shareEmails}
+                        disabled={busy !== null}
+                        onChange={(e) => void setEmails(e.target.checked)}
+                      />
+                      <span>{t.links.dir.emails}</span>
+                    </label>
+                  )}
                 </div>
               );
             })}
             <p className="muted2" style={{ marginTop: 6 }}>
-              {d.mayHint}
+              {link.capabilities.includes('directory:read') ? d.mayHint : t.links.dir.offHint}
             </p>
           </section>
           <SharedBox link={link} />
         </div>
       </div>
+      {sharing && (
+        <DirectoryDialog
+          name={link.instanceName}
+          shareEmails={link.shareEmails}
+          busy={busy === 'caps'}
+          onCancel={() => setSharing(false)}
+          onConfirm={(emails) => void setCap('directory:read', true, emails, t.links.dir.saved)}
+        />
+      )}
     </>
   );
 }

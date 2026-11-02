@@ -19,6 +19,7 @@ import type {
   ConsentResult,
   DemoAgentResult,
   Deployments,
+  DirectoryPreview,
   Link,
   LinkCapability,
   LinkCode,
@@ -366,8 +367,9 @@ export const api = {
   link: (id: string, refresh?: boolean) =>
     request<Link>('GET', `/links/${enc(id)}` + q({ refresh: refresh === undefined ? undefined : String(refresh) })),
   confirmLink: (id: string, fingerprint: string) => request<Link>('POST', `/links/${enc(id)}/confirm`, { fingerprint }),
-  setLinkCapabilities: (id: string, capabilities: LinkCapability[]) =>
-    request<Link>('PUT', `/links/${enc(id)}/capabilities`, { capabilities }),
+  setLinkCapabilities: (id: string, capabilities: LinkCapability[], shareEmails?: boolean) =>
+    request<Link>('PUT', `/links/${enc(id)}/capabilities`, { capabilities, shareEmails: shareEmails ?? null }),
+  directoryPreview: () => request<DirectoryPreview>('GET', '/links/directory-preview'),
   renewLinkKeys: (id: string) => request<Link>('POST', `/links/${enc(id)}/renew-keys`, {}),
   cutLink: (id: string) => request<Link>('POST', `/links/${enc(id)}/cut`, { confirm: true }),
   linkExchanges: (id: string, cursor?: string | null, limit?: number) =>

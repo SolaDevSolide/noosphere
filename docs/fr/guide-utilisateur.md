@@ -157,6 +157,8 @@ Les administrateurs gèrent les liaisons sur la page **Liaisons** du menu du com
 code à usage unique, comparer l'empreinte de quatre mots affichée sur les deux écrans avant de confirmer, choisir ce
 que chaque application peut faire, lire le journal des échanges, renouveler les clés ou couper une liaison. Voir
 [Liaisons](liaisons.md).
+Partager l'annuaire (équipes et personnes) avec une application est désactivé par défaut : l'activer montre d'abord ce
+qui est partagé, ce qui ne l'est jamais et un aperçu. Les adresses e-mail sont une case à part, décochée.
 
 La même page liste les **Outils connectés** : chaînes CI/CD, outils ITSM ou scripts qui ne savent pas signer leurs
 requêtes. **Connecter un outil** lui donne un nom, une clé d'API (affichée une fois, avec des exemples curl, GitHub

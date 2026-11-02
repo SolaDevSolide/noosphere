@@ -223,6 +223,7 @@ const METHOD: Record<string, string> = {
   pair: 'POST',
   status: 'GET',
   catalog: 'GET',
+  directory: 'GET',
   notices: 'POST',
   deployments: 'POST',
   rekey: 'POST',

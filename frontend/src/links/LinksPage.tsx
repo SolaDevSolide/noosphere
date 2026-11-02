@@ -70,7 +70,7 @@ export function AdminOnly({ children }: { children: ReactNode }) {
   );
 }
 
-export function CapabilityList({ caps = LINK_CAPABILITIES as string[] }: { caps?: string[] }) {
+export function CapabilityList({ caps = LINK_CAPABILITIES as readonly string[] }: { caps?: readonly string[] }) {
   const { t } = useI18n();
   return (
     <ul className="can">

@@ -248,8 +248,16 @@ export type LinkExchangeResult = S['LinkExchangeResult'];
 export type LinkExchange = S['LinkExchangeDto'];
 export type LinkExchangePage = S['LinkExchangePageDto'];
 /** Capabilities a link may have, in protocol order. */
-export type LinkCapability = 'catalog:read' | 'notices:send' | 'deployments:receive';
-export const LINK_CAPABILITIES: LinkCapability[] = ['catalog:read', 'notices:send', 'deployments:receive'];
+export type LinkCapability = 'catalog:read' | 'notices:send' | 'deployments:receive' | 'directory:read';
+export const LINK_CAPABILITIES: LinkCapability[] = [
+  'catalog:read',
+  'notices:send',
+  'deployments:receive',
+  'directory:read',
+];
+/** Granted by default at pairing: the directory is never shared unless an administrator ticks it. */
+export const DEFAULT_LINK_CAPABILITIES: LinkCapability[] = ['catalog:read', 'notices:send', 'deployments:receive'];
+export type DirectoryPreview = S['DirectoryPreviewDto'];
 
 /* ---- Milestone 6: third-party tools (API keys and webhooks) ---- */
 
