@@ -45,6 +45,9 @@ public static class LinkAdminEndpoints
                 new LinkCodeCreatedDto(code.Id, value, code.CodeId, code.ExpiresAt, code.Capabilities, PublicAddress.Of(request, settings)));
         }).Produces<LinkCodeCreatedDto>(StatusCodes.Status201Created);
 
+        links.MapGet("/directory-preview", async (NoosphereDbContext db) => await LinkDirectory.Preview(db))
+            .WithSummary("What a link with directory:read would read: counts and three people, for the administrator about to share it");
+
         links.MapGet("", async (NoosphereDbContext db) =>
             (await db.Links.AsNoTracking().OrderBy(l => l.State == LinkState.Cut).ThenByDescending(l => l.PairedAt).ToListAsync()).Select(LinkAdmin.Dto).ToList());
 

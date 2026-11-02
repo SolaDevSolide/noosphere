@@ -52,6 +52,13 @@ Les capacités se choisissent avec le code et se modifient ensuite (`PUT /api/li
 Un second choix, **partager les e-mails** (`shareEmails` dans `PUT /api/links/{id}/capabilities`, désactivé par
 défaut), ajoute les adresses e-mail à l'annuaire.
 
+Sur la fiche de la liaison, **Lire l'annuaire** est la quatrième ligne de **Ce qu'elle peut faire**, désactivée par
+défaut. L'activer ouvre d'abord un résumé : ce qui est partagé (équipes avec leurs contacts, personnes avec nom
+affiché, identifiant et équipes, changements envoyés en avis), ce qui ne l'est jamais (rôles, invités, personnes sans
+équipe), la case **Partager aussi les adresses e-mail** (décochée) et un aperçu de trois personnes
+(`GET /api/links/directory-preview`). À l'appairage, **Lire l'annuaire** est proposée décochée. Une fois activée, le
+bloc **Partagé** de la liaison compte les équipes et les personnes partagées.
+
 ### Annuaire
 
 `GET /link/v1/directory` est signée comme les autres requêtes de liaison et répond par un JWE signé ; une requête
@@ -66,13 +73,13 @@ sans `directory:read` reçoit `403` avec le type de problème `https://noosphere
 
 - `teams` : toutes les équipes, avec leur contact et les applications du catalogue partagé dont elles sont
   responsables (`applicationIds`).
-- `people` : tous les membres et administrateurs, avec nom affiché, identifiant et équipes. Jamais les invités,
-  jamais les rôles.
+- `people` : les membres et administrateurs d'au moins une équipe, avec nom affiché, identifiant et équipes. Jamais
+  les invités, jamais les rôles, jamais les comptes sans équipe.
 - Adresses e-mail : Noosphere ne garde aucun e-mail personnel. Un contact d'équipe qui contient une adresse e-mail
   est envoyé `contact: null` sauf si la liaison partage les e-mails ; un canal de discussion est toujours envoyé.
 - Les changements de l'annuaire arrivent en avis `kind: "team"` (déjà envoyés pour le catalogue) et
   `kind: "person"`, dont l'`id` est l'identifiant : `upsert` quand un compte est créé ou change de nom ou d'équipes,
-  `delete` quand il est supprimé ou devient invité. Les avis `person` ne vont qu'aux liaisons avec `directory:read`.
+  `delete` quand il est supprimé, devient invité ou quitte sa dernière équipe. Les avis `person` ne vont qu'aux liaisons avec `directory:read`.
 - Chaque lecture est inscrite au journal des échanges (opération `directory`), avec le nombre d'équipes et de
   personnes et le partage ou non des adresses e-mail ; les refus aussi.
 

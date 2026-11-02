@@ -330,12 +330,12 @@ public static class NoticeResolver
         return [.. batches.Select(b => (b.CommittedAt, (List<NoticeChange>)[.. Resolve(state, b.Candidates), .. ResolvePeople(state, b.Persons)]))];
     }
 
-    /// <summary>The person notices of one batch: listed now (a member or an administrator) → upsert; listed before only → delete.</summary>
+    /// <summary>The person notices of one batch: listed now (a member or an administrator in a team) → upsert; listed before only → delete.</summary>
     public static async Task<List<NoticeChange>> ResolvePeople(NoosphereDbContext db, IReadOnlyList<PersonCandidate> people, CancellationToken cancel = default) =>
         people.Count == 0 ? [] : ResolvePeople(await State.Load(db, cancel), people);
 
     private sealed record State(Dictionary<string, Visibility> Visibility, List<(string Id, string FromId, string ToId)> Flows,
-        HashSet<string> Domains, HashSet<string> Teams, Dictionary<Guid, (string Username, Role Role)> Users)
+        HashSet<string> Domains, HashSet<string> Teams, Dictionary<Guid, (string Username, Role Role)> Users, HashSet<Guid> Members)
     {
         public static async Task<State> Load(NoosphereDbContext db, CancellationToken cancel)
         {
@@ -344,7 +344,8 @@ public static class NoticeResolver
             var domains = (await db.Domains.AsNoTracking().Select(d => d.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
             var teams = (await db.Teams.AsNoTracking().Select(t => t.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
             var users = (await db.Users.AsNoTracking().Select(u => new { u.Id, u.Username, u.Role }).ToListAsync(cancel)).ToDictionary(u => u.Id, u => (u.Username, u.Role));
-            return new State(visibility, flows, domains, teams, users);
+            var members = (await db.TeamMembers.AsNoTracking().Select(m => m.UserId).Distinct().ToListAsync(cancel)).ToHashSet();
+            return new State(visibility, flows, domains, teams, users, members);
         }
     }
 
@@ -356,7 +357,9 @@ public static class NoticeResolver
             var at = group.Max(p => p.At);
             // The state before the batch: the first account change carries it; a membership change alone says nothing.
             var first = group.FirstOrDefault(p => !p.Membership);
-            var now = state.Users.TryGetValue(group.Key, out var user) && user.Role != Role.Guest;
+            // Listed now: a member or an administrator, in at least one team.
+            var known = state.Users.TryGetValue(group.Key, out var user);
+            var now = known && user.Role != Role.Guest && state.Members.Contains(group.Key);
             if (now)
             {
                 changes[user.Username] = new NoticeChange("person", user.Username, "upsert", at);
@@ -366,6 +369,9 @@ public static class NoticeResolver
             }
             else if (first is { Added: false, OriginalUsername: { } old, OriginalRole: not Role.Guest })
                 changes[old] = new NoticeChange("person", old, "delete", at);
+            // Out of their last team (a membership change alone): they leave the directory.
+            else if (first is null && known && user.Role != Role.Guest)
+                changes[user.Username] = new NoticeChange("person", user.Username, "delete", at);
         }
         return [.. changes.Values];
     }

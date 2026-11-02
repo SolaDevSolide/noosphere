@@ -49,6 +49,12 @@ Capabilities are chosen with the code and changed later (`PUT /api/links/{id}/ca
 choice, **share e-mails** (`shareEmails` in `PUT /api/links/{id}/capabilities`, off by default), adds e-mail
 addresses to the directory.
 
+On the link's page, **Read the directory** is the fourth line of **What it may do**, off by default. Switching it on
+opens a summary first: what is shared (teams with their contacts, people with display name, username and teams,
+changes sent as notices), what never is (roles, guests, people in no team), the **Also share e-mail addresses**
+box (unticked) and a preview of three people (`GET /api/links/directory-preview`). When pairing, **Read the
+directory** is offered unticked. Once on, the **Shared** box of the link counts the teams and people shared.
+
 ### Directory
 
 `GET /link/v1/directory` is signed like the other link requests and answers a signed JWE; a request without
@@ -62,12 +68,13 @@ addresses to the directory.
 ```
 
 - `teams`: every team, with its contact and the applications of the shared catalogue it owns (`applicationIds`).
-- `people`: every member and administrator, with display name, username and teams. Never guests, never roles.
+- `people`: every member and administrator in at least one team, with display name, username and teams. Never
+  guests, never roles, never accounts in no team.
 - E-mail addresses: Noosphere keeps no personal e-mail. A team contact holding an e-mail address is sent as
   `contact: null` unless the link shares e-mails; a chat channel is always sent.
 - Directory changes come as notices with `kind: "team"` (already sent for the catalogue) and `kind: "person"`, whose
-  `id` is the username: `upsert` when an account is created or changes name or teams, `delete` when it is deleted or
-  becomes a guest. Person notices go only to links with `directory:read`.
+  `id` is the username: `upsert` when an account is created or changes name or teams, `delete` when it is deleted,
+  becomes a guest or leaves its last team. Person notices go only to links with `directory:read`.
 - Every read is in the exchange log (operation `directory`), with the number of teams and people and whether e-mail
   addresses were shared; refusals too.
 

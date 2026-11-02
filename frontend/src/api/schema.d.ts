@@ -4070,6 +4070,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/links/directory-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a link with directory:read would read: counts and three people, for the administrator about to share it */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DirectoryPreviewDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/links": {
         parameters: {
             query?: never;
@@ -5801,6 +5837,43 @@ export interface components {
         };
         /** @enum {unknown} */
         DiffKind: "text" | "markdown" | "list" | "ref";
+        /** @description What a link with `directory:read` reads, before an administrator shares it. */
+        DirectoryPreviewDto: {
+            /**
+             * Format: int32
+             * @description Teams shared, with their contacts.
+             */
+            teams: number;
+            /**
+             * Format: int32
+             * @description Members and administrators in at least one team.
+             */
+            people: number;
+            /**
+             * Format: int32
+             * @description Guests: never shared.
+             */
+            guests: number;
+            /**
+             * Format: int32
+             * @description Members and administrators in no team: not shared.
+             */
+            withoutTeam: number;
+            /**
+             * Format: int32
+             * @description Team contacts holding an e-mail address: shared only with `shareEmails`.
+             */
+            contactEmails: number;
+            /** @description The first three people, by display name. */
+            sample: components["schemas"]["DirectoryPreviewPersonDto"][];
+        };
+        /** @description One person as a link would read them in the shared directory. */
+        DirectoryPreviewPersonDto: {
+            username: string;
+            displayName: string;
+            /** @description Team names. */
+            teams: string[];
+        };
         /** @description A domain (administrators only change it) with its pages. */
         DomainDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */

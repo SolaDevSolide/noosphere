@@ -45,6 +45,19 @@ public sealed record LinkConfirmInput(string? Fingerprint);
 /// <param name="ShareEmails">With <c>directory:read</c>: share e-mail addresses in the directory; null keeps the current choice.</param>
 public sealed record LinkCapabilitiesInput(List<string>? Capabilities, bool? ShareEmails = null);
 
+/// <summary>One person as a link would read them in the shared directory.</summary>
+/// <param name="Teams">Team names.</param>
+public sealed record DirectoryPreviewPersonDto(string Username, string DisplayName, IReadOnlyList<string> Teams);
+
+/// <summary>What a link with <c>directory:read</c> reads, before an administrator shares it.</summary>
+/// <param name="Teams">Teams shared, with their contacts.</param>
+/// <param name="People">Members and administrators in at least one team.</param>
+/// <param name="Guests">Guests: never shared.</param>
+/// <param name="WithoutTeam">Members and administrators in no team: not shared.</param>
+/// <param name="ContactEmails">Team contacts holding an e-mail address: shared only with <c>shareEmails</c>.</param>
+/// <param name="Sample">The first three people, by display name.</param>
+public sealed record DirectoryPreviewDto(int Teams, int People, int Guests, int WithoutTeam, int ContactEmails, IReadOnlyList<DirectoryPreviewPersonDto> Sample);
+
 /// <summary>Cutting a link cannot be undone: <c>confirm</c> must be true.</summary>
 public sealed record LinkCutInput(bool? Confirm);
 

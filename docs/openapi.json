@@ -5143,6 +5143,26 @@
         }
       }
     },
+    "/api/links/directory-preview": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "summary": "What a link with directory:read would read: counts and three people, for the administrator about to share it",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryPreviewDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/links": {
       "get": {
         "tags": [
@@ -8546,6 +8566,76 @@
           "list",
           "ref"
         ]
+      },
+      "DirectoryPreviewDto": {
+        "required": [
+          "teams",
+          "people",
+          "guests",
+          "withoutTeam",
+          "contactEmails",
+          "sample"
+        ],
+        "type": "object",
+        "properties": {
+          "teams": {
+            "type": "integer",
+            "description": "Teams shared, with their contacts.",
+            "format": "int32"
+          },
+          "people": {
+            "type": "integer",
+            "description": "Members and administrators in at least one team.",
+            "format": "int32"
+          },
+          "guests": {
+            "type": "integer",
+            "description": "Guests: never shared.",
+            "format": "int32"
+          },
+          "withoutTeam": {
+            "type": "integer",
+            "description": "Members and administrators in no team: not shared.",
+            "format": "int32"
+          },
+          "contactEmails": {
+            "type": "integer",
+            "description": "Team contacts holding an e-mail address: shared only with `shareEmails`.",
+            "format": "int32"
+          },
+          "sample": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryPreviewPersonDto"
+            },
+            "description": "The first three people, by display name."
+          }
+        },
+        "description": "What a link with `directory:read` reads, before an administrator shares it."
+      },
+      "DirectoryPreviewPersonDto": {
+        "required": [
+          "username",
+          "displayName",
+          "teams"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Team names."
+          }
+        },
+        "description": "One person as a link would read them in the shared directory."
       },
       "DomainDetailDto": {
         "type": "object",
