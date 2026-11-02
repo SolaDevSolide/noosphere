@@ -31,6 +31,9 @@ before changing this API?".
   confirm, restrict and cut links on the Links page. Requests are signed (RFC 9421) and bodies encrypted (JWE), with
   fingerprints confirmed on both sides. A link may also read the directory (teams and people, never guests), only
   when an administrator allows it.
+- **Integrations** for tools that cannot speak the link protocol (CI/CD pipelines, ITSM, scripts): API keys, shown
+  once and stored hashed, read the catalogue and send deployments (`/api/integrations`), and outgoing webhooks receive
+  change notices and deployments, signed with HMAC-SHA256, retried, and kept away from private addresses.
 - English and French interface. Runs as one container next to PostgreSQL.
 
 ## Quick start
@@ -118,6 +121,7 @@ docker compose exec noosphere noosphere link code --expires 30m
 - [AI agents (MCP)](docs/en/agents.md), with llms.txt and the Markdown views
 - [Demo toolbox](docs/en/demo.md)
 - [Links with other applications (gestion-mep first)](docs/en/links.md)
+- [Integrations: API keys and webhooks](docs/en/integrations.md), for CI/CD pipelines, ITSM tools and scripts
 - [API](docs/en/api.md) (OpenAPI: [docs/openapi.json](docs/openapi.json), served at `/openapi/v1.json`)
 - [Exchange format](docs/en/exchange-format.md) (JSON Schema: [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Command line](docs/en/cli.md)

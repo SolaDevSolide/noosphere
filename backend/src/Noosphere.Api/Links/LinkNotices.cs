@@ -466,6 +466,11 @@ public sealed class LinkNoticeSender(IServiceScopeFactory scopes, LinkChangeFeed
                         if ((directory ? changes : changes.Where(c => c.Kind != "person").ToList()) is { Count: > 0 } sent)
                             buckets.Add(link.Id, sent);
                 }
+                // Webhooks receive the catalogue changes (never people: the directory is for links only).
+                var forHooks = resolved.SelectMany(r => r.Changes).Where(c => c.Kind != "person").ToList();
+                if (forHooks.Count > 0
+                    && await Integrations.Webhooks.Enqueue(db, Integrations.Webhooks.CatalogChanged, new JsonObject { ["changes"] = LinkProtocol.ToNode(forHooks) }, clock.GetUtcNow(), cancel) > 0)
+                    await db.SaveChangesAsync(cancel);
             }
         }
         var now = clock.GetUtcNow();

@@ -54,6 +54,177 @@
         }
       }
     },
+    "/api/integrations/catalog": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "The shared catalogue, page by page (API key with catalog:read)",
+        "description": "Authorization: Bearer <API key>. Applications visible to everyone, by id, with the flows starting from them; domains and teams on every page.",
+        "operationId": "IntegrationCatalog",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationCatalogPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/deployments": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Send deployment events (API key with deployments:write)",
+        "description": "Authorization: Bearer <API key>. The same events as the link protocol, upserted by deploymentId for this key. An optional Idempotency-Key header (at most 200 characters) replays the first answer for 24 hours.",
+        "operationId": "IntegrationDeployments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeploymentEventsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeploymentsReceiptDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "tags": [
@@ -4992,6 +5163,469 @@
           }
         }
       }
+    },
+    "/api/integrations/keys": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKeyDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyCreatedDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/keys/{id}/revoke": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/keys/{id}/exchanges": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkExchangePageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebhookDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreatedDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks/{id}": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks/{id}/test": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks/{id}/deliveries": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryPageDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/settings": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Integrations"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationSettingsInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5757,6 +6391,136 @@
           "approvalRequired"
         ],
         "description": "Who may connect an agent: any member, for themselves, or the same with an administrator's approval."
+      },
+      "ApiKeyCreatedDto": {
+        "required": [
+          "apiKey",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "$ref": "#/components/schemas/ApiKeyDto"
+          },
+          "key": {
+            "type": "string"
+          }
+        },
+        "description": "An API key just created. `key` is shown only this once: store it in the tool's secrets."
+      },
+      "ApiKeyDto": {
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "scopes",
+          "state",
+          "createdAt",
+          "createdBy",
+          "expiresAt",
+          "lastUsedAt",
+          "revokedAt",
+          "revokedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "The start of the key (`nsk_` and 8 characters), to recognise it."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "state": {
+            "$ref": "#/components/schemas/ApiKeyState"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "revokedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "An API key, without its secret (shown once, at creation)."
+      },
+      "ApiKeyInput": {
+        "required": [
+          "name",
+          "scopes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "scopes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "`catalog:read` and/or `deployments:write`; at least one."
+          },
+          "expiresInDays": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "1 to 3650; null: the key never expires.",
+            "format": "int32"
+          }
+        },
+        "description": "A new API key."
+      },
+      "ApiKeyState": {
+        "enum": [
+          "active",
+          "expired",
+          "revoked"
+        ]
       },
       "ApplicationDetailDto": {
         "type": "object",
@@ -6981,6 +7745,106 @@
           }
         }
       },
+      "DeploymentEventInput": {
+        "required": [
+          "deploymentId",
+          "title",
+          "phase",
+          "outcome",
+          "postponed",
+          "plannedStart",
+          "plannedEnd",
+          "url",
+          "applicationIds",
+          "environments",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "deploymentId": {
+            "type": "string",
+            "description": "The deployment's id in the sending tool (at most 100 characters): events are upserted by it."
+          },
+          "title": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string",
+            "description": "`preparation`, `execution`, `rollback`, `acceptance`, `closed` or `cancelled`."
+          },
+          "outcome": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`success`, `success-with-incidents`, `rolled-back`, `failed` or null."
+          },
+          "postponed": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "plannedStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "plannedEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "url": {
+            "type": "string",
+            "description": "The deployment's page in the sending tool."
+          },
+          "applicationIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Noosphere application ids; unknown or restricted ones are ignored and listed in the answer."
+          },
+          "environments": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DeploymentEnvironmentDto"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last change on the sender's side: an older event than the stored one changes nothing.",
+            "format": "date-time"
+          }
+        },
+        "description": "A deployment event, in the same shape as the link protocol's."
+      },
+      "DeploymentEventsInput": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeploymentEventInput"
+            }
+          }
+        },
+        "description": "Body of `POST /api/integrations/deployments`: at most 500 events."
+      },
       "DeploymentOutcome": {
         "enum": [
           "success",
@@ -7029,26 +7893,61 @@
           "linkId",
           "product",
           "instanceName",
-          "linkActive"
+          "linkActive",
+          "kind"
         ],
         "type": "object",
         "properties": {
           "linkId": {
             "type": "string",
+            "description": "The link's id; for an API key, the key's id.",
             "format": "uuid"
           },
           "product": {
-            "type": "string"
+            "type": "string",
+            "description": "The linked product (`gestion-mep`); `api-key` for an API key."
           },
           "instanceName": {
-            "type": "string"
+            "type": "string",
+            "description": "The linked instance; for an API key, the key's name."
           },
           "linkActive": {
             "type": "boolean",
-            "description": "False once the link is cut: the deployment stays as history."
+            "description": "False once the link is cut, or the API key revoked or expired: the deployment stays as history."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DeploymentSourceKind"
           }
         },
-        "description": "Where a deployment comes from."
+        "description": "Where a deployment comes from: a link, or an API key (`kind: apiKey`)."
+      },
+      "DeploymentSourceKind": {
+        "enum": [
+          "link",
+          "apiKey"
+        ],
+        "description": "Where a deployment comes from: a link, or an API key."
+      },
+      "DeploymentsReceiptDto": {
+        "required": [
+          "accepted",
+          "ignoredApplicationIds"
+        ],
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "integer",
+            "description": "Events received (created, updated, or already newer here).",
+            "format": "int32"
+          },
+          "ignoredApplicationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Application ids unknown here, or not shared, left out of the events."
+          }
+        }
       },
       "DiffEntryDto": {
         "required": [
@@ -8058,6 +8957,239 @@
         },
         "description": "Counts for the header badge."
       },
+      "IntegrationApplicationDto": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "domainId",
+          "teamId",
+          "kind",
+          "lifecycle",
+          "tech",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "description": "`app`, `bus`, `saas`, `data`, `file` or `external`."
+          },
+          "lifecycle": {
+            "type": "string",
+            "description": "`planned`, `live`, `retiring` or `retired`."
+          },
+          "tech": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "description": "The record's page."
+          }
+        }
+      },
+      "IntegrationCatalogPageDto": {
+        "required": [
+          "generatedAt",
+          "instanceName",
+          "baseUrl",
+          "domains",
+          "teams",
+          "applications",
+          "flows",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "instanceName": {
+            "type": "string"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationDomainDto"
+            }
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationTeamDto"
+            }
+          },
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationApplicationDto"
+            }
+          },
+          "flows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationFlowDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` for the next page; null on the last one."
+          }
+        },
+        "description": "One page of the shared catalogue (what everyone sees, like the catalogue of links): applications by id, and the flows\nthat start from them (each flow is on exactly one page). Domains and teams, short lists, are on every page."
+      },
+      "IntegrationDomainDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "IntegrationFlowDto": {
+        "required": [
+          "id",
+          "name",
+          "fromId",
+          "toId",
+          "type",
+          "status",
+          "schedule",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "fromId": {
+            "type": "string"
+          },
+          "toId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "IntegrationSettingsDto": {
+        "required": [
+          "allowPrivateAddresses",
+          "updatedAt",
+          "updatedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "allowPrivateAddresses": {
+            "type": "boolean",
+            "description": "Webhooks may target private, loopback and link-local addresses, and plain HTTP. Off by default: turn it on only for receivers on a trusted network."
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Instance-wide settings of integrations."
+      },
+      "IntegrationSettingsInput": {
+        "required": [
+          "allowPrivateAddresses"
+        ],
+        "type": "object",
+        "properties": {
+          "allowPrivateAddresses": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "IntegrationTeamDto": {
+        "required": [
+          "id",
+          "name",
+          "contact"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "contact": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "JsonNode": {},
       "JsonObject": {
         "type": "object"
@@ -8539,7 +9671,9 @@
           "result",
           "status",
           "reason",
-          "detail"
+          "detail",
+          "apiKeyId",
+          "webhookId"
         ],
         "type": "object",
         "properties": {
@@ -8587,6 +9721,22 @@
               "null",
               "string"
             ]
+          },
+          "apiKeyId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A call made with an API key (`/api/integrations`).",
+            "format": "uuid"
+          },
+          "webhookId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A webhook delivery attempt.",
+            "format": "uuid"
           }
         },
         "description": "One exchange with the peer, sent (`out`) or received (`in`)."
@@ -10890,12 +12040,243 @@
           "restricted"
         ],
         "description": "`Restricted` applications and pages are shown in full to administrators, members of the owning team and the\n        people on their access list; others see their id and domain only."
+      },
+      "WebhookCreatedDto": {
+        "required": [
+          "webhook",
+          "secret"
+        ],
+        "type": "object",
+        "properties": {
+          "webhook": {
+            "$ref": "#/components/schemas/WebhookDto"
+          },
+          "secret": {
+            "type": "string"
+          }
+        },
+        "description": "A webhook just created. `secret` (the HMAC-SHA256 key of `X-Noosphere-Signature`) is shown only this once."
+      },
+      "WebhookDeliveryDto": {
+        "required": [
+          "id",
+          "eventId",
+          "eventType",
+          "state",
+          "attempts",
+          "createdAt",
+          "lastAttemptAt",
+          "nextAttemptAt",
+          "responseStatus",
+          "error",
+          "test"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "eventId": {
+            "type": "string",
+            "description": "Sent as `X-Noosphere-Delivery`, the same for every attempt.",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/WebhookDeliveryState"
+          },
+          "attempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastAttemptAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When it is tried again (pending only).",
+            "format": "date-time"
+          },
+          "responseStatus": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "HTTP status answered by the receiver at the last attempt, if any.",
+            "format": "int32"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "test": {
+            "type": "boolean"
+          }
+        },
+        "description": "One event delivered (or to deliver) to a webhook."
+      },
+      "WebhookDeliveryPageDto": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebhookDeliveryDto"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Pass it as `cursor` for the next (older) page; null on the last page."
+          }
+        }
+      },
+      "WebhookDeliveryState": {
+        "enum": [
+          "pending",
+          "delivered",
+          "failed"
+        ]
+      },
+      "WebhookDto": {
+        "required": [
+          "id",
+          "name",
+          "url",
+          "events",
+          "enabled",
+          "createdAt",
+          "createdBy",
+          "lastDeliveryAt",
+          "pending",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "lastDeliveryAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "pending": {
+            "type": "integer",
+            "description": "Deliveries waiting for a (next) attempt.",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A webhook, without its secret."
+      },
+      "WebhookInput": {
+        "required": [
+          "name",
+          "url",
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "An HTTPS URL. Private, loopback and link-local addresses are refused unless the integration settings allow them."
+          },
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "`catalog.changed` and/or `deployment.updated`; at least one."
+          },
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "true by default."
+          },
+          "version": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "On an update: the version read, to refuse a concurrent change.",
+            "format": "int32"
+          }
+        },
+        "description": "A new webhook, or its new settings."
       }
     }
   },
   "tags": [
     {
       "name": "Health"
+    },
+    {
+      "name": "Integrations"
     },
     {
       "name": "Auth"

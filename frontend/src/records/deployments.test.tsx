@@ -26,7 +26,7 @@ const dep = (x: Partial<Deployment>): Deployment => ({
   environments: [{ name: 'Production', production: true }],
   updatedAt: '2026-10-30T08:00:00Z',
   receivedAt: '2026-10-30T08:00:00Z',
-  source: { linkId: 'l-1', product: 'gestion-mep', instanceName: 'MEP Alizé', linkActive: true },
+  source: { linkId: 'l-1', product: 'gestion-mep', instanceName: 'MEP Alizé', linkActive: true, kind: 'link' },
   ...x,
 });
 
@@ -49,7 +49,7 @@ const sample: Deployments = {
       outcome: 'success',
       applicationIds: ['billing'],
       url: 'https://ci.example/runs/2',
-      source: { linkId: 'l-2', product: 'Release pipeline', instanceName: 'Alizé CI', linkActive: false },
+      source: { linkId: 'l-2', product: 'Release pipeline', instanceName: 'Alizé CI', linkActive: false, kind: 'link' },
     }),
   ],
 };

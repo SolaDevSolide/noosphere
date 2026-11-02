@@ -51,8 +51,10 @@ public sealed record LinkCutInput(bool? Confirm);
 /// <summary>One exchange with the peer, sent (<c>out</c>) or received (<c>in</c>).</summary>
 /// <param name="Operation"><c>pair</c>, <c>status</c>, <c>catalog</c>, <c>directory</c>, <c>notices</c>, <c>deployments</c>, <c>rekey</c> or <c>unpair</c>.</param>
 /// <param name="Reason">For a refusal: <c>unknown-key</c>, <c>link-cut</c>, <c>link-not-confirmed</c>, <c>clock-skew</c>, <c>replay</c>, <c>bad-digest</c>, <c>bad-signature</c>...</param>
+/// <param name="ApiKeyId">A call made with an API key (<c>/api/integrations</c>).</param>
+/// <param name="WebhookId">A webhook delivery attempt.</param>
 public sealed record LinkExchangeDto(long Id, DateTimeOffset At, Guid? LinkId, LinkDirection Direction, string Operation, LinkExchangeResult Result,
-    int? Status, string? Reason, string? Detail);
+    int? Status, string? Reason, string? Detail, Guid? ApiKeyId, Guid? WebhookId);
 
 /// <param name="NextCursor">Pass it as <c>cursor</c> for the next (older) page; null on the last page.</param>
 public sealed record LinkExchangePageDto(IReadOnlyList<LinkExchangeDto> Items, string? NextCursor);
@@ -61,9 +63,12 @@ public sealed record LinkExchangePageDto(IReadOnlyList<LinkExchangeDto> Items, s
 
 public sealed record DeploymentEnvironmentDto(string Name, bool Production);
 
-/// <summary>Where a deployment comes from.</summary>
-/// <param name="LinkActive">False once the link is cut: the deployment stays as history.</param>
-public sealed record DeploymentSourceDto(Guid LinkId, string Product, string InstanceName, bool LinkActive);
+/// <summary>Where a deployment comes from: a link, or an API key (<c>kind: apiKey</c>).</summary>
+/// <param name="LinkId">The link's id; for an API key, the key's id.</param>
+/// <param name="Product">The linked product (<c>gestion-mep</c>); <c>api-key</c> for an API key.</param>
+/// <param name="InstanceName">The linked instance; for an API key, the key's name.</param>
+/// <param name="LinkActive">False once the link is cut, or the API key revoked or expired: the deployment stays as history.</param>
+public sealed record DeploymentSourceDto(Guid LinkId, string Product, string InstanceName, bool LinkActive, DeploymentSourceKind Kind);
 
 /// <summary>A deployment (a MEP of gestion-mep) touching the record.</summary>
 /// <param name="Url">The page of the deployment in the application that sent it; kept once the link is cut, so the history still points to it.</param>

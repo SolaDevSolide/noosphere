@@ -16,8 +16,11 @@ la prend en exemple. Une fois liées :
   responsables et contacts connus de Noosphere. Les comptes restent séparés dans chaque application.
 
 Seuls les administrateurs gèrent les liaisons. Les déploiements sont montrés aux membres et aux administrateurs,
-jamais aux invités. Les applications restreintes (avec une liste d'accès) ne sont jamais
-envoyées, ni les flux qui les touchent, ni les notes protégées, les pages ou l'historique.
+jamais aux invités. Les applications restreintes (avec une liste d'accès) ne sont jamais envoyées, ni les flux qui les
+touchent, ni les notes protégées, les pages ou l'historique.
+
+Les outils qui ne savent ni signer ni chiffrer (CI/CD, ITSM, scripts) utilisent plutôt les
+[clés d'API et webhooks](integrations.md).
 
 ## Appairage
 

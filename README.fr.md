@@ -35,6 +35,10 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   requêtes sont signées (RFC 9421) et les corps chiffrés (JWE), avec des empreintes confirmées des deux côtés. Une
   liaison peut aussi lire l'annuaire (équipes et personnes, jamais les invités), seulement si un administrateur
   l'autorise.
+- Des **intégrations** pour les outils qui ne parlent pas le protocole de liaison (CI/CD, ITSM, scripts) : des clés
+  d'API, montrées une fois et stockées hachées, lisent le catalogue et envoient des déploiements
+  (`/api/integrations`), et des webhooks sortants reçoivent les avis de changement et les déploiements, signés en
+  HMAC-SHA256, réessayés et tenus à l'écart des adresses privées.
 - Une interface en anglais et en français. Un seul conteneur, à côté de PostgreSQL.
 
 ## Démarrage rapide
@@ -123,6 +127,7 @@ docker compose exec noosphere noosphere link code --expires 30m
 - [Agents IA (MCP)](docs/fr/agents.md), avec llms.txt et les vues Markdown
 - [Boîte à outils de démo](docs/fr/demo.md)
 - [Liaisons avec d'autres applications (gestion-mep d'abord)](docs/fr/liaisons.md)
+- [Intégrations : clés d'API et webhooks](docs/fr/integrations.md), pour les chaînes CI/CD, les outils ITSM et les scripts
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)

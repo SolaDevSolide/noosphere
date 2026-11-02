@@ -185,14 +185,23 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 | `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, du plus récent au plus ancien : `{id, at, linkId, direction, operation, result, status, reason, detail}` |
 | `GET /api/links/exchanges?cursor=&limit=` | Toutes les lignes d'échange, y compris les requêtes refusées de clés inconnues |
 
+## Intégrations
+
+Clés d'API et webhooks pour les outils tiers : voir [intégrations](integrations.md). `GET /api/integrations/catalog`
+et `POST /api/integrations/deployments` prennent `Authorization: Bearer <clé d'API>` (ni session, ni
+`X-Requested-With`) ; les autres routes `/api/integrations` (clés, webhooks, livraisons, réglages) sont réservées aux
+administrateurs. Les lignes d'échange portent `apiKeyId` ou `webhookId` pour leurs appels et livraisons.
+
 ## Déploiements
 
 `GET /api/applications/{id}/deployments` et `GET /api/flows/{id}/deployments`, pour qui voit la fiche en entier (403
 sinon ; les invités reçoivent des listes vides), renvoient `{upcoming, past}` : les prochains du plus proche au plus
 lointain, les passés du plus récent au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un
 déploiement est `{deploymentId, title, phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds,
-environments: [{name, production}], updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url`
-reste une fois la liaison coupée (`linkActive` vaut alors false), et `applicationIds` ne liste que les applications
+environments: [{name, production}], updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive, kind}}` ;
+`kind` vaut `link` ou `apiKey` (`linkId` est alors l'identifiant de la clé, `product` vaut `api-key` et
+`instanceName` est le nom de la clé) ; `url` reste une fois la liaison coupée ou la clé révoquée (`linkActive` vaut
+alors false), et `applicationIds` ne liste que les applications
 visibles du lecteur. `GET /api/applications/{id}` et `GET /api/flows/{id}` renvoient aussi `deployments`, avec les 3
 derniers passés.
 

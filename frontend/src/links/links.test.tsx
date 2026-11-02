@@ -51,6 +51,8 @@ const ex = (x: Partial<LinkExchange>): LinkExchange => ({
   status: 200,
   reason: null,
   detail: null,
+  apiKeyId: null,
+  webhookId: null,
   ...x,
 });
 

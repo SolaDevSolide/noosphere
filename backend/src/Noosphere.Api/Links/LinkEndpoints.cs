@@ -129,7 +129,7 @@ public static class LinkEndpoints
             if (errors.Any)
                 return await inbound.Refuse(r.Link, "deployments", 400, LinkProtocol.Reasons.BadBody,
                     "Invalid events: " + string.Join("; ", errors.All.Take(5).Select(e => $"{e.Field}: {e.Message}")));
-            var receipt = await Deployments.Upsert(db, r.Link, events, inbound.Now, ctx.RequestAborted);
+            var receipt = await Deployments.Upsert(db, DeploymentSender.Of(r.Link), events, inbound.Now, ctx.RequestAborted);
             return await inbound.Answer(r, "deployments", 200, LinkProtocol.ToNode(receipt),
                 $"{receipt.Accepted} event(s) accepted" + (receipt.IgnoredApplicationIds.Count > 0 ? $", unknown applications ignored: {string.Join(", ", receipt.IgnoredApplicationIds)}." : "."));
         });

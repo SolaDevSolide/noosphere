@@ -7,6 +7,7 @@ using Noosphere.Api.Auth;
 using Noosphere.Api.Cli;
 using Noosphere.Api.Data;
 using Noosphere.Api.Endpoints;
+using Noosphere.Api.Integrations;
 using Noosphere.Api.Links;
 using Noosphere.Api.Security;
 using Noosphere.Api.Services;
@@ -39,6 +40,7 @@ builder.Services.AddNoosphereOpenApi();
 builder.Services.AddHostedService<AccessLogPurge>();
 builder.Services.AddSingleton<LinkNoticeSender>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<LinkNoticeSender>());
+builder.Services.AddNoosphereIntegrations();
 
 var app = builder.Build();
 
@@ -68,6 +70,7 @@ app.MapOAuth(settings);
 app.MapMcp("/mcp").RequireAuthorization(AgentBearerHandler.Policy).RequireCors(OAuthEndpoints.CorsPolicy);
 app.MapLlms();
 app.MapLinks(settings);
+app.MapIntegrations(settings);
 
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapAccounts();
@@ -81,6 +84,7 @@ api.MapConsent();
 api.MapAgents();
 if (settings.Demo) api.MapDemo();
 api.MapLinkAdmin(settings);
+api.MapIntegrationAdmin();
 // An unknown /api route never falls back to index.html.
 api.Map("{**rest}", () => Problems.Result(404, "Unknown API route.")).AllowAnonymous().ExcludeFromDescription();
 

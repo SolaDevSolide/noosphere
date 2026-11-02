@@ -16,8 +16,10 @@ example. Once linked:
   contacts Noosphere knows. Accounts stay separate in each application.
 
 Only administrators manage links. Deployments are shown to members and administrators, never to guests. Restricted
-applications (any access list) are never sent, nor the flows touching
-them, nor protected notes, pages or history.
+applications (any access list) are never sent, nor the flows touching them, nor protected notes, pages or history.
+
+Tools that cannot sign or encrypt (CI/CD pipelines, ITSM, scripts) use [API keys and webhooks](integrations.md)
+instead.
 
 ## Pairing
 
