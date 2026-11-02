@@ -153,7 +153,11 @@ public static class IntegrationEndpoints
                     return await Refuse(409, "idempotency-key-in-use", $"A request with this {IdempotencyHeader} is in progress: retry in a moment.");
                 }
             }
-            var receipt = await Deployments.Upsert(db, DeploymentSender.Of(key), events, now, ctx.RequestAborted);
+            // A rotated key still in its grace period writes as the key that replaced it: the tool's deployments stay one list.
+            var sender = key;
+            for (var hops = 0; sender.ReplacedById is { } next && hops < 10; hops++)
+                sender = await db.ApiKeys.AsNoTracking().FirstOrDefaultAsync(k => k.Id == next, ctx.RequestAborted) ?? sender;
+            var receipt = await Deployments.Upsert(db, DeploymentSender.Of(sender), events, now, ctx.RequestAborted);
             var answer = new DeploymentsReceiptDto(receipt.Accepted, receipt.IgnoredApplicationIds);
             if (record is not null)
                 (record.Status, record.Response) = (200, JsonSerializer.Serialize(answer, JsonSerializerOptions.Web));
@@ -190,19 +194,39 @@ public static class IntegrationEndpoints
             var errors = new FieldErrors();
             var name = errors.Required("name", input.Name);
             var scopes = ApiKeys.Scopes(input.Scopes, errors);
-            if (input.ExpiresInDays is < 1 or > ApiKeys.MaxExpiresInDays) errors.Add("expiresInDays", $"Between 1 and {ApiKeys.MaxExpiresInDays} days, or null for no expiry.");
+            if (input.ExpiresInDays is not { } days || !ApiKeys.Lifetimes.Contains(days))
+                errors.Add("expiresInDays", $"Required: {string.Join(", ", ApiKeys.Lifetimes)} days.");
             errors.ThrowIfAny();
             var now = clock.GetUtcNow();
-            var (value, prefix, hash) = ApiKeys.New();
-            var key = new ApiKey
-            {
-                Name = name, Prefix = prefix, SecretHash = hash, Scopes = scopes, CreatedAt = now, CreatedBy = Viewer.From(user).Username,
-                ExpiresAt = input.ExpiresInDays is { } days ? now.AddDays(days) : null,
-            };
+            var (key, value) = NewKey(name, scopes, now, input.ExpiresInDays!.Value, Viewer.From(user).Username);
             db.ApiKeys.Add(key);
             await db.SaveChangesAsync();
             return Results.Created($"/api/integrations/keys/{key.Id}", new ApiKeyCreatedDto(ApiKeys.Dto(key, now), value));
         }).Produces<ApiKeyCreatedDto>(StatusCodes.Status201Created);
+
+        admin.MapPost("/keys/{id:guid}/rotate", async (Guid id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
+        {
+            var old = await db.ApiKeys.FirstOrDefaultAsync(k => k.Id == id) ?? throw ApiProblem.NotFound($"No API key with the id '{id}'.");
+            var now = clock.GetUtcNow();
+            if (ApiKeys.State(old, now) != ApiKeyState.Active) throw ApiProblem.Conflict("Only an active key can be rotated: create a new one instead.");
+            if (old.ReplacedById is not null) throw ApiProblem.Conflict("This key was already rotated: rotate the new one.");
+            // The new key lives as long as the old one was meant to (rounded to a lifetime offered), from now.
+            var lifetime = old.ExpiresAt is { } until ? (until - old.CreatedAt).TotalDays : ApiKeys.Lifetimes[^1];
+            var days = ApiKeys.Lifetimes.OrderBy(l => Math.Abs(l - lifetime)).First();
+            var (key, value) = NewKey(old.Name, old.Scopes, now, days, Viewer.From(user).Username);
+            db.ApiKeys.Add(key);
+            old.ReplacedById = key.Id;
+            var grace = now + ApiKeys.RotationGrace;
+            if (old.ExpiresAt is null || old.ExpiresAt > grace) old.ExpiresAt = grace;
+            await using var transaction = await db.Database.BeginTransactionAsync();
+            await db.SaveChangesAsync();
+            // The deployments the tool sent follow its new key.
+            await db.Deployments.Where(d => d.ApiKeyId == old.Id).ExecuteUpdateAsync(u => u.SetProperty(d => d.ApiKeyId, key.Id));
+            await transaction.CommitAsync();
+            return Results.Created($"/api/integrations/keys/{key.Id}", new ApiKeyCreatedDto(ApiKeys.Dto(key, now), value));
+        })
+            .WithSummary("Rotate an API key: a new key, shown once; the old one keeps working for 24 hours")
+            .Produces<ApiKeyCreatedDto>(StatusCodes.Status201Created).Produces<ProblemDto>(StatusCodes.Status404NotFound).Produces<ProblemDto>(StatusCodes.Status409Conflict);
 
         admin.MapPost("/keys/{id:guid}/revoke", async (Guid id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
         {
@@ -218,6 +242,19 @@ public static class IntegrationEndpoints
             if (!await db.ApiKeys.AnyAsync(k => k.Id == id)) throw ApiProblem.NotFound($"No API key with the id '{id}'.");
             return await LinkAdminEndpoints.Exchanges(db.LinkExchanges.AsNoTracking().Where(x => x.ApiKeyId == id), cursor, limit);
         }).Produces<ProblemDto>(StatusCodes.Status404NotFound);
+
+        admin.MapGet("/exchanges", async ([FromQuery(Name = "apiKeyId")] Guid[]? keyIds, [FromQuery(Name = "webhookId")] Guid[]? hookIds, [FromQuery] string? cursor,
+            [FromQuery] int? limit, NoosphereDbContext db) =>
+        {
+            var keys = keyIds ?? [];
+            var hooks = hookIds ?? [];
+            if (keys.Length + hooks.Length is 0 or > 20)
+                throw ApiProblem.Invalid(new Dictionary<string, string[]> { ["apiKeyId"] = ["Between 1 and 20 apiKeyId and webhookId values."] });
+            return await LinkAdminEndpoints.Exchanges(db.LinkExchanges.AsNoTracking()
+                .Where(x => (x.ApiKeyId != null && keys.Contains(x.ApiKeyId.Value)) || (x.WebhookId != null && hooks.Contains(x.WebhookId.Value))), cursor, limit);
+        })
+            .WithSummary("The exchange log of some API keys and webhooks (a third-party tool), newest first")
+            .Produces<ProblemDto>(StatusCodes.Status400BadRequest);
 
         admin.MapGet("/webhooks", async (NoosphereDbContext db) =>
         {
@@ -251,6 +288,8 @@ public static class IntegrationEndpoints
             var (name, url, events) = await Validate(input, db, resolver);
             (hook.Name, hook.Url, hook.Events) = (name, url, events);
             if (input.Enabled is { } enabled) hook.Enabled = enabled;
+            // Switched on again: a paused webhook resumes, with a fresh count of failures.
+            if (input.Enabled == true) (hook.PausedAt, hook.FailingSince) = (null, null);
             hook.Version++;
             await db.SaveChangesAsync();
             return Webhooks.Dto(hook, (await Pending(db)).GetValueOrDefault(id));
@@ -262,6 +301,34 @@ public static class IntegrationEndpoints
             await db.SaveChangesAsync();
             return Results.NoContent();
         }).Produces(StatusCodes.Status204NoContent).Produces<ProblemDto>(StatusCodes.Status404NotFound);
+
+        admin.MapPost("/webhooks/{id:guid}/secret", async (Guid id, NoosphereDbContext db, IDataProtectionProvider protection) =>
+        {
+            var hook = await FindHook(db, id);
+            var secret = Webhooks.NewSecret();
+            hook.ProtectedSecret = Webhooks.Protector(protection).Protect(secret);
+            hook.Version++;
+            await db.SaveChangesAsync();
+            return new WebhookCreatedDto(Webhooks.Dto(hook, (await Pending(db)).GetValueOrDefault(id)), secret);
+        })
+            .WithSummary("Regenerate a webhook's signing secret, shown once; the old one stops signing at once")
+            .Produces<ProblemDto>(StatusCodes.Status404NotFound);
+
+        admin.MapPost("/webhooks/{id:guid}/deliveries/{deliveryId:long}/retry", async (Guid id, long deliveryId, NoosphereDbContext db, WebhookClient client) =>
+        {
+            var hook = await FindHook(db, id);
+            var delivery = await db.WebhookDeliveries.FirstOrDefaultAsync(d => d.Id == deliveryId && d.WebhookId == id)
+                ?? throw ApiProblem.NotFound($"No delivery {deliveryId} for this webhook.");
+            if (delivery.State == WebhookDeliveryState.Delivered) throw ApiProblem.Conflict("This delivery was already delivered.");
+            if (!hook.Enabled || hook.PausedAt is not null) throw ApiProblem.Conflict("Switch the webhook on (or resume it) before retrying.");
+            // One more attempt now; a failed delivery gets this attempt only.
+            delivery.State = WebhookDeliveryState.Pending;
+            await client.Attempt(db, hook, delivery, (await Settings(db)).AllowPrivateWebhookAddresses);
+            await db.SaveChangesAsync();
+            return Webhooks.Dto(delivery);
+        })
+            .WithSummary("Try a waiting or failed delivery again, now")
+            .Produces<ProblemDto>(StatusCodes.Status404NotFound).Produces<ProblemDto>(StatusCodes.Status409Conflict);
 
         admin.MapPost("/webhooks/{id:guid}/test", async (Guid id, ClaimsPrincipal user, NoosphereDbContext db, WebhookClient client, TimeProvider clock) =>
         {
@@ -314,6 +381,15 @@ public static class IntegrationEndpoints
             await db.SaveChangesAsync();
             return SettingsDto(row);
         });
+    }
+
+    private static (ApiKey Key, string Value) NewKey(string name, List<string> scopes, DateTimeOffset now, int days, string by)
+    {
+        var (value, prefix, hash) = ApiKeys.New();
+        return (new ApiKey
+        {
+            Name = name, Prefix = prefix, SecretHash = hash, Scopes = [.. scopes], CreatedAt = now, CreatedBy = by, ExpiresAt = now.AddDays(days),
+        }, value);
     }
 
     private static IntegrationSettingsDto SettingsDto(IntegrationSettings s) =>

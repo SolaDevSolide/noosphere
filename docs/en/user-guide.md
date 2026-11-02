@@ -141,6 +141,14 @@ application; entries are read only here. Guests do not see this block.
 Administrators manage links on the **Links** page of the account menu: pair an application with a single-use code,
 compare the four-word fingerprint shown on both screens before confirming, choose what each application may do,
 read the exchange log, renew keys or cut a link. See [Links](links.md).
+Sharing the directory (teams and people) with an application is off by default: switching it on shows what is
+shared, what never is, and a preview first. E-mail addresses are a separate checkbox, unticked.
+
+The same page lists **Connected tools**: CI/CD pipelines, ITSM tools or scripts that cannot sign requests. **Connect a
+tool** gives one a name, an API key (shown once, with ready-to-paste curl, GitHub Actions and GitLab CI examples)
+and, if needed, a webhook. Each tool has its page: webhook address, events, signing secret, test, last deliveries
+with **Retry now**, the API key with **Rotate** and **Revoke**, and its exchanges. See
+[Integrations](integrations.md#on-the-links-page).
 
 ## Demo toolbox
 

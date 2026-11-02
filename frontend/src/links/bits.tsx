@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import type { Language, Link, LinkExchange } from '../api/types';
 import { useI18n } from '../i18n';
 import type { Dict } from '../i18n/en';
@@ -160,6 +160,43 @@ export function useCountdown(iso: string | null | undefined): { left: string; ov
   return { left: h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`, over: ms === 0 };
 }
 
+/** An on/off switch with its state written next to it. */
+export function Switch({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const flip = () => !disabled && onChange(!checked);
+  const key = (e: KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      flip();
+    }
+  };
+  return (
+    <span
+      className="switch"
+      role="switch"
+      aria-checked={checked}
+      aria-disabled={disabled || undefined}
+      aria-label={label}
+      tabIndex={disabled ? -1 : 0}
+      onClick={flip}
+      onKeyDown={key}
+    >
+      <span className="tr" />
+      <span className="sl">{checked ? t.agents.console.on : t.agents.console.off}</span>
+    </span>
+  );
+}
+
 /* ---------- exchange log ---------- */
 
 export type ExchangeKind = 'all' | 'catalog' | 'notices' | 'events' | 'refused' | 'keys';
@@ -186,6 +223,7 @@ const METHOD: Record<string, string> = {
   pair: 'POST',
   status: 'GET',
   catalog: 'GET',
+  directory: 'GET',
   notices: 'POST',
   deployments: 'POST',
   rekey: 'POST',

@@ -88,7 +88,8 @@ public sealed class LinkDirectoryTests : IAsyncLifetime, IDisposable
         Assert.DoesNotContain(teams.Values.SelectMany(t => t["applicationIds"]!.AsArray()), a => a!.GetValue<string>() == "fraud");
 
         var people = directory["people"]!.AsArray().Select(p => p!.AsObject()).ToDictionary(p => p["username"]!.GetValue<string>());
-        Assert.Equal(["alice", "bob", "david"], people.Keys.Order());
+        // Members and administrators in at least one team: Alice, in no team, is not listed.
+        Assert.Equal(["bob", "david"], people.Keys.Order());
         Assert.Equal(["team-finance", "team-payments"], people["bob"]["teamIds"]!.AsArray().Select(t => t!.GetValue<string>()));
         Assert.All(people.Values, p => Assert.Equal(["displayName", "teamIds", "username"], p.Select(kv => kv.Key).Order()));
         var text = JsonSerializer.Serialize(directory);
@@ -176,6 +177,31 @@ public sealed class LinkDirectoryTests : IAsyncLifetime, IDisposable
             new PersonCandidate(Guid.NewGuid(), true, now),
         ]);
         Assert.Equal([("person", "bob", "upsert"), ("person", "gone", "delete")], changes.Select(c => (c.Kind, c.Id, c.Operation)).Order());
+    }
+
+    [Fact]
+    public async Task People_leaving_their_last_team_leave_the_directory()
+    {
+        using var scope = _api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<NoosphereDbContext>();
+        var david = await db.Users.AsNoTracking().SingleAsync(u => u.Username == "david");
+        await db.TeamMembers.Where(m => m.UserId == david.Id).ExecuteDeleteAsync();
+        var changes = await NoticeResolver.ResolvePeople(db, [new PersonCandidate(david.Id, false, DateTimeOffset.UtcNow, Membership: true)]);
+        Assert.Equal([("person", "david", "delete")], changes.Select(c => (c.Kind, c.Id, c.Operation)));
+    }
+
+    [Fact]
+    public async Task Administrators_preview_the_directory_before_sharing_it()
+    {
+        await (await _api.SignedIn("bob")).GetJson("/api/links/directory-preview", HttpStatusCode.Forbidden);
+        await Run(async db => await db.Teams.Where(t => t.Id == "team-finance").ExecuteUpdateAsync(s => s.SetProperty(t => t.Contact, "finance-ops@alize.example")));
+        var preview = await (await Alice()).GetJson("/api/links/directory-preview");
+        Assert.Equal((2, 1, 1, 1), (preview.GetProperty("people").GetInt32(), preview.GetProperty("guests").GetInt32(), preview.GetProperty("withoutTeam").GetInt32(),
+            preview.GetProperty("contactEmails").GetInt32()));
+        Assert.True(preview.GetProperty("teams").GetInt32() > 2);
+        var sample = preview.GetProperty("sample").EnumerateArray().ToList();
+        Assert.Equal(["bob", "david"], sample.Select(p => p.Str("username")).Order());
+        Assert.Contains(sample, p => p.GetProperty("teams").EnumerateArray().Any(t => t.GetString() == "Team Finance"));
     }
 
     private async Task<List<JsonObject>> WaitFor(Func<List<JsonObject>, bool> match)

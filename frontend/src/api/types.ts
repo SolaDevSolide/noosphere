@@ -248,8 +248,39 @@ export type LinkExchangeResult = S['LinkExchangeResult'];
 export type LinkExchange = S['LinkExchangeDto'];
 export type LinkExchangePage = S['LinkExchangePageDto'];
 /** Capabilities a link may have, in protocol order. */
-export type LinkCapability = 'catalog:read' | 'notices:send' | 'deployments:receive';
-export const LINK_CAPABILITIES: LinkCapability[] = ['catalog:read', 'notices:send', 'deployments:receive'];
+export type LinkCapability = 'catalog:read' | 'notices:send' | 'deployments:receive' | 'directory:read';
+export const LINK_CAPABILITIES: LinkCapability[] = [
+  'catalog:read',
+  'notices:send',
+  'deployments:receive',
+  'directory:read',
+];
+/** Granted by default at pairing: the directory is never shared unless an administrator ticks it. */
+export const DEFAULT_LINK_CAPABILITIES: LinkCapability[] = ['catalog:read', 'notices:send', 'deployments:receive'];
+export type DirectoryPreview = S['DirectoryPreviewDto'];
+
+/* ---- Milestone 6: third-party tools (API keys and webhooks) ---- */
+
+export type ApiKeyState = S['ApiKeyState'];
+export type ApiKey = S['ApiKeyDto'];
+/** A key just created or rotated: `key` is shown only this once. */
+export type ApiKeyCreated = S['ApiKeyCreatedDto'];
+export type ApiKeyInput = S['ApiKeyInput'];
+export type Webhook = S['WebhookDto'];
+/** A webhook just created, or its secret regenerated: `secret` is shown only this once. */
+export type WebhookCreated = S['WebhookCreatedDto'];
+export type WebhookInput = S['WebhookInput'];
+export type WebhookDeliveryState = S['WebhookDeliveryState'];
+export type WebhookDelivery = S['WebhookDeliveryDto'];
+export type WebhookDeliveryPage = S['WebhookDeliveryPageDto'];
+export type IntegrationSettings = S['IntegrationSettingsDto'];
+export type ApiKeyScope = 'catalog:read' | 'deployments:write';
+export const API_KEY_SCOPES: ApiKeyScope[] = ['catalog:read', 'deployments:write'];
+export type WebhookEvent = 'catalog.changed' | 'deployment.updated';
+export const WEBHOOK_EVENTS: WebhookEvent[] = ['catalog.changed', 'deployment.updated'];
+/** Lifetimes a key may have, in days: a key always expires. */
+export const KEY_LIFETIMES = [90, 180, 365] as const;
+export type KeyLifetime = (typeof KEY_LIFETIMES)[number];
 
 export type DeploymentPhase = S['DeploymentPhase'];
 export type DeploymentOutcome = S['DeploymentOutcome'];

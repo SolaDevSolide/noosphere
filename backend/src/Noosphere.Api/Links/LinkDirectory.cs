@@ -9,8 +9,9 @@ namespace Noosphere.Api.Links;
 
 /// <summary>
 /// The directory shared with a link that has <c>directory:read</c>: every team, with its contact and the shared
-/// applications it owns, and every member and administrator, with their display name and teams. Never roles, never
-/// guests, and no e-mail address unless the link's administrator shares them.
+/// applications it owns, and the members and administrators who belong to at least one team, with their display name
+/// and teams. Never roles, never guests, never accounts outside every team, and no e-mail address unless the link's
+/// administrator shares them.
 /// </summary>
 public static partial class LinkDirectory
 {
@@ -26,7 +27,21 @@ public static partial class LinkDirectory
             .GroupBy(m => m.UserId).ToDictionary(g => g.Key, g => g.Select(m => m.TeamId).Order(StringComparer.Ordinal).ToList());
         return new DirectoryPayload(now, instanceName, link.ShareEmails,
             [.. teams.Select(t => new DirectoryTeam(t.Id, t.Name, Contact(t.Contact, link.ShareEmails), owned.GetValueOrDefault(t.Id) ?? []))],
-            [.. people.Select(p => new DirectoryPerson(p.Username, p.DisplayName, memberships.GetValueOrDefault(p.Id) ?? []))]);
+            [.. people.Where(p => memberships.ContainsKey(p.Id)).Select(p => new DirectoryPerson(p.Username, p.DisplayName, memberships[p.Id]))]);
+    }
+
+    /// <summary>What a link would read, for the administrator about to share the directory: counts and three people.</summary>
+    public static async Task<Contracts.DirectoryPreviewDto> Preview(NoosphereDbContext db, CancellationToken cancel = default)
+    {
+        var teams = await db.Teams.AsNoTracking().OrderBy(t => t.Name).Select(t => new { t.Id, t.Name, t.Contact }).ToListAsync(cancel);
+        var names = teams.ToDictionary(t => t.Id, t => t.Name, StringComparer.Ordinal);
+        var users = await db.Users.AsNoTracking().OrderBy(u => u.DisplayName).Select(u => new { u.Id, u.Username, u.DisplayName, u.Role }).ToListAsync(cancel);
+        var memberships = (await db.TeamMembers.AsNoTracking().ToListAsync(cancel))
+            .GroupBy(m => m.UserId).ToDictionary(g => g.Key, g => g.Select(m => names.GetValueOrDefault(m.TeamId) ?? m.TeamId).Order(StringComparer.Ordinal).ToList());
+        var listed = users.Where(u => u.Role != Role.Guest && memberships.ContainsKey(u.Id)).ToList();
+        return new Contracts.DirectoryPreviewDto(teams.Count, listed.Count, users.Count(u => u.Role == Role.Guest),
+            users.Count(u => u.Role != Role.Guest && !memberships.ContainsKey(u.Id)), teams.Count(t => t.Contact is { } c && HasEmail(c)),
+            [.. listed.Take(3).Select(u => new Contracts.DirectoryPreviewPersonDto(u.Username, u.DisplayName, memberships[u.Id]))]);
     }
 
     /// <summary>A contact as shared: kept when e-mails are shared or when it holds no e-mail address (a chat channel), null otherwise.</summary>

@@ -7,7 +7,11 @@ import { useAuth } from '../auth/auth';
 import { useDemo } from '../demo/context';
 import { useI18n } from '../i18n';
 import { PageShell } from '../records/common';
-import { IconCheck, IconClock, IconInfo, IconLink, IconLock, IconTerminal, IconWarn } from '../ui/icons';
+import { IconCheck, IconClock, IconInfo, IconKey, IconLink, IconLock, IconTerminal, IconWarn } from '../ui/icons';
+import { useGo } from '../ui/useGo';
+import { ConnectToolDialog, ShownOnceDialog, type Shown } from './ToolDialogs';
+import { ToolReminders, ToolsSection, useTools, WebhookAddressSettings } from './ToolsSection';
+import { toolPath } from './tools';
 import { AppTile, CapChips, capText, LinkStateChip, PeerChip, productLine, ProtocolLink, useCountdown } from './bits';
 
 /** Display names by username, for "created by" and "paired by"; usernames until loaded. */
@@ -26,7 +30,7 @@ export function usePeopleNames(): (username: string) => string {
   return (u) => names.get(u) ?? u;
 }
 
-export function LinksHeader({ action }: { action?: boolean }) {
+export function LinksHeader({ action, onConnect }: { action?: boolean; onConnect?: () => void }) {
   const { t } = useI18n();
   return (
     <div className="page-h">
@@ -35,6 +39,12 @@ export function LinksHeader({ action }: { action?: boolean }) {
         <p>{t.links.intro}</p>
       </div>
       <div className="page-actions">
+        {onConnect && (
+          <button type="button" className="btn" onClick={onConnect}>
+            <IconKey />
+            {t.links.connect}
+          </button>
+        )}
         {action && (
           <RouterLink className="btn primary" to="/admin/links/pair">
             <IconLink />
@@ -60,7 +70,7 @@ export function AdminOnly({ children }: { children: ReactNode }) {
   );
 }
 
-export function CapabilityList({ caps = LINK_CAPABILITIES as string[] }: { caps?: string[] }) {
+export function CapabilityList({ caps = LINK_CAPABILITIES as readonly string[] }: { caps?: readonly string[] }) {
   const { t } = useI18n();
   return (
     <ul className="can">
@@ -247,6 +257,11 @@ function LinksList() {
   const [codes, setCodes] = useState<LinkCode[]>([]);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
+  const [toolsReload, setToolsReload] = useState(0);
+  const { tools, error: toolsError } = useTools(toolsReload + tick);
+  const [connecting, setConnecting] = useState(false);
+  const [shown, setShown] = useState<{ name: string; shown: Shown } | null>(null);
+  const nav = useGo();
   useEffect(() => {
     let alive = true;
     setError(false);
@@ -269,7 +284,7 @@ function LinksList() {
   const waiting = live.filter((x) => x.peerConfirmed !== true).length;
   return (
     <PageShell wide title={t.links.title}>
-      <LinksHeader action={!!links && links.length > 0} />
+      <LinksHeader action={!!links && links.length > 0} onConnect={() => setConnecting(true)} />
       {error && (
         <div className="banner danger" role="alert">
           <IconWarn />
@@ -285,6 +300,7 @@ function LinksList() {
       )}
       {!error && !links && <ListSkeleton />}
       {links && codes.length > 0 && <OpenCodeBanner codes={codes} nameOf={nameOf} />}
+      {links && tools && <ToolReminders tools={tools} />}
       {links && links.length === 0 && <EmptyLinks />}
       {links && links.length > 0 && (
         <>
@@ -292,7 +308,9 @@ function LinksList() {
             <div className="tb-h">
               <div>
                 <h2 id="ll-h">{l.title}</h2>
-                <p>{l.summary(live.length, products, waiting, cut)}</p>
+                <p>
+                  {l.signed} {l.summary(live.length, products, waiting, cut)}
+                </p>
               </div>
             </div>
             <table className="table rtable atable lk-table">
@@ -315,14 +333,45 @@ function LinksList() {
               </tbody>
             </table>
           </section>
-          <SharedWithEveryLink />
         </>
+      )}
+      {(links || error) && (
+        <ToolsSection
+          tools={tools}
+          error={toolsError}
+          onRetry={() => setToolsReload((x) => x + 1)}
+          onConnect={() => setConnecting(true)}
+          nameOf={nameOf}
+        />
+      )}
+      {links && links.length > 0 && <SharedWithEveryLink />}
+      {links && <WebhookAddressSettings nameOf={nameOf} />}
+      {connecting && (
+        <ConnectToolDialog
+          taken={(tools ?? []).map((x) => x.name)}
+          onClose={() => setConnecting(false)}
+          onCreated={(name, s) => {
+            setConnecting(false);
+            setShown({ name, shown: s });
+            setToolsReload((x) => x + 1);
+          }}
+        />
+      )}
+      {shown && (
+        <ShownOnceDialog
+          shown={shown.shown}
+          onDone={() => {
+            const name = shown.name;
+            setShown(null);
+            nav(toolPath(name));
+          }}
+        />
       )}
     </PageShell>
   );
 }
 
-/** The links page, for administrators: linked applications, an open pairing code, and what every link shares. */
+/** The links page, for administrators: linked applications, an open pairing code, what every link shares, and connected tools. */
 export function LinksPage() {
   return (
     <AdminOnly>

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useGo } from '../ui/useGo';
 import { api, ApiError } from '../api/client';
-import { LINK_CAPABILITIES, type LinkCapability, type LinkCode } from '../api/types';
+import { DEFAULT_LINK_CAPABILITIES, LINK_CAPABILITIES, type LinkCapability, type LinkCode } from '../api/types';
 import { clock, copyText } from '../agents/bits';
 import { useAuth } from '../auth/auth';
 import { useI18n } from '../i18n';
@@ -19,6 +19,7 @@ import {
 } from '../ui/icons';
 import { useToast } from '../ui/Toast';
 import { CapChips, capText, useCountdown } from './bits';
+import { DirectoryDialog } from './DirectoryDialog';
 import { AdminOnly, LinksHeader, usePeopleNames } from './LinksPage';
 
 /** How often the waiting step asks whether the code was used. */
@@ -85,7 +86,7 @@ function CreateStep({ onCreated }: { onCreated: (s: Shown) => void }) {
   const toast = useToast();
   const nav = useGo();
   const c = t.links.code;
-  const [caps, setCaps] = useState<LinkCapability[]>(LINK_CAPABILITIES);
+  const [caps, setCaps] = useState<LinkCapability[]>(DEFAULT_LINK_CAPABILITIES);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const submit = async (e: FormEvent) => {
@@ -114,6 +115,7 @@ function CreateStep({ onCreated }: { onCreated: (s: Shown) => void }) {
       setBusy(false);
     }
   };
+  const [asking, setAsking] = useState(false);
   const toggle = (cap: LinkCapability, on: boolean) => {
     setErr(null);
     setCaps((cs) => LINK_CAPABILITIES.filter((x) => (x === cap ? on : cs.includes(x))));
@@ -136,14 +138,18 @@ function CreateStep({ onCreated }: { onCreated: (s: Shown) => void }) {
             <div className="rcards" role="group" aria-labelledby="cap-l">
               {LINK_CAPABILITIES.map((cap) => {
                 const [name, text] = capText(t, cap);
+                const dir = cap === 'directory:read';
                 return (
                   <label key={cap} className="rcard">
                     <input
                       type="checkbox"
                       checked={caps.includes(cap)}
-                      onChange={(e) => toggle(cap, e.target.checked)}
+                      onChange={(e) => (dir && e.target.checked ? setAsking(true) : toggle(cap, e.target.checked))}
                     />
-                    <b>{name}</b>
+                    <b>
+                      {name}
+                      {dir && <span className="tl-new">{t.links.newBadge}</span>}
+                    </b>
                     <small>
                       {text} <span className="mono">{cap}</span>
                     </small>
@@ -174,6 +180,16 @@ function CreateStep({ onCreated }: { onCreated: (s: Shown) => void }) {
             </div>
           </form>
         </section>
+        {asking && (
+          <DirectoryDialog
+            name={null}
+            onCancel={() => setAsking(false)}
+            onConfirm={() => {
+              setAsking(false);
+              toggle('directory:read', true);
+            }}
+          />
+        )}
       </div>
       <div>
         <section className="box" aria-labelledby="cl-h">

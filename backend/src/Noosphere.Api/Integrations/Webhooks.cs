@@ -37,8 +37,10 @@ public static class Webhooks
     /// <summary>A receiver should refuse a signature whose <c>t</c> is further than this from its clock.</summary>
     public static readonly TimeSpan Tolerance = TimeSpan.FromMinutes(5);
 
-    /// <summary>Delay before attempt n+1 after n failed attempts: 30 s, 2 min, 10 min, 1 h, 6 h; then the delivery fails.</summary>
-    public static readonly TimeSpan[] Backoff = [TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(10), TimeSpan.FromHours(1), TimeSpan.FromHours(6)];
+    /// <summary>Delay before attempt n+1 after n failed attempts: 1 min, 5 min, 30 min, 2 h, 6 h (6 attempts over about 9 hours); then the delivery fails.</summary>
+    public static readonly TimeSpan[] Backoff = [TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(30), TimeSpan.FromHours(2), TimeSpan.FromHours(6)];
+    /// <summary>A webhook failing for this long without a single delivery is paused.</summary>
+    public static readonly TimeSpan PauseAfter = TimeSpan.FromHours(24);
     public static int MaxAttempts => Backoff.Length + 1;
 
     public static IDataProtector Protector(IDataProtectionProvider provider) => provider.CreateProtector("Noosphere.Webhooks.v1");
@@ -69,7 +71,7 @@ public static class Webhooks
     /// <summary>Queues an event for every enabled webhook that receives its type (saved with the caller's next save).</summary>
     public static async Task<int> Enqueue(NoosphereDbContext db, string type, JsonNode data, DateTimeOffset now, CancellationToken cancel = default)
     {
-        var hooks = await db.Webhooks.AsNoTracking().Where(w => w.Enabled && w.Events.Contains(type)).Select(w => w.Id).ToListAsync(cancel);
+        var hooks = await db.Webhooks.AsNoTracking().Where(w => w.Enabled && w.PausedAt == null && w.Events.Contains(type)).Select(w => w.Id).ToListAsync(cancel);
         foreach (var id in hooks)
         {
             var eventId = Guid.NewGuid();
@@ -83,7 +85,7 @@ public static class Webhooks
     }
 
     public static WebhookDto Dto(Webhook w, int pending) =>
-        new(w.Id, w.Name, w.Url, w.Events, w.Enabled, w.CreatedAt, w.CreatedBy, w.LastDeliveryAt, pending, w.Version);
+        new(w.Id, w.Name, w.Url, w.Events, w.Enabled, w.CreatedAt, w.CreatedBy, w.LastDeliveryAt, pending, w.FailingSince, w.PausedAt, w.Version);
 
     public static WebhookDeliveryDto Dto(WebhookDelivery d) =>
         new(d.Id, d.EventId, d.EventType, d.State, d.Attempts, d.CreatedAt, d.LastAttemptAt, d.State == WebhookDeliveryState.Pending ? d.NextAttemptAt : null,
@@ -142,7 +144,7 @@ public sealed class WebhookClient(IHttpClientFactory http, IDataProtectionProvid
         if (error is null)
         {
             (delivery.State, delivery.NextAttemptAt) = (WebhookDeliveryState.Delivered, null);
-            hook.LastDeliveryAt = now;
+            (hook.LastDeliveryAt, hook.FailingSince) = (now, null);
         }
         else if (delivery.Test || delivery.Attempts >= Webhooks.MaxAttempts)
             (delivery.State, delivery.NextAttemptAt) = (WebhookDeliveryState.Failed, null);
@@ -153,6 +155,32 @@ public sealed class WebhookClient(IHttpClientFactory http, IDataProtectionProvid
         var line = LinkLog.Add(db, null, LinkDirection.Out, "webhook", error is null ? LinkExchangeResult.Ok : LinkExchangeResult.Failed, status, now, detail);
         line.WebhookId = hook.Id;
         if (error is not null) logger.LogInformation("Webhook {Name}: {Detail}", hook.Name, detail);
+        // The test button tells about the receiver now; it neither starts nor ends a run of failures.
+        if (error is not null && !delivery.Test)
+        {
+            hook.FailingSince ??= now;
+            if (hook.PausedAt is null && now - hook.FailingSince.Value >= Webhooks.PauseAfter) await Pause(db, hook, now, cancel);
+        }
+    }
+
+    /// <summary>
+    /// Pauses a webhook that failed for 24 hours: its waiting deliveries fail, nothing more is queued, and the pause is
+    /// written to the exchange log and the server log (administrators see it on the Links page).
+    /// </summary>
+    private async Task Pause(NoosphereDbContext db, Webhook hook, DateTimeOffset now, CancellationToken cancel)
+    {
+        hook.PausedAt = now;
+        hook.Version++;
+        const string reason = "The webhook was paused after 24 hours of failures.";
+        foreach (var waiting in db.WebhookDeliveries.Local.Where(d => d.WebhookId == hook.Id && d.State == WebhookDeliveryState.Pending))
+            (waiting.State, waiting.NextAttemptAt, waiting.Error) = (WebhookDeliveryState.Failed, null, reason);
+        await db.WebhookDeliveries.Where(d => d.WebhookId == hook.Id && d.State == WebhookDeliveryState.Pending)
+            .ExecuteUpdateAsync(s => s.SetProperty(d => d.State, WebhookDeliveryState.Failed).SetProperty(d => d.NextAttemptAt, (DateTimeOffset?)null)
+                .SetProperty(d => d.Error, reason), cancel);
+        var line = LinkLog.Add(db, null, LinkDirection.Out, "webhook", LinkExchangeResult.Failed, null, now,
+            $"{hook.Name}: paused after failing since {LinkProtocol.Time(hook.FailingSince!.Value)}. An administrator resumes it on the Links page.", "webhook-paused");
+        line.WebhookId = hook.Id;
+        logger.LogWarning("Webhook {Name} paused: no delivery succeeded since {Since}. Resume it on the Links page once the receiver is fixed.", hook.Name, hook.FailingSince);
     }
 }
 
@@ -193,7 +221,7 @@ public sealed class WebhookSender(IServiceScopeFactory scopes, TimeProvider cloc
         foreach (var delivery in due)
         {
             if (!hooks.TryGetValue(delivery.WebhookId, out var hook)) continue;
-            if (!hook.Enabled)
+            if (!hook.Enabled || hook.PausedAt is not null)
             {
                 (delivery.State, delivery.NextAttemptAt, delivery.Error) = (WebhookDeliveryState.Failed, null, "The webhook was disabled before delivery.");
                 continue;

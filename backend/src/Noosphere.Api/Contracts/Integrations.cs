@@ -6,15 +6,17 @@ namespace Noosphere.Api.Contracts;
 
 /// <summary>A new API key.</summary>
 /// <param name="Scopes"><c>catalog:read</c> and/or <c>deployments:write</c>; at least one.</param>
-/// <param name="ExpiresInDays">1 to 3650; null: the key never expires.</param>
+/// <param name="ExpiresInDays">Required: 90, 180 or 365 days.</param>
 public sealed record ApiKeyInput(string? Name, List<string>? Scopes, int? ExpiresInDays = null);
 
 public enum ApiKeyState { Active, Expired, Revoked }
 
 /// <summary>An API key, without its secret (shown once, at creation).</summary>
 /// <param name="Prefix">The start of the key (<c>nsk_</c> and 8 characters), to recognise it.</param>
+/// <param name="ExpiresAt">Null only for keys created before expiry became required.</param>
+/// <param name="ReplacedById">Set once the key was rotated: the new key's id. The old key keeps working until <c>expiresAt</c> (24 hours at most).</param>
 public sealed record ApiKeyDto(Guid Id, string Name, string Prefix, IReadOnlyList<string> Scopes, ApiKeyState State, DateTimeOffset CreatedAt,
-    string CreatedBy, DateTimeOffset? ExpiresAt, DateTimeOffset? LastUsedAt, DateTimeOffset? RevokedAt, string? RevokedBy);
+    string CreatedBy, DateTimeOffset? ExpiresAt, DateTimeOffset? LastUsedAt, DateTimeOffset? RevokedAt, string? RevokedBy, Guid? ReplacedById);
 
 /// <summary>An API key just created. <c>key</c> is shown only this once: store it in the tool's secrets.</summary>
 public sealed record ApiKeyCreatedDto(ApiKeyDto ApiKey, string Key);
@@ -22,14 +24,16 @@ public sealed record ApiKeyCreatedDto(ApiKeyDto ApiKey, string Key);
 /// <summary>A new webhook, or its new settings.</summary>
 /// <param name="Url">An HTTPS URL. Private, loopback and link-local addresses are refused unless the integration settings allow them.</param>
 /// <param name="Events"><c>catalog.changed</c> and/or <c>deployment.updated</c>; at least one.</param>
-/// <param name="Enabled">true by default.</param>
+/// <param name="Enabled">true by default. Sending true to a paused webhook resumes it.</param>
 /// <param name="Version">On an update: the version read, to refuse a concurrent change.</param>
 public sealed record WebhookInput(string? Name, string? Url, List<string>? Events, bool? Enabled = null, int? Version = null);
 
 /// <summary>A webhook, without its secret.</summary>
 /// <param name="Pending">Deliveries waiting for a (next) attempt.</param>
+/// <param name="FailingSince">First failed attempt since the last delivered one; null while deliveries succeed.</param>
+/// <param name="PausedAt">Set after 24 hours of failures: nothing is queued or sent until an administrator resumes it (<c>enabled: true</c>).</param>
 public sealed record WebhookDto(Guid Id, string Name, string Url, IReadOnlyList<string> Events, bool Enabled, DateTimeOffset CreatedAt, string CreatedBy,
-    DateTimeOffset? LastDeliveryAt, int Pending, int Version);
+    DateTimeOffset? LastDeliveryAt, int Pending, DateTimeOffset? FailingSince, DateTimeOffset? PausedAt, int Version);
 
 /// <summary>A webhook just created. <c>secret</c> (the HMAC-SHA256 key of <c>X-Noosphere-Signature</c>) is shown only this once.</summary>
 public sealed record WebhookCreatedDto(WebhookDto Webhook, string Secret);

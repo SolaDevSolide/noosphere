@@ -2,6 +2,8 @@
 // they send to records. No peer is called: a new pairing code is "used" by a fictional application a few seconds
 // after it is created, so that the fingerprint step can be tried.
 import type {
+  ApiKey,
+  Webhook,
   Deployment,
   DeploymentEnvironment,
   Deployments,
@@ -10,7 +12,7 @@ import type {
   LinkExchange,
   UserM2,
 } from '../api/types';
-import { LINK_CAPABILITIES } from '../api/types';
+import { DEFAULT_LINK_CAPABILITIES, LINK_CAPABILITIES } from '../api/types';
 import type { GovCtx } from './governance';
 
 type Rec = Record<string, unknown>;
@@ -70,7 +72,7 @@ function link(n: number, l: Partial<Link> & Pick<Link, 'product' | 'instanceName
     confirmedBy: 'alice',
     peerConfirmed: true,
     peerCheckedAt: ago(30),
-    capabilities: [...LINK_CAPABILITIES],
+    capabilities: [...DEFAULT_LINK_CAPABILITIES],
     shareEmails: false,
     fingerprint: words(n),
     pairedAt: ago(60 * 24 * 9),
@@ -431,6 +433,7 @@ export function handleLinks(
     if (!e) return problem(404, 'Flow not found.');
     return json(200, deploymentsFor(u, e));
   }
+  if (path.startsWith('/integrations')) return handleIntegrations(ctx, u, method, path, body);
   if (!path.startsWith('/links')) return null;
   if (u.role !== 'admin') return problem(403, 'Administrators only.');
 
@@ -439,7 +442,7 @@ export function handleLinks(
       return json(200, [...codes].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(codeDto));
     if (method === 'POST') {
       const b = body();
-      const caps = Array.isArray(b.capabilities) ? (b.capabilities as string[]) : [...LINK_CAPABILITIES];
+      const caps = Array.isArray(b.capabilities) ? (b.capabilities as string[]) : [...DEFAULT_LINK_CAPABILITIES];
       const unknown = caps.filter((c) => !(LINK_CAPABILITIES as string[]).includes(c));
       if (unknown.length)
         return problem(400, 'Validation failed.', undefined, {
@@ -517,7 +520,9 @@ export function handleLinks(
   if (op === 'capabilities' && method === 'PUT') {
     const blocked = notCut();
     if (blocked) return blocked;
-    const caps = body().capabilities;
+    const b = body();
+    const caps = b.capabilities;
+    if (typeof b.shareEmails === 'boolean') l.shareEmails = b.shareEmails;
     if (!Array.isArray(caps))
       return problem(400, 'Validation failed.', undefined, { capabilities: ['This field is required.'] });
     l.capabilities = LINK_CAPABILITIES.filter((c) => (caps as string[]).includes(c));
@@ -563,4 +568,111 @@ export function handleLinks(
     return json(200, l);
   }
   return problem(405, 'Method not allowed.');
+}
+
+/* ---- third-party tools: a small in-memory version of /api/integrations ---- */
+
+const apiKeys: ApiKey[] = [];
+const webhooks: Webhook[] = [];
+let allowPrivate = false;
+const rand = (n: number) =>
+  Array.from({ length: n }, () => 'abcdefghijkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 32)]).join('');
+
+function handleIntegrations(ctx: GovCtx, u: UserM2, method: string, path: string, body: () => Rec): Response {
+  const { json, problem } = ctx;
+  if (u.role !== 'admin') return problem(403, 'Administrators only.');
+  const now = new Date().toISOString();
+  if (path === '/integrations/keys' && method === 'GET') return json(200, apiKeys);
+  if (path === '/integrations/keys' && method === 'POST') {
+    const b = body();
+    const prefix = 'nsk_' + rand(8);
+    const k: ApiKey = {
+      id: uuid(900 + apiKeys.length),
+      name: typeof b.name === 'string' ? b.name : '',
+      prefix,
+      scopes: (b.scopes as string[]) ?? [],
+      state: 'active',
+      createdAt: now,
+      createdBy: u.username,
+      expiresAt: new Date(Date.now() + Number(b.expiresInDays ?? 365) * 86400000).toISOString(),
+      lastUsedAt: null,
+      revokedAt: null,
+      revokedBy: null,
+      replacedById: null,
+    };
+    apiKeys.unshift(k);
+    return json(201, { apiKey: k, key: `${prefix}_${rand(40)}` });
+  }
+  const km = /^\/integrations\/keys\/([^/]+)\/(revoke|rotate)$/.exec(path);
+  if (km && method === 'POST') {
+    const k = apiKeys.find((x) => x.id === km[1]);
+    if (!k) return problem(404, 'No API key with this id.');
+    if (km[2] === 'revoke') {
+      Object.assign(k, { state: 'revoked', revokedAt: now, revokedBy: u.username });
+      return json(200, k);
+    }
+    const prefix = 'nsk_' + rand(8);
+    const n: ApiKey = { ...k, id: uuid(900 + apiKeys.length), prefix, createdAt: now, lastUsedAt: null };
+    Object.assign(k, { replacedById: n.id, expiresAt: new Date(Date.now() + 86400000).toISOString() });
+    apiKeys.unshift(n);
+    return json(201, { apiKey: n, key: `${prefix}_${rand(40)}` });
+  }
+  if (path === '/integrations/webhooks' && method === 'GET') return json(200, webhooks);
+  if (path === '/integrations/webhooks' && method === 'POST') {
+    const b = body();
+    const w: Webhook = {
+      id: uuid(950 + webhooks.length),
+      name: typeof b.name === 'string' ? b.name : '',
+      url: typeof b.url === 'string' ? b.url : '',
+      events: (b.events as string[]) ?? [],
+      enabled: true,
+      createdAt: now,
+      createdBy: u.username,
+      lastDeliveryAt: null,
+      pending: 0,
+      failingSince: null,
+      pausedAt: null,
+      version: 1,
+    };
+    webhooks.push(w);
+    return json(201, { webhook: w, secret: 'whsec_' + rand(40) });
+  }
+  const wm = /^\/integrations\/webhooks\/([^/]+)(?:\/(test|secret|deliveries))?$/.exec(path);
+  const w = wm ? webhooks.find((x) => x.id === wm[1]) : undefined;
+  if (wm && !w) return problem(404, 'No webhook with this id.');
+  if (wm && w) {
+    if (wm[2] === 'deliveries') return json(200, { items: [], nextCursor: null });
+    if (wm[2] === 'secret') return json(200, { webhook: w, secret: 'whsec_' + rand(40) });
+    if (wm[2] === 'test')
+      return json(200, {
+        id: 1,
+        eventId: uuid(1),
+        eventType: 'ping',
+        state: 'delivered',
+        attempts: 1,
+        createdAt: now,
+        lastAttemptAt: now,
+        nextAttemptAt: null,
+        responseStatus: 200,
+        error: null,
+        test: true,
+      });
+    if (method === 'PUT') {
+      const b = body();
+      Object.assign(w, { url: b.url, events: b.events, version: w.version + 1 });
+      if (typeof b.enabled === 'boolean') Object.assign(w, { enabled: b.enabled, pausedAt: null, failingSince: null });
+      return json(200, w);
+    }
+    if (method === 'DELETE') {
+      webhooks.splice(webhooks.indexOf(w), 1);
+      return new Response(null, { status: 204 });
+    }
+    return json(200, w);
+  }
+  if (path === '/integrations/exchanges') return json(200, { items: [], nextCursor: null });
+  if (path === '/integrations/settings') {
+    if (method === 'PUT') allowPrivate = !!body().allowPrivateAddresses;
+    return json(200, { allowPrivateAddresses: allowPrivate, updatedAt: null, updatedBy: null });
+  }
+  return problem(404, 'Not found.');
 }

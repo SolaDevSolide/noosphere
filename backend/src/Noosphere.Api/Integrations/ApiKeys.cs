@@ -26,7 +26,10 @@ public static class ApiKeys
     public const string Alphabet = "abcdefghijkmnpqrstuvwxyz23456789";
     public const int PrefixLength = 8;
     public const int SecretLength = 40;
-    public const int MaxExpiresInDays = 3650;
+    /// <summary>A key always expires: after one of these lifetimes, in days.</summary>
+    public static readonly int[] Lifetimes = [90, 180, 365];
+    /// <summary>A rotated key keeps working this long, so the tool's secret can be updated without a gap.</summary>
+    public static readonly TimeSpan RotationGrace = TimeSpan.FromHours(24);
     public const string RateLimit = "integration";
     public const int RequestsPerMinute = 120;
 
@@ -49,7 +52,7 @@ public static class ApiKeys
         key.RevokedAt is not null ? ApiKeyState.Revoked : key.ExpiresAt is { } until && until <= now ? ApiKeyState.Expired : ApiKeyState.Active;
 
     public static ApiKeyDto Dto(ApiKey k, DateTimeOffset now) =>
-        new(k.Id, k.Name, k.Prefix, k.Scopes, State(k, now), k.CreatedAt, k.CreatedBy, k.ExpiresAt, k.LastUsedAt, k.RevokedAt, k.RevokedBy);
+        new(k.Id, k.Name, k.Prefix, k.Scopes, State(k, now), k.CreatedAt, k.CreatedBy, k.ExpiresAt, k.LastUsedAt, k.RevokedAt, k.RevokedBy, k.ReplacedById);
 
     /// <summary>Scopes from user input: known values, deduplicated, in order; at least one.</summary>
     public static List<string> Scopes(IEnumerable<string>? values, FieldErrors errors, string field = "scopes")

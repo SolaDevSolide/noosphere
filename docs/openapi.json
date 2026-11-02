@@ -5143,6 +5143,26 @@
         }
       }
     },
+    "/api/links/directory-preview": {
+      "get": {
+        "tags": [
+          "Links"
+        ],
+        "summary": "What a link with directory:read would read: counts and three people, for the administrator about to share it",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectoryPreviewDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/links": {
       "get": {
         "tags": [
@@ -5512,6 +5532,57 @@
         }
       }
     },
+    "/api/integrations/keys/{id}/rotate": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Rotate an API key: a new key, shown once; the old one keeps working for 24 hours",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyCreatedDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/integrations/keys/{id}/revoke": {
       "post": {
         "tags": [
@@ -5596,6 +5667,75 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/exchanges": {
+      "get": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "The exchange log of some API keys and webhooks (a third-party tool), newest first",
+        "parameters": [
+          {
+            "name": "apiKeyId",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "webhookId",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkExchangePageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
@@ -5774,6 +5914,108 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks/{id}/secret": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Regenerate a webhook's signing secret, shown once; the old one stops signing at once",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookCreatedDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Try a waiting or failed delivery again, now",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/json": {
                 "schema": {
@@ -6719,7 +6961,8 @@
           "expiresAt",
           "lastUsedAt",
           "revokedAt",
-          "revokedBy"
+          "revokedBy",
+          "replacedById"
         ],
         "type": "object",
         "properties": {
@@ -6755,6 +6998,7 @@
               "null",
               "string"
             ],
+            "description": "Null only for keys created before expiry became required.",
             "format": "date-time"
           },
           "lastUsedAt": {
@@ -6776,6 +7020,14 @@
               "null",
               "string"
             ]
+          },
+          "replacedById": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Set once the key was rotated: the new key's id. The old key keeps working until `expiresAt` (24 hours at most).",
+            "format": "uuid"
           }
         },
         "description": "An API key, without its secret (shown once, at creation)."
@@ -6808,7 +7060,7 @@
               "null",
               "integer"
             ],
-            "description": "1 to 3650; null: the key never expires.",
+            "description": "Required: 90, 180 or 365 days.",
             "format": "int32"
           }
         },
@@ -8314,6 +8566,76 @@
           "list",
           "ref"
         ]
+      },
+      "DirectoryPreviewDto": {
+        "required": [
+          "teams",
+          "people",
+          "guests",
+          "withoutTeam",
+          "contactEmails",
+          "sample"
+        ],
+        "type": "object",
+        "properties": {
+          "teams": {
+            "type": "integer",
+            "description": "Teams shared, with their contacts.",
+            "format": "int32"
+          },
+          "people": {
+            "type": "integer",
+            "description": "Members and administrators in at least one team.",
+            "format": "int32"
+          },
+          "guests": {
+            "type": "integer",
+            "description": "Guests: never shared.",
+            "format": "int32"
+          },
+          "withoutTeam": {
+            "type": "integer",
+            "description": "Members and administrators in no team: not shared.",
+            "format": "int32"
+          },
+          "contactEmails": {
+            "type": "integer",
+            "description": "Team contacts holding an e-mail address: shared only with `shareEmails`.",
+            "format": "int32"
+          },
+          "sample": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryPreviewPersonDto"
+            },
+            "description": "The first three people, by display name."
+          }
+        },
+        "description": "What a link with `directory:read` reads, before an administrator shares it."
+      },
+      "DirectoryPreviewPersonDto": {
+        "required": [
+          "username",
+          "displayName",
+          "teams"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Team names."
+          }
+        },
+        "description": "One person as a link would read them in the shared directory."
       },
       "DomainDetailDto": {
         "type": "object",
@@ -12874,6 +13196,8 @@
           "createdBy",
           "lastDeliveryAt",
           "pending",
+          "failingSince",
+          "pausedAt",
           "version"
         ],
         "type": "object",
@@ -12915,6 +13239,22 @@
             "type": "integer",
             "description": "Deliveries waiting for a (next) attempt.",
             "format": "int32"
+          },
+          "failingSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "First failed attempt since the last delivered one; null while deliveries succeed.",
+            "format": "date-time"
+          },
+          "pausedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Set after 24 hours of failures: nothing is queued or sent until an administrator resumes it (`enabled: true`).",
+            "format": "date-time"
           },
           "version": {
             "type": "integer",
@@ -12959,7 +13299,7 @@
               "null",
               "boolean"
             ],
-            "description": "true by default."
+            "description": "true by default. Sending true to a paused webhook resumes it."
           },
           "version": {
             "type": [

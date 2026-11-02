@@ -12,9 +12,26 @@ Only administrators create keys and webhooks (`/api/integrations/...`). What a k
 shares: records visible to everyone, never restricted records, protected notes or people. Its calls, refusals
 included, are in the exchange log shared with links (`GET /api/links/exchanges`), kept 90 days.
 
+## On the Links page
+
+Administrators manage tools under **Connected tools** on the **Links** page, below the linked applications. A tool is
+a name with an API key, a webhook, or both:
+
+- **Connect a tool** asks for a name, the key's scopes and expiry (90 days, 180 days or 1 year; 120 requests per
+  minute for every key) and, optionally, a webhook (HTTPS address and events). The key, then the webhook's signing
+  secret, are shown **once**, with curl, GitHub Actions and GitLab CI examples to copy.
+- The list shows each tool's scopes, key prefix, webhook state (on, off, failing, paused) and last use. A banner
+  reminds of keys that expire within 30 days and of paused webhooks.
+- A tool's page shows its webhook (address, events, signing secret with **Regenerate**, **Send a test**, an on/off
+  switch, **Resume** once paused) and its last deliveries, with the attempt, the next try and **Retry now**; its API
+  key with **Rotate** (the old key works 24 more hours) and **Revoke**; and its exchanges, refusals included.
+  **Remove the tool** revokes its keys and deletes its webhook.
+- **Webhook addresses** switches private addresses on or off for every webhook (see
+  [below](#addresses-a-webhook-may-reach)).
+
 ## API keys
 
-Create a key with a name, one or more scopes and an optional expiry:
+Create a key with a name, one or more scopes and an expiry of 90, 180 or 365 days (a key always expires):
 
 ```sh
 curl -sS -X POST https://noosphere.example.com/api/integrations/keys \
@@ -31,6 +48,11 @@ The answer holds `key` (`nsk_` + 8 characters + `_` + 40 characters) **only this
 secrets. Noosphere keeps its SHA-256 only; lists show the prefix (`nsk_` + 8 characters), the scopes, the expiry and
 the last use. `POST /api/integrations/keys/{id}/revoke` revokes it at once; deployments sent with it stay, shown as
 from a revoked key.
+
+To replace a key without a gap, rotate it: `POST /api/integrations/keys/{id}/rotate` answers a new key (same name,
+scopes and lifetime) **once**, and the old key keeps working for 24 hours, the time to update the tool's secret. The
+old key then shows `replacedById`; the deployments it sent follow the new key. The Links page reminds administrators
+of keys that expire within 30 days.
 
 A key works only on the two endpoints below: it never opens a session, and the rest of the API answers 401. These
 endpoints need no `X-Requested-With` header and are limited to 120 requests per minute per key.
@@ -145,10 +167,20 @@ Each delivery is a `POST` with a JSON body `{id, type, createdAt, data}` and the
 | `X-Noosphere-Delivery` | The event id, the same on every retry: drop a delivery you have already handled. |
 | `X-Noosphere-Signature` | `t=<unix seconds>,v1=<hex HMAC-SHA256(secret, "<t>.<raw body>")>` |
 
-A 2xx answer within 10 seconds counts as delivered. Otherwise the delivery is retried after 30 s, 2 min, 10 min,
-1 h and 6 h, then marked failed. Redirects are not followed. `GET /api/integrations/webhooks/{id}/deliveries` lists
-each delivery with its state, attempts, last status and error; every attempt is also in the exchange log. The test
-button sends a `ping` at once and answers its delivery; a disabled webhook (`enabled: false`) receives nothing new.
+A 2xx answer within 10 seconds counts as delivered. Otherwise the delivery is retried after 1 min, 5 min, 30 min,
+2 h and 6 h (6 attempts over about 9 hours), then marked failed. Redirects are not followed.
+`GET /api/integrations/webhooks/{id}/deliveries` lists each delivery with its state, attempts, last status and error;
+every attempt is also in the exchange log. `POST .../deliveries/{deliveryId}/retry` makes one more attempt at once.
+The test button sends a `ping` at once and answers its delivery; a disabled webhook (`enabled: false`) receives
+nothing new.
+
+When no delivery has succeeded for 24 hours (`failingSince` in the webhook), the webhook is **paused** (`pausedAt`):
+its waiting deliveries fail, nothing more is queued, the pause is written to the exchange log (reason
+`webhook-paused`) and to the server log, and the Links page shows it to administrators. Once the receiver is fixed,
+switch the webhook on again (`PUT` with `enabled: true`, or **Resume** on the tool's page).
+
+`POST /api/integrations/webhooks/{id}/secret` regenerates the signing secret and answers it **once**; the old secret
+stops signing at once.
 
 ### Check the signature
 
@@ -219,14 +251,18 @@ curl -sS -X PUT https://noosphere.example.com/api/integrations/settings \
 | --------------- | --- | ------------ |
 | `GET /api/integrations/catalog?cursor=&limit=` | key with `catalog:read` | One page of the catalogue |
 | `POST /api/integrations/deployments` | key with `deployments:write` | `{events}`, then `{accepted, ignoredApplicationIds}` |
-| `GET /api/integrations/keys` | admin | `{id, name, prefix, scopes, state, createdAt, createdBy, expiresAt, lastUsedAt, revokedAt, revokedBy}`; `state` is `active`, `expired` or `revoked` |
-| `POST /api/integrations/keys` | admin | `{name, scopes, expiresInDays?}`, then 201 `{apiKey, key}`: `key` is shown only this once |
+| `GET /api/integrations/keys` | admin | `{id, name, prefix, scopes, state, createdAt, createdBy, expiresAt, lastUsedAt, revokedAt, revokedBy, replacedById}`; `state` is `active`, `expired` or `revoked` |
+| `POST /api/integrations/keys` | admin | `{name, scopes, expiresInDays}` (90, 180 or 365), then 201 `{apiKey, key}`: `key` is shown only this once |
+| `POST /api/integrations/keys/{id}/rotate` | admin | 201 `{apiKey, key}`: a new key shown once; the old one works 24 more hours (409 if not active or already rotated) |
 | `POST /api/integrations/keys/{id}/revoke` | admin | The key, revoked |
 | `GET /api/integrations/keys/{id}/exchanges?cursor=&limit=` | admin | The key's exchange lines |
-| `GET /api/integrations/webhooks`, `GET .../{id}` | admin | `{id, name, url, events, enabled, createdAt, createdBy, lastDeliveryAt, pending, version}` |
+| `GET /api/integrations/exchanges?apiKeyId=&webhookId=&cursor=&limit=` | admin | The exchange lines of several keys and webhooks (1 to 20 ids), newest first |
+| `GET /api/integrations/webhooks`, `GET .../{id}` | admin | `{id, name, url, events, enabled, createdAt, createdBy, lastDeliveryAt, pending, failingSince, pausedAt, version}` |
 | `POST /api/integrations/webhooks` | admin | `{name, url, events, enabled?}`, then 201 `{webhook, secret}`: `secret` is shown only this once |
-| `PUT /api/integrations/webhooks/{id}` | admin | `{name, url, events, enabled?, version?}` (409 when `version` is stale) |
+| `PUT /api/integrations/webhooks/{id}` | admin | `{name, url, events, enabled?, version?}` (409 when `version` is stale); `enabled: true` resumes a paused webhook |
 | `DELETE /api/integrations/webhooks/{id}` | admin | 204; its deliveries go with it |
+| `POST /api/integrations/webhooks/{id}/secret` | admin | `{webhook, secret}`: a new secret, shown only this once |
 | `POST /api/integrations/webhooks/{id}/test` | admin | Sends a `ping` now; answers the delivery |
+| `POST /api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry` | admin | One more attempt now; answers the delivery (409 if delivered, or the webhook is off or paused) |
 | `GET /api/integrations/webhooks/{id}/deliveries?cursor=&limit=` | admin | `{items, nextCursor}`: `{id, eventId, eventType, state, attempts, createdAt, lastAttemptAt, nextAttemptAt, responseStatus, error, test}` |
 | `GET /api/integrations/settings`, `PUT` | admin | `{allowPrivateAddresses}` |
