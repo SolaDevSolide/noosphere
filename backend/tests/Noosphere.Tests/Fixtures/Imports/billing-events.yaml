@@ -1,0 +1,26 @@
+asyncapi: 2.6.0
+info:
+  title: Billing events
+  version: 1.2.0
+x-noosphere-application: billing
+x-noosphere-bus: bus
+channels:
+  billing.invoice.issued:
+    subscribe:
+      summary: An invoice is issued to a member.
+      message:
+        $ref: '#/components/messages/InvoiceIssued'
+  payments.payment.received:
+    publish:
+      summary: A payment is received for an invoice.
+      message:
+        $ref: '#/components/messages/PaymentReceived'
+components:
+  messages:
+    InvoiceIssued:
+      name: InvoiceIssued
+      title: Invoice issued
+      summary: An invoice and its amount.
+    PaymentReceived:
+      name: PaymentReceived
+      summary: A payment received from the bank.

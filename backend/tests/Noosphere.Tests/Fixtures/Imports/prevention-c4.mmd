@@ -1,0 +1,14 @@
+%% Mutuelle Alizé (fictional): the coaching booking, as a C4 container diagram.
+C4Container
+title Coaching booking
+Person(member, "Member", "A member of Mutuelle Alizé")
+System_Boundary(c1, "Customer") {
+  Container(portal, "Customer portal", "React", "Members' web portal")
+  Container(booking, "Booking", "Java", "Books coaching sessions")
+  ContainerDb(bookingdb, "Booking database", "PostgreSQL", "Sessions and slots")
+}
+System_Ext(calendar, "Calendar service", "Calendars of the coaches")
+Rel(member, portal, "Uses", "HTTPS")
+Rel(portal, booking, "Books sessions", "REST")
+Rel(booking, bookingdb, "Reads and writes", "JDBC")
+Rel_R(booking, calendar, "Publishes slots", "Kafka")

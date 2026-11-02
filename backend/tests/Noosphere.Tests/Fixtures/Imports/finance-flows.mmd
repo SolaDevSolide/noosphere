@@ -1,0 +1,7 @@
+flowchart LR
+  %% Mutuelle Alizé (fictional): finance flows, as drawn on the team wiki.
+  subgraph Finance
+    billing[Billing] -->|Ledger entries| acct[(Accounting)]
+  end
+  billing -.->|InvoiceIssued| bus{{Event bus}}
+  check["Payment check"] --> billing & acct
