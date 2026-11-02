@@ -25,7 +25,8 @@ before changing this API?".
 - **Imports** from the formats teams already use: Backstage catalogs, OpenAPI and AsyncAPI files, architecture
   decision records (MADR, Nygard), Mermaid flowcharts and C4 diagrams, and Excel workbooks from a template. A dry run
   previews what will be created or updated, field by field, with possible matches and the place of every warning;
-  the same plan is then applied, and nothing is ever deleted.
+  lines can be left out, and the same plan is then applied, from the Import and export page or the API; nothing is
+  ever deleted.
 - **AI agents** connect through MCP (`/mcp`) for one person, after a consent page: they search, read and draft
   changes with that person's rights, capped by an administrator's ceiling and an hourly quota, and never publish.
   Every call is in their activity; **My agents** and an agents console revoke them, one by one or all at once.

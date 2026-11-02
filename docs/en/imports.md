@@ -21,6 +21,9 @@ with the [exchange import](exchange-format.md) instead.
 
 ## Dry run, preview, apply
 
+In the interface, the **Import and export** page walks through the same steps: source, dry run with the preview,
+lines to leave out, confirmation and result. See the [user guide](user-guide.md#imports).
+
 1. **Dry run.** `POST /api/imports` with the files (`multipart/form-data`, field `files`). Noosphere reads them, finds
    the existing records, checks every change with the same rules as the record forms, and stores the result as a
    **plan**. It answers `201` with the plan.

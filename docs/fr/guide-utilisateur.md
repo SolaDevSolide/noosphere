@@ -174,6 +174,33 @@ le coin bas (un panneau qui monte du bas sur téléphone). Il ouvre la boîte à
 
 Chaque action affiche un avis avec un lien **Voir** vers ce qui a changé. Voir [Boîte à outils de démo](demo.md).
 
+## Imports
+
+**Import et export** (menu du compte) fait entrer ce que vos équipes documentent déjà. Administrateurs et membres
+importent ; les invités ne le peuvent pas.
+
+1. **Source.** Choisissez le format : Backstage, OpenAPI, AsyncAPI, ADR (Markdown), Mermaid / C4, Excel
+   (téléchargez d'abord le modèle) ou Noosphere JSON (le format d'échange, réservé aux administrateurs). Ajoutez un ou
+   plusieurs fichiers, ou un `.zip`. Pour OpenAPI, AsyncAPI et les ADR, vous pouvez nommer l'application concernée.
+   **Options des nouvelles fiches** fixe le domaine des nouvelles applications et l'équipe propriétaire des nouvelles
+   fiches (membres : choisissez une de vos équipes, pour pouvoir publier ce que l'import crée).
+2. **Essai à blanc.** Rien n'est encore écrit. L'aperçu compte ce qui serait créé, mis à jour, laissé inchangé, et les
+   avertissements (ce qui a été écarté ou déduit, avec la raison) ; rien n'est jamais supprimé. Filtrez les lignes par
+   action. Chaque ligne montre son origine dans le fichier (fichier, ligne, emplacement), la fiche dans Noosphere et
+   la façon dont elle a été trouvée (par identifiant ou par nom), les changements champ par champ, et les **noms
+   proches** de fiches existantes, jamais fusionnés. Les erreurs sont montrées à leur place dans le fichier :
+   corrigez les fichiers et relancez l'essai à blanc.
+3. **Écarter des lignes.** Décochez une ligne pour l'écarter. Les lignes qui en ont besoin partent avec elle (une
+   nouvelle application d'un nouveau domaine part avec le domaine), et recocher une ligne rétablit ce dont elle a
+   besoin.
+4. **Confirmer.** **Importer N changements** résume ce qui sera créé et mis à jour, puis applique le plan. Chaque fiche
+   écrite reçoit une révision qui nomme l'import, et le résultat liste les fiches écrites. **Rapport (.csv)**
+   télécharge l'aperçu à chaque étape.
+
+Un essai à blanc (la « simulation » de l'API) s'applique dans les **30 minutes**, et seulement si personne n'a modifié
+le catalogue entre-temps ; sinon la page le dit et **Relancer l'essai à blanc** relit les mêmes fichiers. Voir les
+[imports](imports.md) pour chaque format.
+
 ## Équipes
 
 Les administrateurs gèrent l'appartenance aux équipes sur la page **Utilisateurs** (les **Équipes** de chaque compte)

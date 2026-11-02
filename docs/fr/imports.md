@@ -21,6 +21,9 @@ Noosphere s'importe avec l'[import du format d'échange](exchange-format.md).
 
 ## Simulation, aperçu, application
 
+Dans l'interface, la page **Import et export** suit les mêmes étapes : source, essai à blanc avec l'aperçu, lignes à
+écarter, confirmation et résultat. Voir le [guide utilisateur](guide-utilisateur.md#imports).
+
 1. **Simulation.** `POST /api/imports` avec les fichiers (`multipart/form-data`, champ `files`). Noosphere les lit,
    retrouve les enregistrements existants, vérifie chaque changement avec les mêmes règles que les formulaires et
    enregistre le résultat comme **plan**. Il répond `201` avec le plan.

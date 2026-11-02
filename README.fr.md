@@ -27,7 +27,8 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
 - Des **imports** depuis les formats que les équipes utilisent déjà : catalogues Backstage, fichiers OpenAPI et
   AsyncAPI, décisions d'architecture (MADR, Nygard), diagrammes Mermaid et C4, et classeurs Excel à partir d'un
   modèle. Une simulation montre ce qui sera créé ou mis à jour, champ par champ, avec les correspondances possibles
-  et l'emplacement de chaque avertissement ; le même plan est ensuite appliqué, et rien n'est jamais supprimé.
+  et l'emplacement de chaque avertissement ; des lignes peuvent être écartées, puis le même plan est appliqué, depuis
+  la page Import et export ou l'API ; rien n'est jamais supprimé.
 - Des **agents IA** se connectent par MCP (`/mcp`) pour une personne, après une page de consentement : ils
   cherchent, lisent et rédigent des brouillons avec les droits de cette personne, sous un plafond fixé par un
   administrateur et un quota horaire, et ne publient jamais. Chaque appel figure dans leur activité ; **Mes agents**
