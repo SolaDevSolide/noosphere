@@ -29,8 +29,10 @@ public sealed class Link
     /// <summary>The peer's confirmation, as last read from its status (or implied by a data request from it); null until known.</summary>
     public bool? PeerConfirmed { get; set; }
     public DateTimeOffset? PeerCheckedAt { get; set; }
-    /// <summary><c>catalog:read</c>, <c>notices:send</c>, <c>deployments:receive</c>.</summary>
+    /// <summary><c>catalog:read</c>, <c>notices:send</c>, <c>deployments:receive</c>, <c>directory:read</c>.</summary>
     public List<string> Capabilities { get; set; } = [];
+    /// <summary>With <c>directory:read</c>: e-mail addresses (team contacts) are shared too. Off by default.</summary>
+    public bool ShareEmails { get; set; }
 
     /// <summary>This side's signing private key (PKCS#8), protected; null once cut.</summary>
     public string? OwnSigningKey { get; set; }
@@ -102,8 +104,12 @@ public sealed class LinkExchange
 {
     public long Id { get; set; }
     public DateTimeOffset At { get; set; }
-    /// <summary>Null for a request whose key is unknown.</summary>
+    /// <summary>Null for a request whose key is unknown, and for the exchanges of API keys and webhooks.</summary>
     public Guid? LinkId { get; set; }
+    /// <summary>A call made with an API key (<c>/api/integrations</c>).</summary>
+    public Guid? ApiKeyId { get; set; }
+    /// <summary>A webhook delivery attempt.</summary>
+    public Guid? WebhookId { get; set; }
     public LinkDirection Direction { get; set; }
     /// <summary><c>pair</c>, <c>status</c>, <c>catalog</c>, <c>notices</c>, <c>deployments</c>, <c>rekey</c>, <c>unpair</c>.</summary>
     public string Operation { get; set; } = "";
@@ -143,8 +149,11 @@ public sealed record DeploymentEnvironment(string Name, bool Production);
 public sealed class Deployment
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid LinkId { get; set; }
-    /// <summary>The MEP id on the gestion-mep side.</summary>
+    /// <summary>The link it came through; null when it came with an API key.</summary>
+    public Guid? LinkId { get; set; }
+    /// <summary>The API key it came with (<c>POST /api/integrations/deployments</c>).</summary>
+    public Guid? ApiKeyId { get; set; }
+    /// <summary>The deployment id on the sender's side (a MEP id for gestion-mep).</summary>
     public string DeploymentId { get; set; } = "";
     public string Title { get; set; } = "";
     public DeploymentPhase Phase { get; set; }

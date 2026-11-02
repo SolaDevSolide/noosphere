@@ -71,6 +71,7 @@ function link(n: number, l: Partial<Link> & Pick<Link, 'product' | 'instanceName
     peerConfirmed: true,
     peerCheckedAt: ago(30),
     capabilities: [...LINK_CAPABILITIES],
+    shareEmails: false,
     fingerprint: words(n),
     pairedAt: ago(60 * 24 * 9),
     pairedBy: 'alice',
@@ -85,8 +86,12 @@ function link(n: number, l: Partial<Link> & Pick<Link, 'product' | 'instanceName
   };
 }
 
-function log(linkId: string | null, at: string, x: Omit<LinkExchange, 'id' | 'at' | 'linkId'>) {
-  exchanges.push({ id: ++exSeq, at, linkId, ...x });
+function log(
+  linkId: string | null,
+  at: string,
+  x: Omit<LinkExchange, 'id' | 'at' | 'linkId' | 'apiKeyId' | 'webhookId'>,
+) {
+  exchanges.push({ id: ++exSeq, at, linkId, apiKeyId: null, webhookId: null, ...x });
 }
 
 const env = (name: string, production: boolean): DeploymentEnvironment => ({ name, production });
@@ -382,6 +387,7 @@ const sourceOf = (linkId: string) => {
     product: l?.product ?? '',
     instanceName: l?.instanceName ?? '',
     linkActive: !!l && l.state !== 'cut',
+    kind: 'link' as const,
   };
 };
 const ended = (d: StoredDeployment) => d.phase === 'closed' || d.phase === 'cancelled';

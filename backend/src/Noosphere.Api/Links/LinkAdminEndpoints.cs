@@ -66,7 +66,7 @@ public static class LinkAdminEndpoints
             if (input.Capabilities is null) errors.Add("capabilities", "This field is required.");
             var capabilities = LinkAdmin.Capabilities(input.Capabilities ?? [], errors);
             errors.ThrowIfAny();
-            return LinkAdmin.Dto(await admin.SetCapabilities(await admin.Find(id), capabilities));
+            return LinkAdmin.Dto(await admin.SetCapabilities(await admin.Find(id), capabilities, input.ShareEmails));
         });
 
         links.MapPost("/{id:guid}/renew-keys", async (Guid id, LinkAdmin admin) => LinkAdmin.Dto(await admin.RenewKeys(await admin.Find(id))))
@@ -106,7 +106,7 @@ public static class LinkAdminEndpoints
         }
     }
 
-    private static async Task<LinkExchangePageDto> Exchanges(IQueryable<LinkExchange> query, string? cursor, int? limit)
+    public static async Task<LinkExchangePageDto> Exchanges(IQueryable<LinkExchange> query, string? cursor, int? limit)
     {
         var errors = new FieldErrors();
         long? before = null;
@@ -120,7 +120,7 @@ public static class LinkAdminEndpoints
         errors.ThrowIfAny();
         if (before is { } until) query = query.Where(x => x.Id < until);
         var rows = await query.OrderByDescending(x => x.Id).Take(size + 1).ToListAsync();
-        var items = rows.Take(size).Select(x => new LinkExchangeDto(x.Id, x.At, x.LinkId, x.Direction, x.Operation, x.Result, x.Status, x.Reason, x.Detail)).ToList();
+        var items = rows.Take(size).Select(x => new LinkExchangeDto(x.Id, x.At, x.LinkId, x.Direction, x.Operation, x.Result, x.Status, x.Reason, x.Detail, x.ApiKeyId, x.WebhookId)).ToList();
         return new LinkExchangePageDto(items, rows.Count > size ? items[^1].Id.ToString(CultureInfo.InvariantCulture) : null);
     }
 }

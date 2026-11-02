@@ -27,10 +27,10 @@ public sealed class LinkAdmin(NoosphereDbContext db, LinkKeys keys, LinkClient c
 
     // ---------- Codes ----------
 
-    /// <summary>Capabilities from user input: known values, deduplicated, in protocol order; null means all three.</summary>
+    /// <summary>Capabilities from user input: known values, deduplicated, in protocol order; null means the defaults (all but <c>directory:read</c>).</summary>
     public static List<string> Capabilities(IEnumerable<string>? values, FieldErrors errors, string field = "capabilities")
     {
-        if (values is null) return [.. LinkProtocol.AllCapabilities];
+        if (values is null) return [.. LinkProtocol.DefaultCapabilities];
         var wanted = values.Select(v => v?.Trim() ?? "").Where(v => v.Length > 0).ToHashSet(StringComparer.Ordinal);
         foreach (var unknown in wanted.Where(v => !LinkProtocol.AllCapabilities.Contains(v)))
             errors.Add(field, $"Unknown capability '{unknown}'. Expected {string.Join(", ", LinkProtocol.AllCapabilities)}.");
@@ -79,7 +79,7 @@ public sealed class LinkAdmin(NoosphereDbContext db, LinkKeys keys, LinkClient c
         var hash = Hash(normalized);
         if (await db.LinkCodes.AnyAsync(c => c.CodeHash == hash, cancel)) return null;
         var now = clock.GetUtcNow();
-        var code = Add(normalized, "bootstrap", now, now + LinkProtocol.BootstrapCodeLifetime, LinkProtocol.AllCapabilities, bootstrap: true);
+        var code = Add(normalized, "bootstrap", now, now + LinkProtocol.BootstrapCodeLifetime, LinkProtocol.DefaultCapabilities, bootstrap: true);
         await db.SaveChangesAsync(cancel);
         return (false, $"Bootstrap pairing code {code.CodeId}… loaded: gestion-mep can pair with it until {LinkProtocol.Time(code.ExpiresAt)}.");
     }
@@ -203,7 +203,7 @@ public sealed class LinkAdmin(NoosphereDbContext db, LinkKeys keys, LinkClient c
     // ---------- Links ----------
 
     public static LinkDto Dto(Link l) => new(l.Id, l.Product, l.InstanceName, l.Url, l.PeerVersion, l.State, l.ConfirmedHere, l.ConfirmedAt, l.ConfirmedBy,
-        l.PeerConfirmed, l.PeerCheckedAt, l.Capabilities, l.Fingerprint, l.PairedAt, l.PairedBy, l.KeysRenewedAt, l.LastExchangeAt, l.CutAt, l.CutBy, l.Demo,
+        l.PeerConfirmed, l.PeerCheckedAt, l.Capabilities, l.ShareEmails, l.Fingerprint, l.PairedAt, l.PairedBy, l.KeysRenewedAt, l.LastExchangeAt, l.CutAt, l.CutBy, l.Demo,
         new LinkKeyIdsDto(l.OwnSigningKid, l.OwnEncryptionKid, l.PeerSigningKid, l.PeerEncryptionKid), l.Version);
 
     public async Task<Link> Find(Guid id, CancellationToken cancel = default) =>
@@ -249,10 +249,12 @@ public sealed class LinkAdmin(NoosphereDbContext db, LinkKeys keys, LinkClient c
         return result;
     }
 
-    public async Task<Link> SetCapabilities(Link link, IReadOnlyList<string> capabilities, CancellationToken cancel = default)
+    /// <summary>Replaces the capabilities; <paramref name="shareEmails"/> (null: unchanged) says whether the directory carries e-mail addresses.</summary>
+    public async Task<Link> SetCapabilities(Link link, IReadOnlyList<string> capabilities, bool? shareEmails = null, CancellationToken cancel = default)
     {
         RequireNotCut(link);
         link.Capabilities = [.. capabilities];
+        if (shareEmails is { } share) link.ShareEmails = share;
         link.Version++;
         if (!capabilities.Contains(LinkProtocol.NoticesSend)) buckets.Drop(link.Id);
         await db.SaveChangesAsync(cancel);

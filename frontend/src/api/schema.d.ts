@@ -83,6 +83,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The shared catalogue, page by page (API key with catalog:read)
+         * @description Authorization: Bearer <API key>. Applications visible to everyone, by id, with the flows starting from them; domains and teams on every page.
+         */
+        get: operations["IntegrationCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/deployments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send deployment events (API key with deployments:write)
+         * @description Authorization: Bearer <API key>. The same events as the link protocol, upserted by deploymentId for this key. An optional Idempotency-Key header (at most 200 characters) replays the first answer for 24 hours.
+         */
+        post: operations["IntegrationDeployments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -4100,6 +4140,487 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiKeyDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApiKeyInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiKeyCreatedDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/keys/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiKeyDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/keys/{id}/exchanges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkExchangePageDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WebhookInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookCreatedDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WebhookInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDeliveryDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDeliveryPageDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IntegrationSettingsDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["IntegrationSettingsInput"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IntegrationSettingsDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4328,6 +4849,44 @@ export interface components {
          * @enum {unknown}
          */
         AgentWhoConnects: "anyMember" | "approvalRequired";
+        /** @description An API key just created. `key` is shown only this once: store it in the tool's secrets. */
+        ApiKeyCreatedDto: {
+            apiKey: components["schemas"]["ApiKeyDto"];
+            key: string;
+        };
+        /** @description An API key, without its secret (shown once, at creation). */
+        ApiKeyDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description The start of the key (`nsk_` and 8 characters), to recognise it. */
+            prefix: string;
+            scopes: string[];
+            state: components["schemas"]["ApiKeyState"];
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: string;
+            /** Format: date-time */
+            expiresAt: null | string;
+            /** Format: date-time */
+            lastUsedAt: null | string;
+            /** Format: date-time */
+            revokedAt: null | string;
+            revokedBy: null | string;
+        };
+        /** @description A new API key. */
+        ApiKeyInput: {
+            name: null | string;
+            /** @description `catalog:read` and/or `deployments:write`; at least one. */
+            scopes: null | string[];
+            /**
+             * Format: int32
+             * @description 1 to 3650; null: the key never expires.
+             */
+            expiresInDays?: null | number;
+        };
+        /** @enum {unknown} */
+        ApiKeyState: "active" | "expired" | "revoked";
         /** @description An application with its owner, the reader's permissions, its pages and its deployments. */
         ApplicationDetailDto: {
             /** @description Team whose members publish changes; null when only administrators do. */
@@ -4673,6 +5232,35 @@ export interface components {
             name: string;
             production: boolean;
         };
+        /** @description A deployment event, in the same shape as the link protocol's. */
+        DeploymentEventInput: {
+            /** @description The deployment's id in the sending tool (at most 100 characters): events are upserted by it. */
+            deploymentId: string;
+            title: string;
+            /** @description `preparation`, `execution`, `rollback`, `acceptance`, `closed` or `cancelled`. */
+            phase: string;
+            /** @description `success`, `success-with-incidents`, `rolled-back`, `failed` or null. */
+            outcome: null | string;
+            postponed: null | boolean;
+            /** Format: date-time */
+            plannedStart: null | string;
+            /** Format: date-time */
+            plannedEnd: null | string;
+            /** @description The deployment's page in the sending tool. */
+            url: string;
+            /** @description Noosphere application ids; unknown or restricted ones are ignored and listed in the answer. */
+            applicationIds: null | string[];
+            environments: null | components["schemas"]["DeploymentEnvironmentDto"][];
+            /**
+             * Format: date-time
+             * @description Last change on the sender's side: an older event than the stored one changes nothing.
+             */
+            updatedAt: string;
+        };
+        /** @description Body of `POST /api/integrations/deployments`: at most 500 events. */
+        DeploymentEventsInput: {
+            events: components["schemas"]["DeploymentEventInput"][];
+        };
         /** @enum {unknown} */
         DeploymentOutcome: "success" | "success-with-incidents" | "rolled-back" | "failed" | null;
         /** @enum {unknown} */
@@ -4684,14 +5272,34 @@ export interface components {
             /** @description Closed or cancelled, latest first (the last three in a record's detail). */
             past: components["schemas"]["DeploymentDto"][];
         };
-        /** @description Where a deployment comes from. */
+        /** @description Where a deployment comes from: a link, or an API key (`kind: apiKey`). */
         DeploymentSourceDto: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description The link's id; for an API key, the key's id.
+             */
             linkId: string;
+            /** @description The linked product (`gestion-mep`); `api-key` for an API key. */
             product: string;
+            /** @description The linked instance; for an API key, the key's name. */
             instanceName: string;
-            /** @description False once the link is cut: the deployment stays as history. */
+            /** @description False once the link is cut, or the API key revoked or expired: the deployment stays as history. */
             linkActive: boolean;
+            kind: components["schemas"]["DeploymentSourceKind"];
+        };
+        /**
+         * @description Where a deployment comes from: a link, or an API key.
+         * @enum {unknown}
+         */
+        DeploymentSourceKind: "link" | "apiKey";
+        DeploymentsReceiptDto: {
+            /**
+             * Format: int32
+             * @description Events received (created, updated, or already newer here).
+             */
+            accepted: number;
+            /** @description Application ids unknown here, or not shared, left out of the events. */
+            ignoredApplicationIds: string[];
         };
         /** @description One changed field. `markdown` fields carry the raw texts, for an inline word diff. */
         DiffEntryDto: {
@@ -4969,6 +5577,66 @@ export interface components {
              */
             mineOpen: number;
         };
+        IntegrationApplicationDto: {
+            id: string;
+            name: string;
+            description: null | string;
+            domainId: string;
+            teamId: null | string;
+            /** @description `app`, `bus`, `saas`, `data`, `file` or `external`. */
+            kind: string;
+            /** @description `planned`, `live`, `retiring` or `retired`. */
+            lifecycle: string;
+            tech: null | string;
+            /** @description The record's page. */
+            url: string;
+        };
+        /**
+         * @description One page of the shared catalogue (what everyone sees, like the catalogue of links): applications by id, and the flows
+         *     that start from them (each flow is on exactly one page). Domains and teams, short lists, are on every page.
+         */
+        IntegrationCatalogPageDto: {
+            /** Format: date-time */
+            generatedAt: string;
+            instanceName: string;
+            baseUrl: string;
+            domains: components["schemas"]["IntegrationDomainDto"][];
+            teams: components["schemas"]["IntegrationTeamDto"][];
+            applications: components["schemas"]["IntegrationApplicationDto"][];
+            flows: components["schemas"]["IntegrationFlowDto"][];
+            /** @description Pass it as `cursor` for the next page; null on the last one. */
+            nextCursor: null | string;
+        };
+        IntegrationDomainDto: {
+            id: string;
+            name: string;
+        };
+        IntegrationFlowDto: {
+            id: string;
+            name: string;
+            fromId: string;
+            toId: string;
+            type: string;
+            status: string;
+            schedule: null | string;
+            url: string;
+        };
+        /** @description Instance-wide settings of integrations. */
+        IntegrationSettingsDto: {
+            /** @description Webhooks may target private, loopback and link-local addresses, and plain HTTP. Off by default: turn it on only for receivers on a trusted network. */
+            allowPrivateAddresses: boolean;
+            /** Format: date-time */
+            updatedAt: null | string;
+            updatedBy: null | string;
+        };
+        IntegrationSettingsInput: {
+            allowPrivateAddresses: null | boolean;
+        };
+        IntegrationTeamDto: {
+            id: string;
+            name: string;
+            contact: null | string;
+        };
         JsonNode: unknown;
         JsonObject: Record<string, never>;
         /**
@@ -5004,6 +5672,8 @@ export interface components {
         /** @description Replaces the capabilities of a link. */
         LinkCapabilitiesInput: {
             capabilities: null | string[];
+            /** @description With `directory:read`: share e-mail addresses in the directory; null keeps the current choice. */
+            shareEmails?: null | boolean;
         };
         /** @description A pairing code just created. `code` is shown only this once: enter it in gestion-mep with the URL of this instance. */
         LinkCodeCreatedDto: {
@@ -5049,7 +5719,7 @@ export interface components {
              * @description 1 to 1440; 15 by default.
              */
             expiresInMinutes: null | number;
-            /** @description Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`. All three by default. */
+            /** @description Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`, `directory:read`. All but `directory:read` by default. */
             capabilities: null | string[];
         };
         /** @enum {unknown} */
@@ -5083,6 +5753,8 @@ export interface components {
             /** Format: date-time */
             peerCheckedAt: null | string;
             capabilities: string[];
+            /** @description With `directory:read`: the directory carries e-mail addresses. Off by default. */
+            shareEmails: boolean;
             /** @description Four words, the same on both sides: compare them before confirming. */
             fingerprint: string;
             /** Format: date-time */
@@ -5114,7 +5786,7 @@ export interface components {
             /** Format: uuid */
             linkId: null | string;
             direction: components["schemas"]["LinkDirection"];
-            /** @description `pair`, `status`, `catalog`, `notices`, `deployments`, `rekey` or `unpair`. */
+            /** @description `pair`, `status`, `catalog`, `directory`, `notices`, `deployments`, `rekey` or `unpair`. */
             operation: string;
             result: components["schemas"]["LinkExchangeResult"];
             /** Format: int32 */
@@ -5122,6 +5794,16 @@ export interface components {
             /** @description For a refusal: `unknown-key`, `link-cut`, `link-not-confirmed`, `clock-skew`, `replay`, `bad-digest`, `bad-signature`... */
             reason: null | string;
             detail: null | string;
+            /**
+             * Format: uuid
+             * @description A call made with an API key (`/api/integrations`).
+             */
+            apiKeyId: null | string;
+            /**
+             * Format: uuid
+             * @description A webhook delivery attempt.
+             */
+            webhookId: null | string;
         };
         LinkExchangePageDto: {
             items: components["schemas"]["LinkExchangeDto"][];
@@ -5763,6 +6445,84 @@ export interface components {
          * @enum {unknown}
          */
         Visibility: "everyone" | "restricted";
+        /** @description A webhook just created. `secret` (the HMAC-SHA256 key of `X-Noosphere-Signature`) is shown only this once. */
+        WebhookCreatedDto: {
+            webhook: components["schemas"]["WebhookDto"];
+            secret: string;
+        };
+        /** @description One event delivered (or to deliver) to a webhook. */
+        WebhookDeliveryDto: {
+            /** Format: int64 */
+            id: number;
+            /**
+             * Format: uuid
+             * @description Sent as `X-Noosphere-Delivery`, the same for every attempt.
+             */
+            eventId: string;
+            eventType: string;
+            state: components["schemas"]["WebhookDeliveryState"];
+            /** Format: int32 */
+            attempts: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastAttemptAt: null | string;
+            /**
+             * Format: date-time
+             * @description When it is tried again (pending only).
+             */
+            nextAttemptAt: null | string;
+            /**
+             * Format: int32
+             * @description HTTP status answered by the receiver at the last attempt, if any.
+             */
+            responseStatus: null | number;
+            error: null | string;
+            test: boolean;
+        };
+        WebhookDeliveryPageDto: {
+            items: components["schemas"]["WebhookDeliveryDto"][];
+            /** @description Pass it as `cursor` for the next (older) page; null on the last page. */
+            nextCursor: null | string;
+        };
+        /** @enum {unknown} */
+        WebhookDeliveryState: "pending" | "delivered" | "failed";
+        /** @description A webhook, without its secret. */
+        WebhookDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            url: string;
+            events: string[];
+            enabled: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: string;
+            /** Format: date-time */
+            lastDeliveryAt: null | string;
+            /**
+             * Format: int32
+             * @description Deliveries waiting for a (next) attempt.
+             */
+            pending: number;
+            /** Format: int32 */
+            version: number;
+        };
+        /** @description A new webhook, or its new settings. */
+        WebhookInput: {
+            name: null | string;
+            /** @description An HTTPS URL. Private, loopback and link-local addresses are refused unless the integration settings allow them. */
+            url: null | string;
+            /** @description `catalog.changed` and/or `deployment.updated`; at least one. */
+            events: null | string[];
+            /** @description true by default. */
+            enabled?: null | boolean;
+            /**
+             * Format: int32
+             * @description On an update: the version read, to refuse a concurrent change.
+             */
+            version?: null | number;
+        };
     };
     responses: never;
     parameters: never;
@@ -5772,6 +6532,143 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    IntegrationCatalog: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationCatalogPageDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
+    IntegrationDeployments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentEventsInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeploymentsReceiptDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDto"];
+                };
+            };
+        };
+    };
     AccessApplication: {
         parameters: {
             query?: never;

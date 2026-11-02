@@ -27,6 +27,7 @@ const link = (x: Partial<Link> = {}): Link => ({
   peerConfirmed: true,
   peerCheckedAt: '2026-10-30T08:00:00Z',
   capabilities: ['catalog:read', 'notices:send', 'deployments:receive'],
+  shareEmails: false,
   fingerprint: 'orbit cedar 0712 lumen',
   pairedAt: '2026-10-20T08:00:00Z',
   pairedBy: 'alice',
@@ -50,6 +51,8 @@ const ex = (x: Partial<LinkExchange>): LinkExchange => ({
   status: 200,
   reason: null,
   detail: null,
+  apiKeyId: null,
+  webhookId: null,
   ...x,
 });
 

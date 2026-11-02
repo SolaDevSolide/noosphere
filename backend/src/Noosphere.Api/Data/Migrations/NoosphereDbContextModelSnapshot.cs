@@ -275,6 +275,60 @@ namespace Noosphere.Api.Data.Migrations
                     b.ToTable("AgentTokens");
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.ApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.PrimitiveCollection<List<string>>("Scopes")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<string>("SecretHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Prefix")
+                        .IsUnique();
+
+                    b.ToTable("ApiKeys");
+                });
+
             modelBuilder.Entity("Noosphere.Domain.Application", b =>
                 {
                     b.Property<string>("Id")
@@ -426,6 +480,9 @@ namespace Noosphere.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApiKeyId")
+                        .HasColumnType("uuid");
+
                     b.PrimitiveCollection<List<string>>("ApplicationIds")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -442,7 +499,7 @@ namespace Noosphere.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<Guid>("LinkId")
+                    b.Property<Guid?>("LinkId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Outcome")
@@ -487,10 +544,16 @@ namespace Noosphere.Api.Data.Migrations
 
                     b.HasIndex("EndedAt");
 
+                    b.HasIndex("ApiKeyId", "DeploymentId")
+                        .IsUnique();
+
                     b.HasIndex("LinkId", "DeploymentId")
                         .IsUnique();
 
-                    b.ToTable("Deployments");
+                    b.ToTable("Deployments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Deployments_Source", "(\"LinkId\" IS NULL) <> (\"ApiKeyId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Noosphere.Domain.Flow", b =>
@@ -577,6 +640,37 @@ namespace Noosphere.Api.Data.Migrations
                     b.ToTable("Flows");
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.IdempotentRequest", b =>
+                {
+                    b.Property<Guid>("ApiKeyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Response")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ApiKeyId", "Key");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("IdempotentRequests");
+                });
+
             modelBuilder.Entity("Noosphere.Domain.InstanceSettings", b =>
                 {
                     b.Property<int>("Id")
@@ -607,6 +701,29 @@ namespace Noosphere.Api.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("InstanceSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.IntegrationSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowPrivateWebhookAddresses")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IntegrationSettings");
                 });
 
             modelBuilder.Entity("Noosphere.Domain.Link", b =>
@@ -736,6 +853,9 @@ namespace Noosphere.Api.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("ShareEmails")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -829,6 +949,9 @@ namespace Noosphere.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<Guid?>("ApiKeyId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("At")
                         .HasColumnType("timestamp with time zone");
 
@@ -861,11 +984,18 @@ namespace Noosphere.Api.Data.Migrations
                     b.Property<int?>("Status")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("WebhookId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("At");
 
+                    b.HasIndex("ApiKeyId", "Id");
+
                     b.HasIndex("LinkId", "Id");
+
+                    b.HasIndex("WebhookId", "Id");
 
                     b.ToTable("LinkExchanges", (string)null);
                 });
@@ -1381,6 +1511,114 @@ namespace Noosphere.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.Webhook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.PrimitiveCollection<List<string>>("Events")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<DateTimeOffset?>("LastDeliveryAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ProtectedSecret")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Webhooks");
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.WebhookDelivery", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("ResponseStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("Test")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("WebhookId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("State", "NextAttemptAt");
+
+                    b.HasIndex("WebhookId", "Id");
+
+                    b.ToTable("WebhookDeliveries");
+                });
+
             modelBuilder.Entity("Noosphere.Domain.AgentActivity", b =>
                 {
                     b.HasOne("Noosphere.Domain.AgentConnection", null)
@@ -1432,11 +1670,15 @@ namespace Noosphere.Api.Data.Migrations
 
             modelBuilder.Entity("Noosphere.Domain.Deployment", b =>
                 {
+                    b.HasOne("Noosphere.Domain.ApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Noosphere.Domain.Link", null)
                         .WithMany()
                         .HasForeignKey("LinkId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Noosphere.Domain.Flow", b =>
@@ -1459,6 +1701,15 @@ namespace Noosphere.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.IdempotentRequest", b =>
+                {
+                    b.HasOne("Noosphere.Domain.ApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Noosphere.Domain.LinkCode", b =>
                 {
                     b.HasOne("Noosphere.Domain.Link", null)
@@ -1469,10 +1720,20 @@ namespace Noosphere.Api.Data.Migrations
 
             modelBuilder.Entity("Noosphere.Domain.LinkExchange", b =>
                 {
+                    b.HasOne("Noosphere.Domain.ApiKey", null)
+                        .WithMany()
+                        .HasForeignKey("ApiKeyId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Noosphere.Domain.Link", null)
                         .WithMany()
                         .HasForeignKey("LinkId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Noosphere.Domain.Webhook", null)
+                        .WithMany()
+                        .HasForeignKey("WebhookId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Noosphere.Domain.LinkNonce", b =>
@@ -1526,6 +1787,15 @@ namespace Noosphere.Api.Data.Migrations
                     b.HasOne("Noosphere.Domain.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Noosphere.Domain.WebhookDelivery", b =>
+                {
+                    b.HasOne("Noosphere.Domain.Webhook", null)
+                        .WithMany()
+                        .HasForeignKey("WebhookId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

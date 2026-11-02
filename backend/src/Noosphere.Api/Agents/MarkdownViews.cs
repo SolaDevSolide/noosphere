@@ -22,9 +22,9 @@ public sealed class MarkdownViews
     private readonly Dictionary<string, string> _teams;
     private readonly Dictionary<string, string> _domains;
     private readonly IReadOnlyList<Deployment> _deployments;
-    private readonly IReadOnlyDictionary<Guid, Link> _links;
+    private readonly Links.DeploymentSources _links;
 
-    private MarkdownViews(Snapshot s, IReadOnlyList<Page> pages, Access access, string baseUrl, IReadOnlyList<Deployment> deployments, IReadOnlyDictionary<Guid, Link> links)
+    private MarkdownViews(Snapshot s, IReadOnlyList<Page> pages, Access access, string baseUrl, IReadOnlyList<Deployment> deployments, Links.DeploymentSources links)
     {
         (_s, _pages, _access, _base, _deployments, _links) = (s, pages, access, baseUrl, deployments, links);
         _teams = s.Teams.ToDictionary(t => t.Id, t => t.Name);
@@ -306,7 +306,7 @@ public sealed class MarkdownViews
         if (deployments.Upcoming.Count + deployments.Past.Count == 0) return;
         b.Append(heading);
         var sources = deployments.Upcoming.Concat(deployments.Past).Select(d => d.Source).DistinctBy(s => s.LinkId)
-            .Select(s => $"{s.InstanceName} ({s.Product}{(s.LinkActive ? "" : ", link cut")})");
+            .Select(s => $"{s.InstanceName} ({s.Product}{(s.LinkActive ? "" : s.Kind == DeploymentSourceKind.ApiKey ? ", key revoked" : ", link cut")})");
         b.Append("From ").Append(string.Join(", ", sources)).Append(".\n\n");
         foreach (var d in deployments.Upcoming)
             b.Append("- ").Append(d.PlannedStart is { } start ? $"Planned {Moment(start)}" : "Not scheduled yet").Append(": ").Append(Title(d))

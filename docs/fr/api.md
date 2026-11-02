@@ -175,15 +175,22 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 | Méthode et chemin | Corps, réponse |
 | ----------------- | -------------- |
 | `GET /api/links/codes` | Codes d'appairage : `{id, codeId, state, capabilities, createdAt, expiresAt, createdBy, usedAt, linkId, failedAttempts, bootstrap}` ; `state` vaut `active`, `used`, `expired` ou `burnt` |
-| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes et toutes les capacités par défaut), puis 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}` : `code` n'est montré que cette fois |
-| `GET /api/links` | Toutes les liaisons : `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}` ; `state` vaut `pending`, `active` ou `cut` |
+| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes et toutes les capacités sauf `directory:read` par défaut), puis 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}` : `code` n'est montré que cette fois |
+| `GET /api/links` | Toutes les liaisons : `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, shareEmails, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}` ; `state` vaut `pending`, `active` ou `cut` |
 | `GET /api/links/{id}?refresh=true` | Une liaison ; `refresh` demande d'abord son état au pair si la dernière vérification date de plus d'une minute |
 | `POST /api/links/{id}/confirm` | `{fingerprint}`, les quatre mots lus dans gestion-mep ; 422 s'ils diffèrent |
-| `PUT /api/links/{id}/capabilities` | `{capabilities}`, parmi `catalog:read`, `notices:send`, `deployments:receive` |
+| `PUT /api/links/{id}/capabilities` | `{capabilities, shareEmails?}` : parmi `catalog:read`, `notices:send`, `deployments:receive`, `directory:read` ; `shareEmails` (null le garde) ajoute les adresses e-mail à l'annuaire |
 | `POST /api/links/{id}/renew-keys` | De nouvelles clés, annoncées au pair (502 s'il refuse) |
 | `POST /api/links/{id}/cut` | `{confirm: true}` : prévient le pair (au mieux) et efface les clés |
 | `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, du plus récent au plus ancien : `{id, at, linkId, direction, operation, result, status, reason, detail}` |
 | `GET /api/links/exchanges?cursor=&limit=` | Toutes les lignes d'échange, y compris les requêtes refusées de clés inconnues |
+
+## Intégrations
+
+Clés d'API et webhooks pour les outils tiers : voir [intégrations](integrations.md). `GET /api/integrations/catalog`
+et `POST /api/integrations/deployments` prennent `Authorization: Bearer <clé d'API>` (ni session, ni
+`X-Requested-With`) ; les autres routes `/api/integrations` (clés, webhooks, livraisons, réglages) sont réservées aux
+administrateurs. Les lignes d'échange portent `apiKeyId` ou `webhookId` pour leurs appels et livraisons.
 
 ## Déploiements
 
@@ -191,8 +198,10 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 sinon ; les invités reçoivent des listes vides), renvoient `{upcoming, past}` : les prochains du plus proche au plus
 lointain, les passés du plus récent au plus ancien. Un flux reçoit les déploiements de ses deux extrémités. Un
 déploiement est `{deploymentId, title, phase, outcome, postponed, plannedStart, plannedEnd, url, applicationIds,
-environments: [{name, production}], updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive}}` ; `url`
-reste une fois la liaison coupée (`linkActive` vaut alors false), et `applicationIds` ne liste que les applications
+environments: [{name, production}], updatedAt, receivedAt, source: {linkId, product, instanceName, linkActive, kind}}` ;
+`kind` vaut `link` ou `apiKey` (`linkId` est alors l'identifiant de la clé, `product` vaut `api-key` et
+`instanceName` est le nom de la clé) ; `url` reste une fois la liaison coupée ou la clé révoquée (`linkActive` vaut
+alors false), et `applicationIds` ne liste que les applications
 visibles du lecteur. `GET /api/applications/{id}` et `GET /api/flows/{id}` renvoient aussi `deployments`, avec les 3
 derniers passés.
 

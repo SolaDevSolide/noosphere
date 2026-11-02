@@ -30,6 +30,11 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<LinkExchange> LinkExchanges => Set<LinkExchange>();
     public DbSet<LinkNonce> LinkNonces => Set<LinkNonce>();
     public DbSet<Deployment> Deployments => Set<Deployment>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<IdempotentRequest> IdempotentRequests => Set<IdempotentRequest>();
+    public DbSet<Webhook> Webhooks => Set<Webhook>();
+    public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
+    public DbSet<IntegrationSettings> IntegrationSettings => Set<IntegrationSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -178,6 +183,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
         });
         ConfigureAgents(modelBuilder);
         ConfigureLinks(modelBuilder);
+        ConfigureIntegrations(modelBuilder);
     }
 
     private static void ConfigureLinks(ModelBuilder modelBuilder)
@@ -231,7 +237,11 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.Reason).HasMaxLength(50);
             e.Property(x => x.Detail).HasMaxLength(Rules.MaxShortTextLength);
             e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<ApiKey>().WithMany().HasForeignKey(x => x.ApiKeyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Webhook>().WithMany().HasForeignKey(x => x.WebhookId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => new { x.LinkId, x.Id });
+            e.HasIndex(x => new { x.ApiKeyId, x.Id });
+            e.HasIndex(x => new { x.WebhookId, x.Id });
             e.HasIndex(x => x.At);
         });
         modelBuilder.Entity<LinkNonce>(e =>
@@ -250,10 +260,54 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.Property(x => x.Url).HasMaxLength(Url);
             e.Property(x => x.Environments).HasColumnType("jsonb");
             e.HasOne<Link>().WithMany().HasForeignKey(x => x.LinkId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<ApiKey>().WithMany().HasForeignKey(x => x.ApiKeyId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => new { x.LinkId, x.DeploymentId }).IsUnique();
+            e.HasIndex(x => new { x.ApiKeyId, x.DeploymentId }).IsUnique();
+            e.ToTable(t => t.HasCheckConstraint("CK_Deployments_Source", "(\"LinkId\" IS NULL) <> (\"ApiKeyId\" IS NULL)"));
             e.HasIndex(x => x.ApplicationIds).HasMethod("gin");
             e.HasIndex(x => x.EndedAt);
         });
+    }
+
+    private static void ConfigureIntegrations(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ApiKey>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Prefix).HasMaxLength(20);
+            e.Property(x => x.SecretHash).HasMaxLength(64);
+            e.Property(x => x.CreatedBy).HasMaxLength(100);
+            e.Property(x => x.RevokedBy).HasMaxLength(100);
+            e.HasIndex(x => x.Prefix).IsUnique();
+        });
+        modelBuilder.Entity<IdempotentRequest>(e =>
+        {
+            e.HasKey(x => new { x.ApiKeyId, x.Key });
+            e.Property(x => x.Key).HasMaxLength(200);
+            e.Property(x => x.RequestHash).HasMaxLength(64);
+            e.Property(x => x.Response).HasColumnType("jsonb");
+            e.HasOne<ApiKey>().WithMany().HasForeignKey(x => x.ApiKeyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.CreatedAt);
+        });
+        modelBuilder.Entity<Webhook>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(Rules.MaxNameLength);
+            e.Property(x => x.Url).HasMaxLength(2048);
+            e.Property(x => x.ProtectedSecret).HasMaxLength(4096);
+            e.Property(x => x.CreatedBy).HasMaxLength(100);
+        });
+        modelBuilder.Entity<WebhookDelivery>(e =>
+        {
+            e.Property(x => x.EventType).HasMaxLength(50);
+            e.Property(x => x.Payload).HasColumnType("jsonb");
+            e.Property(x => x.State).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Error).HasMaxLength(Rules.MaxShortTextLength);
+            e.HasOne<Webhook>().WithMany().HasForeignKey(x => x.WebhookId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.WebhookId, x.Id });
+            e.HasIndex(x => new { x.State, x.NextAttemptAt });
+            e.HasIndex(x => x.CreatedAt);
+        });
+        modelBuilder.Entity<IntegrationSettings>(e => e.Property(x => x.UpdatedBy).HasMaxLength(100));
     }
 
     private static void ConfigureAgents(ModelBuilder modelBuilder)

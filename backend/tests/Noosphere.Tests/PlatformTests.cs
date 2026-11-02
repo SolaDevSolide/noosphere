@@ -100,10 +100,12 @@ public class MigrationBackupTests : IDisposable
     {
         using var scope = _api.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<NoosphereDbContext>();
-        // Pretend the last four migrations (collaboration, access, agents, then links) are not applied yet: drop what they created.
-        foreach (var last in (await db.Database.GetAppliedMigrationsAsync()).TakeLast(4).ToList())
+        // Pretend the last six migrations (collaboration, access, agents, links, link directory, then integrations) are not
+        // applied yet: drop what they created.
+        foreach (var last in (await db.Database.GetAppliedMigrationsAsync()).TakeLast(6).ToList())
             await db.Database.ExecuteSqlAsync($"""delete from "__EFMigrationsHistory" where "MigrationId" = {last}""");
-        await db.Database.ExecuteSqlRawAsync("""drop table "Deployments", "LinkNonces", "LinkExchanges", "LinkCodes", "Links" """);
+        await db.Database.ExecuteSqlRawAsync("""drop table "IdempotentRequests", "WebhookDeliveries", "IntegrationSettings" """);
+        await db.Database.ExecuteSqlRawAsync("""drop table "Deployments", "LinkNonces", "LinkExchanges", "ApiKeys", "Webhooks", "LinkCodes", "Links" """);
         await db.Database.ExecuteSqlRawAsync("""drop table "AgentActivity", "AgentTokens", "OAuthRequests", "OAuthClients", "AgentConnections", "AgentSettings" """);
         await db.Database.ExecuteSqlRawAsync("""drop table "ProposalApprovals", "ProposalChanges", "Proposals", "Revisions", "Pages", "TeamMembers", "InstanceSettings", "AccessLog" """);
         await db.Database.ExecuteSqlRawAsync("""alter table "Applications" drop column "AccessTeamIds", drop column "AccessUsernames", drop column "ProtectedNotes" """);
@@ -112,7 +114,7 @@ public class MigrationBackupTests : IDisposable
         await db.Database.ExecuteSqlRawAsync("""insert into "__EFMigrationsHistory" values ('20200101000000_Older', '10.0.0')""");
         var directory = Path.Combine(_api.Directory, "backups");
 
-        Assert.Equal(4, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
+        Assert.Equal(6, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
         Assert.Single(Directory.GetFiles(directory, "before-migration-*.json"));
         Assert.Equal(0, await DatabaseMigrator.Migrate(db, directory, NullLogger.Instance));
 

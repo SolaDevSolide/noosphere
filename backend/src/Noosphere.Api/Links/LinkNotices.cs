@@ -17,10 +17,22 @@ public sealed record ChangeCandidate(RecordKind Kind, string Id, bool Added, Dat
     Visibility? OriginalVisibility = null, bool VisibilityChanged = false, string? OriginalFromId = null, string? OriginalToId = null);
 
 /// <summary>
+/// A saved change of an account or of a team membership, for the directory (<c>directory:read</c>). For an account:
+/// its original username and role (null when it was added); for a membership, both are null.
+/// </summary>
+public sealed record PersonCandidate(Guid UserId, bool Added, DateTimeOffset At, string? OriginalUsername = null, Role? OriginalRole = null,
+    bool Membership = false);
+
+/// <summary>
 /// The changes of one logical write, released once they are committed: one <c>SaveChanges</c>, or every save of an
 /// explicit transaction. <paramref name="CommittedAt"/> is when they became visible to other connections.
 /// </summary>
-public sealed record ChangeBatch(DateTimeOffset CommittedAt, IReadOnlyList<ChangeCandidate> Candidates);
+public sealed record ChangeBatch(DateTimeOffset CommittedAt, IReadOnlyList<ChangeCandidate> Candidates, IReadOnlyList<PersonCandidate>? People = null)
+{
+    public IReadOnlyList<PersonCandidate> Persons => People ?? [];
+
+    public bool Empty => Candidates.Count == 0 && Persons.Count == 0;
+}
 
 /// <summary>Committed changes waiting to be turned into change notices (singleton, filled by <see cref="LinkChangeInterceptor"/>).</summary>
 public sealed class LinkChangeFeed
@@ -29,7 +41,7 @@ public sealed class LinkChangeFeed
 
     public void Enqueue(ChangeBatch batch)
     {
-        if (batch.Candidates.Count > 0) _batches.Enqueue(batch);
+        if (!batch.Empty) _batches.Enqueue(batch);
     }
 
     public List<ChangeBatch> Drain()
@@ -48,16 +60,29 @@ public sealed class LinkChangeFeed
 /// </summary>
 public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clock) : SaveChangesInterceptor, IDbTransactionInterceptor
 {
+    private sealed class Found
+    {
+        public List<ChangeCandidate> Records { get; } = [];
+        public List<PersonCandidate> People { get; } = [];
+
+        public void AddRange(Found other)
+        {
+            Records.AddRange(other.Records);
+            People.AddRange(other.People);
+        }
+    }
+
     // Collected in SavingChanges, until the save ends.
-    private readonly ConditionalWeakTable<DbContext, List<ChangeCandidate>> _pending = [];
+    private readonly ConditionalWeakTable<DbContext, Found> _pending = [];
     // Saved inside an explicit transaction, until it ends.
-    private readonly ConditionalWeakTable<DbContext, List<ChangeCandidate>> _uncommitted = [];
+    private readonly ConditionalWeakTable<DbContext, Found> _uncommitted = [];
 
     private static readonly string[] AppFields = [nameof(Application.Name), nameof(Application.Description), nameof(Application.DomainId),
         nameof(Application.TeamId), nameof(Application.Kind), nameof(Application.Lifecycle), nameof(Application.Tech), nameof(Application.Visibility)];
     private static readonly string[] FlowFields = [nameof(Flow.Name), nameof(Flow.FromId), nameof(Flow.ToId), nameof(Flow.Type), nameof(Flow.Status), nameof(Flow.Schedule)];
     private static readonly string[] DomainFields = [nameof(BusinessDomain.Name)];
     private static readonly string[] TeamFields = [nameof(Team.Name), nameof(Team.Contact)];
+    private static readonly string[] UserFields = [nameof(User.Username), nameof(User.DisplayName), nameof(User.Role)];
 
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
@@ -120,7 +145,7 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
         if (context is null) return;
         context.ChangeTracker.DetectChanges();
         var now = clock.GetUtcNow();
-        var found = new List<ChangeCandidate>();
+        var found = new Found();
         foreach (var entry in context.ChangeTracker.Entries())
         {
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted)) continue;
@@ -129,22 +154,29 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
             {
                 case Application a when Relevant(entry, AppFields):
                     var visibility = (Visibility)entry.Property(nameof(Application.Visibility)).OriginalValue!;
-                    found.Add(new ChangeCandidate(RecordKind.Application, a.Id, added, now, added ? null : visibility,
+                    found.Records.Add(new ChangeCandidate(RecordKind.Application, a.Id, added, now, added ? null : visibility,
                         entry.State == EntityState.Deleted || (entry.State == EntityState.Modified && visibility != a.Visibility)));
                     break;
                 case Flow f when Relevant(entry, FlowFields):
-                    found.Add(new ChangeCandidate(RecordKind.Flow, f.Id, added, now, null, false,
+                    found.Records.Add(new ChangeCandidate(RecordKind.Flow, f.Id, added, now, null, false,
                         added ? null : (string?)entry.Property(nameof(Flow.FromId)).OriginalValue, added ? null : (string?)entry.Property(nameof(Flow.ToId)).OriginalValue));
                     break;
                 case BusinessDomain d when Relevant(entry, DomainFields):
-                    found.Add(new ChangeCandidate(RecordKind.Domain, d.Id, added, now));
+                    found.Records.Add(new ChangeCandidate(RecordKind.Domain, d.Id, added, now));
                     break;
                 case Team t when Relevant(entry, TeamFields):
-                    found.Add(new ChangeCandidate(RecordKind.Team, t.Id, added, now));
+                    found.Records.Add(new ChangeCandidate(RecordKind.Team, t.Id, added, now));
+                    break;
+                case User u when Relevant(entry, UserFields):
+                    found.People.Add(added ? new PersonCandidate(u.Id, true, now)
+                        : new PersonCandidate(u.Id, false, now, (string?)entry.Property(nameof(User.Username)).OriginalValue, (Role?)entry.Property(nameof(User.Role)).OriginalValue));
+                    break;
+                case TeamMember m when entry.State != EntityState.Modified:
+                    found.People.Add(new PersonCandidate(m.UserId, false, now, Membership: true));
                     break;
             }
         }
-        if (found.Count == 0) return;
+        if (found.Records.Count == 0 && found.People.Count == 0) return;
         lock (_pending)
         {
             if (_pending.TryGetValue(context, out var list)) list.AddRange(found);
@@ -158,7 +190,7 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
     private void Release(DbContext? context, bool saved)
     {
         if (context is null) return;
-        List<ChangeCandidate>? list;
+        Found? list;
         lock (_pending)
         {
             if (!_pending.TryGetValue(context, out list)) return;
@@ -175,19 +207,19 @@ public sealed class LinkChangeInterceptor(LinkChangeFeed queue, TimeProvider clo
             }
             return;
         }
-        queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), list));
+        queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), list.Records, list.People));
     }
 
     private void EndTransaction(DbContext? context, bool committed)
     {
         if (context is null) return;
-        List<ChangeCandidate>? held;
+        Found? held;
         lock (_pending)
         {
             if (!_uncommitted.TryGetValue(context, out held)) return;
             _uncommitted.Remove(context);
         }
-        if (committed) queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), held));
+        if (committed) queue.Enqueue(new ChangeBatch(clock.GetUtcNow(), held.Records, held.People));
     }
 }
 
@@ -293,13 +325,17 @@ public static class NoticeResolver
     public static async Task<List<(DateTimeOffset CommittedAt, List<NoticeChange> Changes)>> Resolve(NoosphereDbContext db, IReadOnlyList<ChangeBatch> batches,
         CancellationToken cancel = default)
     {
-        if (batches.All(b => b.Candidates.Count == 0)) return [];
+        if (batches.All(b => b.Empty)) return [];
         var state = await State.Load(db, cancel);
-        return [.. batches.Select(b => (b.CommittedAt, Resolve(state, b.Candidates)))];
+        return [.. batches.Select(b => (b.CommittedAt, (List<NoticeChange>)[.. Resolve(state, b.Candidates), .. ResolvePeople(state, b.Persons)]))];
     }
 
+    /// <summary>The person notices of one batch: listed now (a member or an administrator) → upsert; listed before only → delete.</summary>
+    public static async Task<List<NoticeChange>> ResolvePeople(NoosphereDbContext db, IReadOnlyList<PersonCandidate> people, CancellationToken cancel = default) =>
+        people.Count == 0 ? [] : ResolvePeople(await State.Load(db, cancel), people);
+
     private sealed record State(Dictionary<string, Visibility> Visibility, List<(string Id, string FromId, string ToId)> Flows,
-        HashSet<string> Domains, HashSet<string> Teams)
+        HashSet<string> Domains, HashSet<string> Teams, Dictionary<Guid, (string Username, Role Role)> Users)
     {
         public static async Task<State> Load(NoosphereDbContext db, CancellationToken cancel)
         {
@@ -307,8 +343,31 @@ public static class NoticeResolver
             var flows = (await db.Flows.AsNoTracking().Select(f => new { f.Id, f.FromId, f.ToId }).ToListAsync(cancel)).Select(f => (f.Id, f.FromId, f.ToId)).ToList();
             var domains = (await db.Domains.AsNoTracking().Select(d => d.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
             var teams = (await db.Teams.AsNoTracking().Select(t => t.Id).ToListAsync(cancel)).ToHashSet(StringComparer.Ordinal);
-            return new State(visibility, flows, domains, teams);
+            var users = (await db.Users.AsNoTracking().Select(u => new { u.Id, u.Username, u.Role }).ToListAsync(cancel)).ToDictionary(u => u.Id, u => (u.Username, u.Role));
+            return new State(visibility, flows, domains, teams, users);
         }
+    }
+
+    private static List<NoticeChange> ResolvePeople(State state, IReadOnlyList<PersonCandidate> people)
+    {
+        var changes = new Dictionary<string, NoticeChange>(StringComparer.Ordinal);
+        foreach (var group in people.GroupBy(p => p.UserId))
+        {
+            var at = group.Max(p => p.At);
+            // The state before the batch: the first account change carries it; a membership change alone says nothing.
+            var first = group.FirstOrDefault(p => !p.Membership);
+            var now = state.Users.TryGetValue(group.Key, out var user) && user.Role != Role.Guest;
+            if (now)
+            {
+                changes[user.Username] = new NoticeChange("person", user.Username, "upsert", at);
+                // A renamed account: the old username leaves the directory.
+                if (first is { Added: false, OriginalUsername: { } old, OriginalRole: not Role.Guest } && old != user.Username)
+                    changes[old] = new NoticeChange("person", old, "delete", at);
+            }
+            else if (first is { Added: false, OriginalUsername: { } old, OriginalRole: not Role.Guest })
+                changes[old] = new NoticeChange("person", old, "delete", at);
+        }
+        return [.. changes.Values];
     }
 
     private static List<NoticeChange> Resolve(State state, IReadOnlyList<ChangeCandidate> candidates)
@@ -396,11 +455,23 @@ public sealed class LinkNoticeSender(IServiceScopeFactory scopes, LinkChangeFeed
         {
             var resolved = (await NoticeResolver.Resolve(db, batches, cancel)).Where(r => r.Changes.Count > 0).ToList();
             if (resolved.Count > 0)
-                foreach (var link in await db.Links.AsNoTracking().Where(Receives).Select(l => new { l.Id, l.ConfirmedAt }).ToListAsync(cancel))
+            {
+                foreach (var link in await db.Links.AsNoTracking().Where(Receives).Select(l => new { l.Id, l.ConfirmedAt, l.Capabilities }).ToListAsync(cancel))
+                {
+                    // People are noticed only to the links that read the directory.
+                    var directory = link.Capabilities.Contains(LinkProtocol.DirectoryRead);
                     // A write committed before the link was confirmed here is already in the catalogue the peer reads
                     // once confirmed: it is not noticed (nor taken as the state before the later writes).
                     foreach (var (committedAt, changes) in resolved.Where(r => link.ConfirmedAt is not { } confirmed || r.CommittedAt >= confirmed))
-                        buckets.Add(link.Id, changes);
+                        if ((directory ? changes : changes.Where(c => c.Kind != "person").ToList()) is { Count: > 0 } sent)
+                            buckets.Add(link.Id, sent);
+                }
+                // Webhooks receive the catalogue changes (never people: the directory is for links only).
+                var forHooks = resolved.SelectMany(r => r.Changes).Where(c => c.Kind != "person").ToList();
+                if (forHooks.Count > 0
+                    && await Integrations.Webhooks.Enqueue(db, Integrations.Webhooks.CatalogChanged, new JsonObject { ["changes"] = LinkProtocol.ToNode(forHooks) }, clock.GetUtcNow(), cancel) > 0)
+                    await db.SaveChangesAsync(cancel);
+            }
         }
         var now = clock.GetUtcNow();
         var due = buckets.TakeDue(now);

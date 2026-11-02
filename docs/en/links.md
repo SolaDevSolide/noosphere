@@ -11,11 +11,15 @@ example. Once linked:
   administrator chooses;
 - Noosphere tells gestion-mep when a shared record changes (**change notices**);
 - gestion-mep sends the **deployments** touching the followed applications. Each application and flow record shows
-  the upcoming and past deployments, and AI agents see them in `get_record` and the Markdown views.
+  the upcoming and past deployments, and AI agents see them in `get_record` and the Markdown views;
+- when an administrator allows it, gestion-mep reads the **directory** (teams and people), to name the owners and
+  contacts Noosphere knows. Accounts stay separate in each application.
 
 Only administrators manage links. Deployments are shown to members and administrators, never to guests. Restricted
-applications (any access list) are never sent, nor the flows touching
-them, nor protected notes, pages or history.
+applications (any access list) are never sent, nor the flows touching them, nor protected notes, pages or history.
+
+Tools that cannot sign or encrypt (CI/CD pipelines, ITSM, scripts) use [API keys and webhooks](integrations.md)
+instead.
 
 ## Pairing
 
@@ -32,14 +36,40 @@ them, nor protected notes, pages or history.
 
 A wrong code counts as a failure: after 5 wrong MACs the code is burnt (`code-burnt`). Codes are stored hashed.
 
-Capabilities are chosen with the code (all three by default) and changed later
-(`PUT /api/links/{id}/capabilities`):
+Capabilities are chosen with the code and changed later (`PUT /api/links/{id}/capabilities`):
 
-| Capability | Allows |
-| ---------- | ------ |
-| `catalog:read` | gestion-mep reads the catalogue (`GET /link/v1/catalog`) |
-| `notices:send` | Noosphere posts change notices to gestion-mep |
-| `deployments:receive` | gestion-mep posts deployments (`POST /link/v1/deployments`) |
+| Capability | Allows | By default |
+| ---------- | ------ | ---------- |
+| `catalog:read` | gestion-mep reads the catalogue (`GET /link/v1/catalog`) | on |
+| `notices:send` | Noosphere posts change notices to gestion-mep | on |
+| `deployments:receive` | gestion-mep posts deployments (`POST /link/v1/deployments`) | on |
+| `directory:read` | gestion-mep reads the directory (`GET /link/v1/directory`) and receives `person` notices | **off** |
+
+`directory:read` is never granted unless an administrator names it, on the code or later on the link. A second
+choice, **share e-mails** (`shareEmails` in `PUT /api/links/{id}/capabilities`, off by default), adds e-mail
+addresses to the directory.
+
+### Directory
+
+`GET /link/v1/directory` is signed like the other link requests and answers a signed JWE; a request without
+`directory:read` gets `403` with the problem type `https://noosphere.dev/problems/capability-missing`. An
+`If-None-Match` with the last `ETag` gets `304`.
+
+```json
+{ "generatedAt": "2026-11-02T09:00:00Z", "instanceName": "Noosphere Alizé", "emailsShared": false,
+  "teams": [ { "id": "team-finance", "name": "Team Finance", "contact": "#team-finance", "applicationIds": ["billing", "ledger"] } ],
+  "people": [ { "username": "bob", "displayName": "Bob Martin", "teamIds": ["team-finance", "team-payments"] } ] }
+```
+
+- `teams`: every team, with its contact and the applications of the shared catalogue it owns (`applicationIds`).
+- `people`: every member and administrator, with display name, username and teams. Never guests, never roles.
+- E-mail addresses: Noosphere keeps no personal e-mail. A team contact holding an e-mail address is sent as
+  `contact: null` unless the link shares e-mails; a chat channel is always sent.
+- Directory changes come as notices with `kind: "team"` (already sent for the catalogue) and `kind: "person"`, whose
+  `id` is the username: `upsert` when an account is created or changes name or teams, `delete` when it is deleted or
+  becomes a guest. Person notices go only to links with `directory:read`.
+- Every read is in the exchange log (operation `directory`), with the number of teams and people and whether e-mail
+  addresses were shared; refusals too.
 
 **Renew keys** (`noosphere link renew <id>`) creates new keys and tells the peer, signed with the old key: the
 fingerprint changes and no new confirmation is needed. Requests signed with the old key are still accepted for 5
@@ -75,7 +105,7 @@ planned deployment also shows under the application's title.
 The shared contract is the reference; in short:
 
 - Endpoints under `/link/v1` (outside `/api`: no cookie, no CSRF), limited to 120 requests per minute per link.
-  Noosphere serves `pair`, `status`, `catalog`, `deployments`, `rekey`, `unpair`; gestion-mep serves `notices`,
+  Noosphere serves `pair`, `status`, `catalog`, `directory`, `deployments`, `rekey`, `unpair`; gestion-mep serves `notices`,
   `status`, `rekey`, `unpair`.
 - Each side has, per link, a P-256 signing key and a P-256 encryption key. Private keys are encrypted at rest with
   ASP.NET Core Data Protection (the `NOOSPHERE_KEYS_DIR` key ring) and never leave the server. Key ids are RFC 7638
@@ -96,7 +126,7 @@ over the path with the prefix of `NOOSPHERE_PUBLIC_URL`, with the request's `Pat
 
 | Command | Does |
 | ------- | ---- |
-| `noosphere link code [--expires 15m\|2h] [--capabilities catalog:read,notices:send,deployments:receive]` | Creates a pairing code, shown once. |
+| `noosphere link code [--expires 15m\|2h] [--capabilities catalog:read,notices:send,deployments:receive,directory:read]` | Creates a pairing code, shown once. Without `--capabilities`: all but `directory:read`. |
 | `noosphere link list [--json]` | Lists links: state, peer confirmation, instance, fingerprint. |
 | `noosphere link confirm <id> --fingerprint "<four words>"` | Confirms a pending link after comparing fingerprints. |
 | `noosphere link renew <id>` | Renews this side's keys and tells the peer. |

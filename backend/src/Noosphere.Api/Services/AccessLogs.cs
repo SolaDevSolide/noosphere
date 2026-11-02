@@ -92,6 +92,8 @@ public sealed class AccessLogPurge(IServiceScopeFactory scopes, Settings setting
                 var activity = await Agents.AgentRuntime.Purge(db, settings.AgentActivityDays, clock.GetUtcNow(), stoppingToken);
                 if (activity > 0) logger.LogInformation("Agent activity: {Count} line(s) older than {Days} days purged.", activity, settings.AgentActivityDays);
                 var (exchanges, deployments) = await Links.LinkLog.Purge(db, clock.GetUtcNow(), stoppingToken);
+                var deliveries = await Integrations.Webhooks.Purge(db, clock.GetUtcNow(), stoppingToken);
+                if (deliveries > 0) logger.LogInformation("Webhooks: {Count} delivery line(s) older than 90 days purged.", deliveries);
                 if (exchanges + deployments > 0)
                     logger.LogInformation("Links: {Exchanges} exchange line(s) older than 90 days and {Deployments} deployment(s) ended over 365 days ago purged.", exchanges, deployments);
             }
