@@ -9365,3 +9365,481 @@ a.wl:hover {
     white-space: normal;
   }
 }
+
+/* ---- import from other formats ---- */
+.box.tb.ip {
+  overflow: visible;
+}
+.ip-body {
+  padding: 0 20px 16px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.ip-body > .banner {
+  margin: 0;
+}
+.isteps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13.5px;
+  color: var(--fg-muted);
+}
+.isteps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.isteps li + li::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--line-strong);
+  margin-right: 2px;
+}
+.isteps .isd {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--fg-subtle);
+}
+.isteps li.now {
+  color: var(--fg);
+  font-weight: 600;
+}
+.isteps li.now .isd {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.isteps li.done .isd {
+  background: var(--ok-bg);
+  border-color: transparent;
+  color: var(--ok-fg);
+}
+.rcards.ip-srcs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ip-srcs .rcard {
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-content: start;
+}
+.ip-srcs .rcard input {
+  grid-column: 2;
+  grid-row: 1;
+}
+.ip-srcs .rcard b,
+.ip-srcs .rcard small,
+.ip-srcs .rcard .meta {
+  grid-column: 1;
+}
+.ip-srcs .rcard b {
+  grid-row: 1;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+.ip-si {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  color: var(--fg-muted);
+}
+.rcard:has(input:checked) .ip-si {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.ip-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px 20px;
+  align-items: start;
+}
+.ip-static {
+  margin: 26px 0 0;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.ip-static svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ok-fg);
+}
+.ip-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.ip-files li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  min-width: 0;
+}
+.ip-files li > svg {
+  flex: none;
+  color: var(--fg-subtle);
+}
+.ip-fn {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+}
+.ip-fn b {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.ip-fn small {
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+.ip-more > summary {
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.ip-more[open] > summary {
+  margin-bottom: 10px;
+}
+.ip-go {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ip-go .btn.primary {
+  margin-left: auto;
+}
+.ip-tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.ip-tiles.six {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.ip-tiles.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0;
+}
+.ip-tiles .stat {
+  background: var(--surface);
+}
+.ip-tiles .stat.c b {
+  color: var(--ok-fg);
+}
+.ip-tiles .stat.u b {
+  color: var(--accent-text);
+}
+.ip-tiles .stat.w b {
+  color: var(--warn-fg);
+}
+.ip-tiles .stat.e b {
+  color: var(--danger-fg);
+}
+.ip-tiles .stat.d b {
+  color: var(--fg-subtle);
+}
+.ip-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ip-match {
+  font-size: 12.5px;
+}
+.box.tb .ip-table td {
+  font-size: 13.5px;
+}
+.ip-table tr.dim td {
+  color: var(--fg-muted);
+}
+.ip-table tr.off td {
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+}
+.ip-table tr.off td:not(.ip-act) > * {
+  opacity: 0.6;
+}
+.ip-table tr.off .ip-note.out {
+  opacity: 1;
+}
+.ip-act {
+  width: 1%;
+  white-space: nowrap;
+}
+.ip-actw {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ip-cb {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.ip-cb:disabled {
+  cursor: default;
+}
+.ip-src {
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.ip-rec b {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.ip-rec b a {
+  color: var(--fg);
+}
+.ip-rec small {
+  display: block;
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+.ip-close {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--warn-fg);
+}
+.ip-close a {
+  color: inherit;
+}
+.ip-det {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ip-f {
+  color: var(--fg-subtle);
+}
+.ip-diff {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+.ip-diff summary {
+  cursor: pointer;
+}
+.ip-diff .ip-show {
+  color: var(--accent-text);
+  font-size: 12px;
+}
+.ip-diff .wdiff {
+  margin-top: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+.ip-msgs {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 12.5px;
+}
+.ip-msgs li {
+  display: flex;
+  gap: 6px;
+}
+.ip-msgs svg {
+  flex: none;
+  margin-top: 2px;
+}
+.ip-msgs.warning {
+  color: var(--warn-fg);
+}
+.ip-msgs.error {
+  color: var(--danger-fg);
+}
+.ip-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--fg-subtle);
+}
+.ip-note.out {
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.ip-foot {
+  display: grid;
+  gap: 4px;
+  color: var(--fg-muted);
+  flex: 1 1 280px;
+}
+.ip-exp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--fg-subtle);
+}
+.ip-acts {
+  margin-top: 10px;
+}
+.ip-written h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.ip-written ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.ip-written li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13.5px;
+}
+.ip-written small {
+  color: var(--fg-subtle);
+}
+.ip-sure {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.ip-sure li {
+  display: flex;
+  gap: 8px;
+}
+.ip-sure svg {
+  flex: none;
+  margin-top: 1px;
+}
+.ip-sure .ok svg {
+  color: var(--ok-fg);
+}
+.ip-sure .warn svg {
+  color: var(--warn-fg);
+}
+.ip-sure .info svg {
+  color: var(--accent-text);
+}
+@media (max-width: 1000px) {
+  .rcards.ip-srcs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ip-tiles,
+  .ip-tiles.six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .ip-body {
+    padding: 0 16px 16px;
+  }
+  .rcards.ip-srcs,
+  .ip-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ip-static {
+    margin-top: 0;
+  }
+  .ip-tiles,
+  .ip-tiles.six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ip-act {
+    width: auto;
+  }
+  .rtable.ip-table td[data-l]::before {
+    min-width: 104px;
+    vertical-align: top;
+  }
+  .rtable.ip-table td {
+    display: grid !important;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 2px 8px;
+  }
+  .rtable.ip-table td[data-l]::before {
+    min-width: 0;
+  }
+  .rtable.ip-table td > * {
+    min-width: 0;
+  }
+  .rtable.ip-table td.ip-det > *:not(:first-child),
+  .rtable.ip-table td.ip-rec > *:not(:first-child) {
+    grid-column: 2;
+  }
+}
+.ip-more > summary {
+  gap: 6px;
+  list-style: none;
+}
+.ip-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ip-more > summary svg {
+  transform: rotate(-90deg);
+  transition: transform 0.15s;
+}
+.ip-more[open] > summary svg {
+  transform: none;
+}
+.box.tb.ip > .tb-h h2.big {
+  margin: 0;
+}
+.ip-filters .seg .cnt {
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ip-filters .seg button[aria-pressed='true'] .cnt {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+@media (max-width: 720px) {
+  .isteps {
+    gap: 6px;
+  }
+  .isteps li + li::before {
+    width: 12px;
+    margin-right: 0;
+  }
+}
