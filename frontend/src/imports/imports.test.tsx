@@ -127,21 +127,22 @@ describe('import page', () => {
   }
 
   it('starts with no file: the dry run waits for one', async () => {
-    renderPage(<ImportExportPage />, { path: '/import-export', route: '/import-export', me: ME.bob });
+    renderPage(<ImportExportPage />, { path: '/import-export', route: '/import-export', me: ME.alice });
     await screen.findByRole('radiogroup', { name: T.sourceLabel });
     expect(screen.getByRole('button', { name: T.dryRun })).toBeDisabled();
-    // The exchange import stays for administrators.
-    expect(screen.getByRole('radio', { name: /Noosphere JSON/ })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /Noosphere JSON/ })).toBeEnabled();
   });
 
-  it('tells guests they cannot import', async () => {
-    renderPage(<ImportExportPage />, {
-      path: '/import-export',
-      route: '/import-export',
-      me: { ...ME.bob, role: 'guest' },
-    });
-    expect(await screen.findByText(T.guestsCannot)).toBeInTheDocument();
+  it.each([
+    ['member', ME.bob],
+    ['guest', { ...ME.bob, role: 'guest' as const }],
+  ])('tells a %s that only administrators import, and offers the template', async (_, me) => {
+    renderPage(<ImportExportPage />, { path: '/import-export', route: '/import-export', me });
+    expect(await screen.findByText(T.adminsOnlyH)).toBeInTheDocument();
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: T.template })).toHaveAttribute('href', api.importTemplateUrl);
+    // Export stays open to everyone.
+    expect(screen.getByRole('button', { name: en.access.exportTitle })).toBeInTheDocument();
   });
 
   it('previews the plan, leaves out a line with what needs it, and applies the rest', async () => {

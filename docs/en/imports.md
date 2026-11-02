@@ -82,10 +82,10 @@ warning; a flow whose end is unknown is skipped.
 
 ## Rights
 
-Administrators and members import; guests cannot (`403`). Every change of the plan is checked as if it were made by
-hand: members publish changes to the records their teams own (set `teamId` to one of your teams for new records),
-and only administrators create or change domains and teams. A change the person may not publish is an error of the
-plan; send a [proposal](proposals.md) for it instead.
+Only administrators import, as with the [exchange import](exchange-format.md): members and guests get `403` on the
+dry run, the plans and their application. Members send a [proposal](proposals.md) instead. The
+[Excel template](imports-excel.md#template) is open to everyone signed in. Plans of the command line belong to
+`system`, run by whoever runs the server.
 
 ## Options
 
@@ -116,8 +116,7 @@ cannot expand into a huge one (the exchange import refuses them too).
 
 ## Record of imports
 
-Every dry run is kept, applied or not: `GET /api/imports` lists one's own imports, and every import for
-administrators, with its author, time, formats, counts, status and the reason of a refusal; `GET /api/imports/{id}`
+Every dry run is kept, applied or not: `GET /api/imports` lists every import, with its author, time, formats, counts, status and the reason of a refusal; `GET /api/imports/{id}`
 gives the whole preview, with the name, size and SHA-256 of every file. Each record written gets a revision by the
 person who applied the plan, with the summary `Imported (backstage, import 1a2b3c4d)`, in its
 [history](history.md). The server log has a line for every plan, application and refusal.

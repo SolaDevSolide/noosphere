@@ -191,7 +191,7 @@ function Expiry({ plan, onOver }: { plan: ImportPlan; onOver: () => void }) {
 export function ImportPanel() {
   const { t } = useI18n();
   const T = t.imports;
-  const { me, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const { model: m, reload } = useLandscape();
   const input = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<SourceId>('backstage');
@@ -207,7 +207,6 @@ export function ImportPanel() {
   const [applying, setApplying] = useState(false);
   const [showWritten, setShowWritten] = useState(false);
 
-  const guest = me?.role === 'guest';
   const native = source === 'native';
   const name = T.sources[source].name;
   const total = files.reduce((s, f) => s + f.size, 0);
@@ -299,15 +298,23 @@ export function ImportPanel() {
     p.files.length <= 1 ? (p.files[0]?.name ?? '') : T.moreFiles(p.files[0].name, p.files.length - 1);
   const title = plan ? `${filesText(plan)} · ${name}` : name;
 
-  if (guest)
+  if (!isAdmin)
     return (
       <section className="box" aria-labelledby="imp-h">
         <h2 className="big" id="imp-h">
           {T.importH}
         </h2>
-        <div className="banner" role="note">
+        <div className="banner info" role="note">
           <IconLock size={16} />
-          <span className="bt">{T.guestsCannot}</span>
+          <div className="bt">
+            <b>{T.adminsOnlyH}</b> {T.adminsOnlyText}
+            <div className="page-actions ip-acts">
+              <a className="btn sm" href={api.importTemplateUrl} download>
+                <IconDownload size={14} />
+                {T.template}
+              </a>
+            </div>
+          </div>
         </div>
       </section>
     );
@@ -517,15 +524,13 @@ export function ImportPanel() {
           <Steps at={0} />
           <div className="rcards ip-srcs" role="radiogroup" aria-label={T.sourceLabel}>
             {SOURCES.map((s) => {
-              const off = s === 'native' && !isAdmin;
               return (
-                <label key={s} className={'rcard' + (off ? ' disabled' : '')}>
+                <label key={s} className="rcard">
                   <input
                     type="radio"
                     name="ip-source"
                     value={s}
                     checked={source === s}
-                    disabled={off}
                     onChange={() => {
                       setSource(s);
                       setError(null);
@@ -538,12 +543,6 @@ export function ImportPanel() {
                     {T.sources[s].name}
                   </b>
                   <small>{T.sources[s].hint}</small>
-                  {off && (
-                    <span className="meta">
-                      <IconLock size={12} />
-                      {T.adminsOnly}
-                    </span>
-                  )}
                 </label>
               );
             })}

@@ -6,7 +6,9 @@ export const importsEn = {
   intro: 'Move a landscape in or out of Noosphere, from the formats your teams already use.',
   importH: 'Import',
   importText: 'Every import starts with a dry run. Records are created or updated, never deleted.',
-  guestsCannot: 'Guests cannot import. Ask an administrator or a member of the team that owns the records.',
+  adminsOnlyH: 'Only administrators import.',
+  adminsOnlyText:
+    'An import can create and change many records at once, across teams. To change a record, edit it or send a proposal from it; to bring in a file, ask an administrator. The Excel template helps prepare one.',
   steps: { source: 'Source', dry: 'Dry run', confirm: 'Confirm', stepsLabel: 'Import steps' },
   sourceLabel: 'Source format',
   sources: {
@@ -43,10 +45,9 @@ export const importsEn = {
     native: {
       name: 'Noosphere JSON',
       hint: 'noosphere/v1 exchange format',
-      info: 'The exchange import: records are matched by id, new ids are created, existing ones updated. Administrators only.',
+      info: 'The exchange import: records are matched by id, new ids are created, existing ones updated.',
     },
   },
-  adminsOnly: 'Administrators only',
   providerLabel: 'Application that provides this API',
   providerAdrLabel: 'Application the decisions are about',
   providerHint: 'Left empty: the application named in the file (x-noosphere-application, or the title).',
@@ -59,7 +60,7 @@ export const importsEn = {
   domainLabel: 'Domain of new applications',
   domainHint: 'Left empty: the domain given in the file, or a domain “Imported”.',
   teamLabel: 'Owning team of new records',
-  teamHint: 'Members: choose one of your teams, so that you may publish what the import creates.',
+  teamHint: 'Left empty: the team given in the file, if any.',
   none: '—',
   choose: 'Choose files',
   chooseOne: 'Choose a file',

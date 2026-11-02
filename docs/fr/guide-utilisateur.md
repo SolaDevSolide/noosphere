@@ -176,14 +176,15 @@ Chaque action affiche un avis avec un lien **Voir** vers ce qui a changé. Voir 
 
 ## Imports
 
-**Import et export** (menu du compte) fait entrer ce que vos équipes documentent déjà. Administrateurs et membres
-importent ; les invités ne le peuvent pas.
+**Import et export** (menu du compte) fait entrer ce que vos équipes documentent déjà. Seuls les administrateurs
+importent ; membres et invités voient pourquoi, et les membres envoient plutôt une [proposition](proposals.md). Tout le
+monde peut exporter.
 
 1. **Source.** Choisissez le format : Backstage, OpenAPI, AsyncAPI, ADR (Markdown), Mermaid / C4, Excel
    (téléchargez d'abord le modèle) ou Noosphere JSON (le format d'échange, réservé aux administrateurs). Ajoutez un ou
    plusieurs fichiers, ou un `.zip`. Pour OpenAPI, AsyncAPI et les ADR, vous pouvez nommer l'application concernée.
    **Options des nouvelles fiches** fixe le domaine des nouvelles applications et l'équipe propriétaire des nouvelles
-   fiches (membres : choisissez une de vos équipes, pour pouvoir publier ce que l'import crée).
+   fiches.
 2. **Essai à blanc.** Rien n'est encore écrit. L'aperçu compte ce qui serait créé, mis à jour, laissé inchangé, et les
    avertissements (ce qui a été écarté ou déduit, avec la raison) ; rien n'est jamais supprimé. Filtrez les lignes par
    action. Chaque ligne montre son origine dans le fichier (fichier, ligne, emplacement), la fiche dans Noosphere et

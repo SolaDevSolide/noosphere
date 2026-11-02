@@ -160,14 +160,13 @@ Each action shows a notice with a **Show me** link to what changed. See [Demo to
 
 ## Imports
 
-**Import and export** (account menu) brings in what your teams already document. Administrators and members import;
-guests cannot.
+**Import and export** (account menu) brings in what your teams already document. Only administrators import; members
+and guests see why, and members send a [proposal](proposals.md) instead. Everyone may export.
 
 1. **Source.** Choose the format: Backstage, OpenAPI, AsyncAPI, ADR (Markdown), Mermaid / C4, Excel (download the
    template first) or Noosphere JSON (the exchange format, administrators only). Add one or several files, or a
    `.zip`. For OpenAPI, AsyncAPI and ADR, you may name the application the files are about. **Options for new
-   records** sets the domain of new applications and the owning team of new records (members: choose one of your
-   teams, so that you may publish what the import creates).
+   records** sets the domain of new applications and the owning team of new records.
 2. **Dry run.** Nothing is written yet. The preview counts what would be created, updated, left unchanged, and the
    warnings (what was left out or guessed, with the reason); nothing is ever deleted. Filter the lines by action.
    Each line shows where it comes from in the file (file, line, place), the record in Noosphere and how it was found

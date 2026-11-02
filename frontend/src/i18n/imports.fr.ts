@@ -8,8 +8,9 @@ export const importsFr: ImportsDict = {
   importH: 'Import',
   importText:
     'Chaque import commence par un essai à blanc. Les enregistrements sont créés ou mis à jour, jamais supprimés.',
-  guestsCannot:
-    'Les invités ne peuvent pas importer. Demandez à un administrateur ou à un membre de l’équipe propriétaire des fiches.',
+  adminsOnlyH: 'Seuls les administrateurs importent.',
+  adminsOnlyText:
+    'Un import peut créer et modifier de nombreuses fiches d’un coup, pour plusieurs équipes. Pour changer une fiche, modifiez-la ou envoyez une proposition depuis la fiche ; pour faire entrer un fichier, demandez à un administrateur. Le modèle Excel aide à le préparer.',
   steps: { source: 'Source', dry: 'Essai à blanc', confirm: 'Confirmer', stepsLabel: 'Étapes de l’import' },
   sourceLabel: 'Format source',
   sources: {
@@ -46,10 +47,9 @@ export const importsFr: ImportsDict = {
     native: {
       name: 'Noosphere JSON',
       hint: 'Format d’échange noosphere/v1',
-      info: 'L’import d’échange : les fiches sont rapprochées par identifiant, les nouvelles créées, les existantes mises à jour. Réservé aux administrateurs.',
+      info: 'L’import d’échange : les fiches sont rapprochées par identifiant, les nouvelles créées, les existantes mises à jour.',
     },
   },
-  adminsOnly: 'Administrateurs seulement',
   providerLabel: 'Application qui fournit cette API',
   providerAdrLabel: 'Application concernée par les décisions',
   providerHint: 'Vide : l’application nommée dans le fichier (x-noosphere-application, ou le titre).',
@@ -62,7 +62,7 @@ export const importsFr: ImportsDict = {
   domainLabel: 'Domaine des nouvelles applications',
   domainHint: 'Vide : le domaine indiqué dans le fichier, ou un domaine « Imported ».',
   teamLabel: 'Équipe propriétaire des nouvelles fiches',
-  teamHint: 'Membres : choisissez une de vos équipes, pour pouvoir publier ce que l’import crée.',
+  teamHint: 'Vide : l’équipe indiquée dans le fichier, s’il y en a une.',
   none: '—',
   choose: 'Choisir des fichiers',
   chooseOne: 'Choisir un fichier',

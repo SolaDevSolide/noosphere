@@ -88,11 +88,10 @@ inconnue est ignoré.
 
 ## Droits
 
-Les administrateurs et les membres importent ; les invités ne peuvent pas (`403`). Chaque changement du plan est
-vérifié comme s'il était fait à la main : les membres publient les changements des enregistrements de leurs équipes
-(mettez `teamId` à l'une de vos équipes pour les nouveaux enregistrements), et seuls les administrateurs créent ou
-modifient domaines et équipes. Un changement que la personne ne peut pas publier est une erreur du plan ; envoyez
-plutôt une [proposition](proposals.md).
+Seuls les administrateurs importent, comme pour l'[import d'échange](exchange-format.md) : membres et invités
+reçoivent `403` sur la simulation, les plans et leur application. Les membres envoient plutôt une
+[proposition](proposals.md). Le [modèle Excel](imports-excel.md#modèle) est ouvert à toute personne connectée. Les
+plans de la ligne de commande appartiennent à `system`, lancée par qui exploite le serveur.
 
 ## Options
 
@@ -123,8 +122,7 @@ qu'un petit fichier ne puisse pas se déployer en un fichier énorme (l'import d
 
 ## Trace des imports
 
-Chaque simulation est gardée, appliquée ou non : `GET /api/imports` liste ses propres imports, et tous les imports
-pour les administrateurs, avec leur auteur, leur date, leurs formats, leurs comptes, leur état et la raison d'un
+Chaque simulation est gardée, appliquée ou non : `GET /api/imports` liste tous les imports, avec leur auteur, leur date, leurs formats, leurs comptes, leur état et la raison d'un
 refus ; `GET /api/imports/{id}` donne l'aperçu complet, avec le nom, la taille et le SHA-256 de chaque fichier.
 Chaque enregistrement écrit reçoit une révision de la personne qui a appliqué le plan, avec le résumé
 `Imported (backstage, import 1a2b3c4d)`, dans son [historique](history.md). Le journal du serveur a une ligne pour

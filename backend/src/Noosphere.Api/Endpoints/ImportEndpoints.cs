@@ -31,8 +31,8 @@ public sealed record ImportQuery(
 
 /// <summary>
 /// Imports from other formats (Backstage, OpenAPI, AsyncAPI, ADR, Mermaid, Excel): a dry run stores a plan and returns
-/// its preview, then the same plan is applied by id. Administrators and members (who publish what they could publish by
-/// hand); guests cannot import.
+/// its preview, then the same plan is applied by id. Administrators only, as for the exchange import; the Excel template
+/// is open to everyone signed in.
 /// </summary>
 public static class ImportEndpoints
 {
@@ -59,7 +59,7 @@ public static class ImportEndpoints
             var plan = await ImportService.Plan(db, access, files, options, clock.GetUtcNow(), loggers.CreateLogger("Noosphere.Imports"), request.HttpContext.RequestAborted);
             return Results.Created($"/api/imports/{plan.Id}", plan);
         })
-            .RequireEditor()
+            .RequireAdmin()
             .WithMetadata(new RequestSizeLimitAttribute(ImportLimits.MaxUploadBytes))
             .WithMetadata(new RequestFormLimitsAttribute { MultipartBodyLengthLimit = ImportLimits.MaxUploadBytes, ValueCountLimit = ImportLimits.MaxFiles + 10 })
             .AddOpenApiOperationTransformer((operation, _, _) =>
@@ -94,12 +94,12 @@ public static class ImportEndpoints
 
         imports.MapGet("", async ([FromQuery] int? limit, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             await ImportService.List(db, await Access.Load(db, user), clock.GetUtcNow(), limit ?? 50))
-            .RequireEditor()
+            .RequireAdmin()
             .WithSummary("Recent imports: one's own, everyone's for administrators");
 
         imports.MapGet("/{id:guid}", async (Guid id, ClaimsPrincipal user, NoosphereDbContext db, TimeProvider clock) =>
             await ImportService.Get(db, await Access.Load(db, user), id, clock.GetUtcNow()))
-            .RequireEditor()
+            .RequireAdmin()
             .Produces<ProblemDto>(StatusCodes.Status404NotFound);
 
         // The body is optional (no body applies the whole plan), so it is read by hand: a declared body would make the
@@ -121,7 +121,7 @@ public static class ImportEndpoints
             }
             return await ImportService.Apply(db, await Access.Load(db, user), id, clock.GetUtcNow(), loggers.CreateLogger("Noosphere.Imports"), input?.Skip);
         })
-            .RequireEditor()
+            .RequireAdmin()
             .AddOpenApiOperationTransformer(async (operation, context, cancel) =>
             {
                 operation.RequestBody = new OpenApiRequestBody

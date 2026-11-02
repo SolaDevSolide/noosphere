@@ -103,7 +103,8 @@ export function handleImports(
   files: File[],
 ): Response | null {
   if (!path.startsWith('/imports')) return null;
-  if (user.role === 'guest') return problem(403, 'Guests cannot import.');
+  if (path === '/imports/template.xlsx') return null;
+  if (user.role !== 'admin') return problem(403, 'Only administrators import.');
   if (path === '/imports' && method === 'POST') {
     if (!files.length) return problem(400, 'Send the files as multipart/form-data.');
     const plan = demoPlan(user, files, url.searchParams.get('format'));

@@ -39,7 +39,8 @@ public class ImportRulesTests : IDisposable
     public async Task A_plan_belongs_to_its_author_and_is_applied_once()
     {
         var alice = await _api.SignedIn("alice");
-        var bob = await _api.SignedIn("bob");
+        await alice.PostJson("/api/users", new { username = "erin", displayName = "Erin", role = "admin", password = "password-1", teamIds = Array.Empty<string>() }, HttpStatusCode.Created);
+        var bob = await _api.SignedIn("erin", "password-1");
         var plan = await Plan(alice, Text("catalog-info.yaml", CrmComponent));
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync($"/api/imports/{plan.Str("id")}")).StatusCode);
         await Apply(bob, plan, HttpStatusCode.NotFound);
@@ -119,37 +120,22 @@ public class ImportRulesTests : IDisposable
     }
 
     [Fact]
-    public async Task Members_publish_what_their_teams_own_and_guests_cannot_import()
+    public async Task Only_administrators_import_but_everyone_signed_in_gets_the_template()
     {
-        var david = await _api.SignedIn("david");
-        // Team CRM owns the CRM: david publishes its changes.
-        var own = await Plan(david, Text("catalog-info.yaml", CrmComponent));
-        Assert.True(own.GetProperty("canApply").GetBoolean(), Messages(own, "errors"));
-        await Apply(david, own);
-        Assert.Equal("Members and contacts of Mutuelle Alizé.", (await david.GetJson("/api/applications/crm")).Str("description"));
-
-        // Billing belongs to Team Finance, and domains are for administrators.
-        var other = await Plan(david, Text("other.yaml", """
-            apiVersion: backstage.io/v1alpha1
-            kind: Component
-            metadata: { name: billing, description: Invoices of Mutuelle Alizé. }
-            spec: { owner: team-finance }
-            ---
-            apiVersion: backstage.io/v1alpha1
-            kind: Domain
-            metadata: { name: wellbeing, title: Wellbeing }
-            spec: {}
-            """));
-        var errors = Messages(other, "errors");
-        Assert.Contains("Only members of Team Finance publish changes to this application", errors, StringComparison.Ordinal);
-        Assert.Contains("Only administrators change domains and teams", errors, StringComparison.Ordinal);
-        Assert.False(other.GetProperty("canApply").GetBoolean());
-        Assert.True(Entry(other, "application", "billing").GetProperty("hasErrors").GetBoolean());
-        await Apply(david, other, HttpStatusCode.UnprocessableEntity);
-
-        var claire = await _api.SignedIn("claire");
-        await Plan(claire, "", HttpStatusCode.Forbidden, Text("catalog-info.yaml", CrmComponent));
-        Assert.Equal(HttpStatusCode.Forbidden, (await claire.GetAsync("/api/imports")).StatusCode);
+        var alice = await _api.SignedIn("alice");
+        var plan = await Plan(alice, Text("catalog-info.yaml", CrmComponent));
+        foreach (var name in new[] { "david", "claire" })
+        {
+            var user = await _api.SignedIn(name);
+            await Plan(user, "", HttpStatusCode.Forbidden, Text("catalog-info.yaml", CrmComponent));
+            Assert.Equal(HttpStatusCode.Forbidden, (await user.GetAsync("/api/imports")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await user.GetAsync($"/api/imports/{plan.Str("id")}")).StatusCode);
+            await Apply(user, plan, HttpStatusCode.Forbidden);
+            Assert.Equal(HttpStatusCode.OK, (await user.GetAsync("/api/imports/template.xlsx")).StatusCode);
+        }
+        Assert.Equal("planned", (await alice.GetJson($"/api/imports/{plan.Str("id")}")).Str("status"));
+        await Apply(alice, plan);
+        Assert.Equal("Members and contacts of Mutuelle Alizé.", (await alice.GetJson("/api/applications/crm")).Str("description"));
     }
 
     [Fact]
@@ -227,7 +213,7 @@ public class ImportRulesTests : IDisposable
         var list = await alice.GetJson("/api/imports");
         var row = list.EnumerateArray().Single(p => p.Str("id") == plan.Str("id"));
         Assert.Equal(("applied", "alice", 3), (row.Str("status"), row.Str("username"), row.GetProperty("counts").GetProperty("create").GetInt32()));
-        Assert.Empty((await bob.GetJson("/api/imports")).EnumerateArray());
+        Assert.Equal(HttpStatusCode.Forbidden, (await bob.GetAsync("/api/imports")).StatusCode);
 
         using var stdout = new StringWriter();
         using var stderr = new StringWriter();
