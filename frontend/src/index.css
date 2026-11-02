@@ -9727,6 +9727,122 @@ a.wl:hover {
   gap: 6px;
 }
 .ip-written li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13.5px;
+}
+.ip-written small {
+  color: var(--fg-subtle);
+}
+.ip-sure {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.ip-sure li {
+  display: flex;
+  gap: 8px;
+}
+.ip-sure svg {
+  flex: none;
+  margin-top: 1px;
+}
+.ip-sure .ok svg {
+  color: var(--ok-fg);
+}
+.ip-sure .warn svg {
+  color: var(--warn-fg);
+}
+.ip-sure .info svg {
+  color: var(--accent-text);
+}
+@media (max-width: 1000px) {
+  .rcards.ip-srcs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ip-tiles,
+  .ip-tiles.six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .ip-body {
+    padding: 0 16px 16px;
+  }
+  .rcards.ip-srcs,
+  .ip-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ip-static {
+    margin-top: 0;
+  }
+  .ip-tiles,
+  .ip-tiles.six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ip-act {
+    width: auto;
+  }
+  .rtable.ip-table td[data-l]::before {
+    min-width: 104px;
+    vertical-align: top;
+  }
+  .rtable.ip-table td {
+    display: grid !important;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 2px 8px;
+  }
+  .rtable.ip-table td[data-l]::before {
+    min-width: 0;
+  }
+  .rtable.ip-table td > * {
+    min-width: 0;
+  }
+  .rtable.ip-table td.ip-det > *:not(:first-child),
+  .rtable.ip-table td.ip-rec > *:not(:first-child) {
+    grid-column: 2;
+  }
+}
+.ip-more > summary {
+  gap: 6px;
+  list-style: none;
+}
+.ip-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ip-more > summary svg {
+  transform: rotate(-90deg);
+  transition: transform 0.15s;
+}
+.ip-more[open] > summary svg {
+  transform: none;
+}
+.box.tb.ip > .tb-h h2.big {
+  margin: 0;
+}
+.ip-filters .seg .cnt {
+  background: var(--surface-2);
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ip-filters .seg button[aria-pressed='true'] .cnt {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+@media (max-width: 720px) {
+  .isteps {
+    gap: 6px;
+  }
+  .isteps li + li::before {
+    width: 12px;
+    margin-right: 0;
+  }
+}
 
 /* connected tools: API keys and webhooks */
 .seg button[aria-selected='true'] {
@@ -9887,117 +10003,6 @@ a.wl:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
-  font-size: 13.5px;
-}
-.ip-written small {
-  color: var(--fg-subtle);
-}
-.ip-sure {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-  font-size: 13.5px;
-}
-.ip-sure li {
-  display: flex;
-  gap: 8px;
-}
-.ip-sure svg {
-  flex: none;
-  margin-top: 1px;
-}
-.ip-sure .ok svg {
-  color: var(--ok-fg);
-}
-.ip-sure .warn svg {
-  color: var(--warn-fg);
-}
-.ip-sure .info svg {
-  color: var(--accent-text);
-}
-@media (max-width: 1000px) {
-  .rcards.ip-srcs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .ip-tiles,
-  .ip-tiles.six {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-@media (max-width: 720px) {
-  .ip-body {
-    padding: 0 16px 16px;
-  }
-  .rcards.ip-srcs,
-  .ip-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .ip-static {
-    margin-top: 0;
-  }
-  .ip-tiles,
-  .ip-tiles.six {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .ip-act {
-    width: auto;
-  }
-  .rtable.ip-table td[data-l]::before {
-    min-width: 104px;
-    vertical-align: top;
-  }
-  .rtable.ip-table td {
-    display: grid !important;
-    grid-template-columns: 104px minmax(0, 1fr);
-    gap: 2px 8px;
-  }
-  .rtable.ip-table td[data-l]::before {
-    min-width: 0;
-  }
-  .rtable.ip-table td > * {
-    min-width: 0;
-  }
-  .rtable.ip-table td.ip-det > *:not(:first-child),
-  .rtable.ip-table td.ip-rec > *:not(:first-child) {
-    grid-column: 2;
-  }
-}
-.ip-more > summary {
-  gap: 6px;
-  list-style: none;
-}
-.ip-more > summary::-webkit-details-marker {
-  display: none;
-}
-.ip-more > summary svg {
-  transform: rotate(-90deg);
-  transition: transform 0.15s;
-}
-.ip-more[open] > summary svg {
-  transform: none;
-}
-.box.tb.ip > .tb-h h2.big {
-  margin: 0;
-}
-.ip-filters .seg .cnt {
-  background: var(--surface-2);
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-}
-.ip-filters .seg button[aria-pressed='true'] .cnt {
-  background: var(--accent-soft);
-  color: var(--accent-text);
-}
-@media (max-width: 720px) {
-  .isteps {
-    gap: 6px;
-  }
-  .isteps li + li::before {
-    width: 12px;
-    margin-right: 0;
-
 }
 .tl-addr .mono {
   overflow-wrap: anywhere;
