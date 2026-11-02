@@ -29,8 +29,10 @@ public sealed class Link
     /// <summary>The peer's confirmation, as last read from its status (or implied by a data request from it); null until known.</summary>
     public bool? PeerConfirmed { get; set; }
     public DateTimeOffset? PeerCheckedAt { get; set; }
-    /// <summary><c>catalog:read</c>, <c>notices:send</c>, <c>deployments:receive</c>.</summary>
+    /// <summary><c>catalog:read</c>, <c>notices:send</c>, <c>deployments:receive</c>, <c>directory:read</c>.</summary>
     public List<string> Capabilities { get; set; } = [];
+    /// <summary>With <c>directory:read</c>: e-mail addresses (team contacts) are shared too. Off by default.</summary>
+    public bool ShareEmails { get; set; }
 
     /// <summary>This side's signing private key (PKCS#8), protected; null once cut.</summary>
     public string? OwnSigningKey { get; set; }

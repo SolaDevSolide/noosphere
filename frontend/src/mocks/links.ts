@@ -71,6 +71,7 @@ function link(n: number, l: Partial<Link> & Pick<Link, 'product' | 'instanceName
     peerConfirmed: true,
     peerCheckedAt: ago(30),
     capabilities: [...LINK_CAPABILITIES],
+    shareEmails: false,
     fingerprint: words(n),
     pairedAt: ago(60 * 24 * 9),
     pairedBy: 'alice',

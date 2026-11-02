@@ -11,7 +11,9 @@ la prend en exemple. Une fois liées :
   choisies par son administrateur ;
 - Noosphere prévient gestion-mep quand une fiche partagée change (**avis de changement**) ;
 - gestion-mep envoie les **déploiements** touchant les applications suivies. Chaque fiche d'application et de flux
-  montre les déploiements à venir et passés, et les agents IA les voient dans `get_record` et les vues Markdown.
+  montre les déploiements à venir et passés, et les agents IA les voient dans `get_record` et les vues Markdown ;
+- si un administrateur l'autorise, gestion-mep lit l'**annuaire** (équipes et personnes), pour nommer les
+  responsables et contacts connus de Noosphere. Les comptes restent séparés dans chaque application.
 
 Seuls les administrateurs gèrent les liaisons. Les déploiements sont montrés aux membres et aux administrateurs,
 jamais aux invités. Les applications restreintes (avec une liste d'accès) ne sont jamais
@@ -34,14 +36,42 @@ envoyées, ni les flux qui les touchent, ni les notes protégées, les pages ou 
 Un code faux compte comme un échec : après 5 MAC faux, le code est grillé (`code-burnt`). Les codes sont stockés
 hachés.
 
-Les capacités se choisissent avec le code (les trois par défaut) et se modifient ensuite
-(`PUT /api/links/{id}/capabilities`) :
+Les capacités se choisissent avec le code et se modifient ensuite (`PUT /api/links/{id}/capabilities`) :
 
-| Capacité | Permet |
-| -------- | ------ |
-| `catalog:read` | à gestion-mep de lire le catalogue (`GET /link/v1/catalog`) |
-| `notices:send` | à Noosphere d'envoyer des avis de changement à gestion-mep |
-| `deployments:receive` | à gestion-mep d'envoyer des déploiements (`POST /link/v1/deployments`) |
+| Capacité | Permet | Par défaut |
+| -------- | ------ | ---------- |
+| `catalog:read` | à gestion-mep de lire le catalogue (`GET /link/v1/catalog`) | oui |
+| `notices:send` | à Noosphere d'envoyer des avis de changement à gestion-mep | oui |
+| `deployments:receive` | à gestion-mep d'envoyer des déploiements (`POST /link/v1/deployments`) | oui |
+| `directory:read` | à gestion-mep de lire l'annuaire (`GET /link/v1/directory`) et de recevoir les avis `person` | **non** |
+
+`directory:read` n'est jamais accordée sans qu'un administrateur la nomme, sur le code ou plus tard sur la liaison.
+Un second choix, **partager les e-mails** (`shareEmails` dans `PUT /api/links/{id}/capabilities`, désactivé par
+défaut), ajoute les adresses e-mail à l'annuaire.
+
+### Annuaire
+
+`GET /link/v1/directory` est signée comme les autres requêtes de liaison et répond par un JWE signé ; une requête
+sans `directory:read` reçoit `403` avec le type de problème `https://noosphere.dev/problems/capability-missing`. Un
+`If-None-Match` avec le dernier `ETag` reçoit `304`.
+
+```json
+{ "generatedAt": "2026-11-02T09:00:00Z", "instanceName": "Noosphere Alizé", "emailsShared": false,
+  "teams": [ { "id": "team-finance", "name": "Team Finance", "contact": "#team-finance", "applicationIds": ["billing", "ledger"] } ],
+  "people": [ { "username": "bob", "displayName": "Bob Martin", "teamIds": ["team-finance", "team-payments"] } ] }
+```
+
+- `teams` : toutes les équipes, avec leur contact et les applications du catalogue partagé dont elles sont
+  responsables (`applicationIds`).
+- `people` : tous les membres et administrateurs, avec nom affiché, identifiant et équipes. Jamais les invités,
+  jamais les rôles.
+- Adresses e-mail : Noosphere ne garde aucun e-mail personnel. Un contact d'équipe qui contient une adresse e-mail
+  est envoyé `contact: null` sauf si la liaison partage les e-mails ; un canal de discussion est toujours envoyé.
+- Les changements de l'annuaire arrivent en avis `kind: "team"` (déjà envoyés pour le catalogue) et
+  `kind: "person"`, dont l'`id` est l'identifiant : `upsert` quand un compte est créé ou change de nom ou d'équipes,
+  `delete` quand il est supprimé ou devient invité. Les avis `person` ne vont qu'aux liaisons avec `directory:read`.
+- Chaque lecture est inscrite au journal des échanges (opération `directory`), avec le nombre d'équipes et de
+  personnes et le partage ou non des adresses e-mail ; les refus aussi.
 
 **Renouveler les clés** (`noosphere link renew <id>`) crée de nouvelles clés et prévient le pair, par une requête signée
 avec l'ancienne clé : l'empreinte change, sans nouvelle confirmation. Les requêtes signées avec l'ancienne clé restent
@@ -81,7 +111,7 @@ cible. Le prochain déploiement prévu s'affiche aussi sous le titre de l'applic
 Le contrat partagé fait référence ; en bref :
 
 - Points d'accès sous `/link/v1` (hors `/api` : ni cookie, ni CSRF), limités à 120 requêtes par minute et par
-  liaison. Noosphere sert `pair`, `status`, `catalog`, `deployments`, `rekey`, `unpair` ; gestion-mep sert
+  liaison. Noosphere sert `pair`, `status`, `catalog`, `directory`, `deployments`, `rekey`, `unpair` ; gestion-mep sert
   `notices`, `status`, `rekey`, `unpair`.
 - Chaque côté a, par liaison, une clé de signature P-256 et une clé de chiffrement P-256. Les clés privées sont
   chiffrées au repos par la Data Protection d'ASP.NET Core (le trousseau de `NOOSPHERE_KEYS_DIR`) et ne quittent
@@ -103,7 +133,7 @@ sans préfixe.
 
 | Commande | Effet |
 | -------- | ----- |
-| `noosphere link code [--expires 15m\|2h] [--capabilities catalog:read,notices:send,deployments:receive]` | Crée un code d'appairage, affiché une fois. |
+| `noosphere link code [--expires 15m\|2h] [--capabilities catalog:read,notices:send,deployments:receive,directory:read]` | Crée un code d'appairage, affiché une fois. Sans `--capabilities` : toutes sauf `directory:read`. |
 | `noosphere link list [--json]` | Liste les liaisons : état, confirmation du pair, instance, empreinte. |
 | `noosphere link confirm <id> --fingerprint "<quatre mots>"` | Confirme une liaison en attente après comparaison des empreintes. |
 | `noosphere link renew <id>` | Renouvelle les clés de ce côté et prévient le pair. |

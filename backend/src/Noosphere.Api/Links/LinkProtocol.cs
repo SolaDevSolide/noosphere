@@ -15,7 +15,12 @@ public static class LinkProtocol
     public const string CatalogRead = "catalog:read";
     public const string NoticesSend = "notices:send";
     public const string DeploymentsReceive = "deployments:receive";
-    public static readonly IReadOnlyList<string> AllCapabilities = [CatalogRead, NoticesSend, DeploymentsReceive];
+    /// <summary>The peer reads the directory (teams and people). Never granted by default: an administrator switches it on.</summary>
+    public const string DirectoryRead = "directory:read";
+    /// <summary>Every capability, in protocol order.</summary>
+    public static readonly IReadOnlyList<string> AllCapabilities = [CatalogRead, NoticesSend, DeploymentsReceive, DirectoryRead];
+    /// <summary>Granted when a pairing code names none: every capability but <c>directory:read</c>.</summary>
+    public static readonly IReadOnlyList<string> DefaultCapabilities = [CatalogRead, NoticesSend, DeploymentsReceive];
 
     /// <summary>A signature's <c>created</c> may differ from the receiver's clock by this much.</summary>
     public static readonly TimeSpan ClockSkew = TimeSpan.FromSeconds(300);
@@ -96,11 +101,27 @@ public sealed record CatalogFlow(string Id, string Name, string FromId, string T
 public sealed record CatalogPayload(DateTimeOffset GeneratedAt, string InstanceName, string BaseUrl, IReadOnlyList<CatalogDomain> Domains,
     IReadOnlyList<CatalogTeam> Teams, IReadOnlyList<CatalogApplication> Applications, IReadOnlyList<CatalogFlow> Flows);
 
-/// <summary>One change of a shared record. <c>kind</c>: application, flow, domain, team; <c>operation</c>: upsert, delete.</summary>
+/// <summary>
+/// One change of a shared record. <c>kind</c>: application, flow, domain, team, or person (only with <c>directory:read</c>;
+/// its id is the username); <c>operation</c>: upsert, delete.
+/// </summary>
 public sealed record NoticeChange(string Kind, string Id, string Operation, DateTimeOffset At);
 
 /// <summary>Body of <c>POST /link/v1/notices</c> (JWE).</summary>
 public sealed record NoticePayload(IReadOnlyList<NoticeChange> Changes);
+
+/// <summary>A team of the directory.</summary>
+/// <param name="Contact">The team's contact; an e-mail address is left out (null) unless the link shares e-mails.</param>
+/// <param name="ApplicationIds">Applications of the shared catalogue the team owns.</param>
+public sealed record DirectoryTeam(string Id, string Name, string? Contact, IReadOnlyList<string> ApplicationIds);
+
+/// <summary>A person of the directory: a member or an administrator (never a guest), without role.</summary>
+public sealed record DirectoryPerson(string Username, string DisplayName, IReadOnlyList<string> TeamIds);
+
+/// <summary>Body of <c>GET /link/v1/directory</c> (JWE).</summary>
+/// <param name="EmailsShared">Whether this link receives e-mail addresses (an administrator's choice, off by default).</param>
+public sealed record DirectoryPayload(DateTimeOffset GeneratedAt, string InstanceName, bool EmailsShared, IReadOnlyList<DirectoryTeam> Teams,
+    IReadOnlyList<DirectoryPerson> People);
 
 /// <summary>Response of <c>POST /link/v1/deployments</c> (JWE).</summary>
 /// <param name="Accepted">Events stored (created or updated, or already newer here).</param>

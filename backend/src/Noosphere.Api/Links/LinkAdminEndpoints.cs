@@ -66,7 +66,7 @@ public static class LinkAdminEndpoints
             if (input.Capabilities is null) errors.Add("capabilities", "This field is required.");
             var capabilities = LinkAdmin.Capabilities(input.Capabilities ?? [], errors);
             errors.ThrowIfAny();
-            return LinkAdmin.Dto(await admin.SetCapabilities(await admin.Find(id), capabilities));
+            return LinkAdmin.Dto(await admin.SetCapabilities(await admin.Find(id), capabilities, input.ShareEmails));
         });
 
         links.MapPost("/{id:guid}/renew-keys", async (Guid id, LinkAdmin admin) => LinkAdmin.Dto(await admin.RenewKeys(await admin.Find(id))))

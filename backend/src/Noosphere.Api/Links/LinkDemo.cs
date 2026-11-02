@@ -26,7 +26,7 @@ public static class LinkDemo
         {
             Product = "gestion-mep", InstanceName = "MEP Alizé", Url = PeerUrl, PeerVersion = "1.11.0", State = LinkState.Active,
             ConfirmedHere = true, ConfirmedAt = paired.AddMinutes(4), ConfirmedBy = "alice", PeerConfirmed = true, PeerCheckedAt = now.AddHours(-1),
-            Capabilities = [.. LinkProtocol.AllCapabilities],
+            Capabilities = [.. LinkProtocol.DefaultCapabilities],
             OwnSigningKey = ownSigning.Protected, OwnSigningKid = ownSigning.Kid, OwnEncryptionKey = ownEncryption.Protected, OwnEncryptionKid = ownEncryption.Kid,
             PeerSigningKey = peerSigning.Serialize(), PeerSigningKid = peerSigning.Kid(), PeerEncryptionKey = peerEncryption.Serialize(), PeerEncryptionKid = peerEncryption.Kid(),
             Fingerprint = Fingerprint([ownSigning.Public, ownEncryption.Public, peerSigning, peerEncryption]),
@@ -36,7 +36,7 @@ public static class LinkDemo
         var code = NormalizeCode(RandomNumberGenerator.GetString(LinkAdmin.CodeAlphabet, LinkAdmin.CodeLength));
         db.LinkCodes.Add(new LinkCode
         {
-            CodeId = code[..4], ProtectedCode = keys.Protect(code), CodeHash = LinkAdmin.Hash(code), Capabilities = [.. LinkProtocol.AllCapabilities],
+            CodeId = code[..4], ProtectedCode = keys.Protect(code), CodeHash = LinkAdmin.Hash(code), Capabilities = [.. LinkProtocol.DefaultCapabilities],
             CreatedAt = paired.AddMinutes(-3), ExpiresAt = paired.AddMinutes(12), CreatedBy = "alice", UsedAt = paired, LinkId = link.Id,
         });
 

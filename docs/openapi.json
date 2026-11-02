@@ -8193,6 +8193,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "shareEmails": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "With `directory:read`: share e-mail addresses in the directory; null keeps the current choice."
           }
         },
         "description": "Replaces the capabilities of a link."
@@ -8328,7 +8335,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`. All three by default."
+            "description": "Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`, `directory:read`. All but `directory:read` by default."
           }
         },
         "description": "A new pairing code."
@@ -8391,6 +8398,7 @@
           "peerConfirmed",
           "peerCheckedAt",
           "capabilities",
+          "shareEmails",
           "fingerprint",
           "pairedAt",
           "pairedBy",
@@ -8462,6 +8470,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "shareEmails": {
+            "type": "boolean",
+            "description": "With `directory:read`: the directory carries e-mail addresses. Off by default."
           },
           "fingerprint": {
             "type": "string",
@@ -8551,7 +8563,7 @@
           },
           "operation": {
             "type": "string",
-            "description": "`pair`, `status`, `catalog`, `notices`, `deployments`, `rekey` or `unpair`."
+            "description": "`pair`, `status`, `catalog`, `directory`, `notices`, `deployments`, `rekey` or `unpair`."
           },
           "result": {
             "$ref": "#/components/schemas/LinkExchangeResult"

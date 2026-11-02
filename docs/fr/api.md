@@ -175,11 +175,11 @@ Administrateurs seulement. Voir [liaisons avec gestion-mep](liaisons.md) pour le
 | Méthode et chemin | Corps, réponse |
 | ----------------- | -------------- |
 | `GET /api/links/codes` | Codes d'appairage : `{id, codeId, state, capabilities, createdAt, expiresAt, createdBy, usedAt, linkId, failedAttempts, bootstrap}` ; `state` vaut `active`, `used`, `expired` ou `burnt` |
-| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes et toutes les capacités par défaut), puis 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}` : `code` n'est montré que cette fois |
-| `GET /api/links` | Toutes les liaisons : `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}` ; `state` vaut `pending`, `active` ou `cut` |
+| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes et toutes les capacités sauf `directory:read` par défaut), puis 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}` : `code` n'est montré que cette fois |
+| `GET /api/links` | Toutes les liaisons : `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, shareEmails, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}` ; `state` vaut `pending`, `active` ou `cut` |
 | `GET /api/links/{id}?refresh=true` | Une liaison ; `refresh` demande d'abord son état au pair si la dernière vérification date de plus d'une minute |
 | `POST /api/links/{id}/confirm` | `{fingerprint}`, les quatre mots lus dans gestion-mep ; 422 s'ils diffèrent |
-| `PUT /api/links/{id}/capabilities` | `{capabilities}`, parmi `catalog:read`, `notices:send`, `deployments:receive` |
+| `PUT /api/links/{id}/capabilities` | `{capabilities, shareEmails?}` : parmi `catalog:read`, `notices:send`, `deployments:receive`, `directory:read` ; `shareEmails` (null le garde) ajoute les adresses e-mail à l'annuaire |
 | `POST /api/links/{id}/renew-keys` | De nouvelles clés, annoncées au pair (502 s'il refuse) |
 | `POST /api/links/{id}/cut` | `{confirm: true}` : prévient le pair (au mieux) et efface les clés |
 | `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, du plus récent au plus ancien : `{id, at, linkId, direction, operation, result, status, reason, detail}` |

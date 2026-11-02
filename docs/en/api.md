@@ -172,11 +172,11 @@ Administrators only. See [links with gestion-mep](links.md) for the protocol und
 | Method and path | Body, answer |
 | --------------- | ------------ |
 | `GET /api/links/codes` | Pairing codes: `{id, codeId, state, capabilities, createdAt, expiresAt, createdBy, usedAt, linkId, failedAttempts, bootstrap}`; `state` is `active`, `used`, `expired` or `burnt` |
-| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes and all capabilities by default), then 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}`: `code` is shown only this once |
-| `GET /api/links` | Every link: `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}`; `state` is `pending`, `active` or `cut` |
+| `POST /api/links/codes` | `{expiresInMinutes?, capabilities?}` (15 minutes and every capability but `directory:read` by default), then 201 `{id, code, codeId, expiresAt, capabilities, pairUrl}`: `code` is shown only this once |
+| `GET /api/links` | Every link: `{id, product, instanceName, url, peerVersion, state, confirmedHere, confirmedAt, confirmedBy, peerConfirmed, peerCheckedAt, capabilities, shareEmails, fingerprint, pairedAt, pairedBy, keysRenewedAt, lastExchangeAt, cutAt, cutBy, demo, keys, version}`; `state` is `pending`, `active` or `cut` |
 | `GET /api/links/{id}?refresh=true` | One link; `refresh` asks the peer for its status first when the last check is older than a minute |
 | `POST /api/links/{id}/confirm` | `{fingerprint}`, the four words read on gestion-mep; 422 when they differ |
-| `PUT /api/links/{id}/capabilities` | `{capabilities}`, a subset of `catalog:read`, `notices:send`, `deployments:receive` |
+| `PUT /api/links/{id}/capabilities` | `{capabilities, shareEmails?}`: a subset of `catalog:read`, `notices:send`, `deployments:receive`, `directory:read`; `shareEmails` (null keeps it) adds e-mail addresses to the directory |
 | `POST /api/links/{id}/renew-keys` | New keys, announced to the peer (502 when it refuses) |
 | `POST /api/links/{id}/cut` | `{confirm: true}`: tells the peer (best effort) and erases the keys |
 | `GET /api/links/{id}/exchanges?cursor=&limit=` | `{items, nextCursor}`, newest first: `{id, at, linkId, direction, operation, result, status, reason, detail}` |

@@ -13,7 +13,7 @@ namespace Noosphere.Api.Links;
 
 /// <summary>
 /// The link protocol served by Noosphere, outside <c>/api</c> (no cookie, no CSRF header): pairing, status, catalogue,
-/// deployments, key renewal and cut. Every request but the pairing is signed (RFC 9421); every answer to an identified
+/// directory, deployments, key renewal and cut. Every request but the pairing is signed (RFC 9421); every answer to an identified
 /// link is signed; data bodies are JWE. 120 requests per minute per link.
 /// </summary>
 public static class LinkEndpoints
@@ -91,6 +91,26 @@ public static class LinkEndpoints
             else
                 answer = await inbound.Answer(r, "catalog", 200, LinkProtocol.ToNode(catalog),
                     $"{catalog.Applications.Count} application(s), {catalog.Flows.Count} flow(s), {catalog.Domains.Count} domain(s), {catalog.Teams.Count} team(s).");
+            answer.Headers["ETag"] = etag;
+            return answer;
+        });
+
+        link.MapGet("/directory", async (HttpContext ctx, LinkInbound inbound, NoosphereDbContext db) =>
+        {
+            var (r, refusal) = await inbound.Verify(ctx, "directory");
+            if (r is null) return refusal!;
+            Seen(r.Link);
+            if (!r.Link.Capabilities.Contains(LinkProtocol.DirectoryRead))
+                return await inbound.Refuse(r.Link, "directory", 403, LinkProtocol.Reasons.CapabilityMissing,
+                    "This link does not have the directory:read capability: an administrator of Noosphere grants it on the link.");
+            var directory = await LinkDirectory.Build(db, r.Link, (await InstanceSettingsStore.Get(db, settings)).InstanceName, inbound.Now, ctx.RequestAborted);
+            var etag = LinkDirectory.ETag(directory);
+            LinkResponse answer;
+            if (LinkCatalog.NotModified(ctx.Request.Headers.IfNoneMatch.ToString(), etag))
+                answer = await inbound.Answer(r, "directory", 304, null, "Not modified.");
+            else
+                answer = await inbound.Answer(r, "directory", 200, LinkProtocol.ToNode(directory),
+                    $"{directory.Teams.Count} team(s), {directory.People.Count} person(s); e-mail addresses {(directory.EmailsShared ? "shared" : "withheld")}.");
             answer.Headers["ETag"] = etag;
             return answer;
         });

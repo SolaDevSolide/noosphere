@@ -5004,6 +5004,8 @@ export interface components {
         /** @description Replaces the capabilities of a link. */
         LinkCapabilitiesInput: {
             capabilities: null | string[];
+            /** @description With `directory:read`: share e-mail addresses in the directory; null keeps the current choice. */
+            shareEmails?: null | boolean;
         };
         /** @description A pairing code just created. `code` is shown only this once: enter it in gestion-mep with the URL of this instance. */
         LinkCodeCreatedDto: {
@@ -5049,7 +5051,7 @@ export interface components {
              * @description 1 to 1440; 15 by default.
              */
             expiresInMinutes: null | number;
-            /** @description Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`. All three by default. */
+            /** @description Granted to the link: `catalog:read`, `notices:send`, `deployments:receive`, `directory:read`. All but `directory:read` by default. */
             capabilities: null | string[];
         };
         /** @enum {unknown} */
@@ -5083,6 +5085,8 @@ export interface components {
             /** Format: date-time */
             peerCheckedAt: null | string;
             capabilities: string[];
+            /** @description With `directory:read`: the directory carries e-mail addresses. Off by default. */
+            shareEmails: boolean;
             /** @description Four words, the same on both sides: compare them before confirming. */
             fingerprint: string;
             /** Format: date-time */
@@ -5114,7 +5118,7 @@ export interface components {
             /** Format: uuid */
             linkId: null | string;
             direction: components["schemas"]["LinkDirection"];
-            /** @description `pair`, `status`, `catalog`, `notices`, `deployments`, `rekey` or `unpair`. */
+            /** @description `pair`, `status`, `catalog`, `directory`, `notices`, `deployments`, `rekey` or `unpair`. */
             operation: string;
             result: components["schemas"]["LinkExchangeResult"];
             /** Format: int32 */
