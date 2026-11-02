@@ -20,6 +20,9 @@ Hors Docker : `dotnet Noosphere.dll <commande>`.
 | `noosphere users reset-password <username> [--password <p>]` | Pose un nouveau mot de passe (généré s'il n'est pas donné) et ferme les sessions du compte. |
 | `noosphere export [--format json\|yaml] [--output <fichier>]` | Écrit tout le paysage et ses pages, enregistrements restreints et notes protégées compris (`scope: full`), sur la sortie standard ou dans un fichier. |
 | `noosphere import <fichier\|-> [--dry-run] [--format json\|yaml]` | Vérifie un fichier, puis crée ou met à jour ses éléments. `-` lit l'entrée standard. Le format vient de l'extension, ou est deviné. |
+| `noosphere imports plan <fichier>... [--format <format>] [--domain <id>] [--team <id>] [--application <id>] [--parent-page <id>]` | Simulation d'un [import depuis d'autres formats](imports.md) (Backstage, OpenAPI, AsyncAPI, ADR, Mermaid, Excel ; fichiers ou archives zip) : affiche le plan et son id. Sort avec le code 1 si le plan a des erreurs. |
+| `noosphere imports apply <id-du-plan>` | Applique ce plan, dans les 30 minutes et si le catalogue n'a pas changé depuis. |
+| `noosphere imports template [--output <fichier>]` | Écrit le modèle Excel de l'import (`noosphere-import-template.xlsx` par défaut). |
 | `noosphere demo reset --yes` | Remplace tout le paysage, ses pages, son historique et ses propositions par la démonstration « Alizé » et réinitialise les comptes de démonstration. Mode démonstration seulement. |
 | `noosphere link code [--expires 15m] [--capabilities <liste>]` | Crée un code d'appairage pour gestion-mep, affiché une fois. Voir [liaisons](liaisons.md#ligne-de-commande). |
 | `noosphere link list` | Liste les liaisons avec des instances de gestion-mep. |
@@ -53,4 +56,6 @@ noosphere users create dana --role admin --display-name "Dana Martin"
 noosphere export --format yaml --output paysage.yaml
 noosphere import paysage.yaml --dry-run
 docker compose exec -T noosphere noosphere import - < paysage.json
+noosphere imports plan catalog-info.yaml adr.zip --team team-crm
+noosphere imports apply 3f1c2b9e-5d0a-4c1e-9b7a-2e8f6d4c1a20
 ```

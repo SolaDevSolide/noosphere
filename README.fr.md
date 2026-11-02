@@ -24,6 +24,10 @@ données clients ? » ou « qui prévenir avant de changer cette API ? ».
   du paysage sur ce niveau.
 - Un format d'échange documenté (JSON ou YAML) pour importer et exporter le paysage : ce que vous voyez ou, pour
   les administrateurs, un export complet inscrit au journal des accès.
+- Des **imports** depuis les formats que les équipes utilisent déjà : catalogues Backstage, fichiers OpenAPI et
+  AsyncAPI, décisions d'architecture (MADR, Nygard), diagrammes Mermaid et C4, et classeurs Excel à partir d'un
+  modèle. Une simulation montre ce qui sera créé ou mis à jour, champ par champ, avec les correspondances possibles
+  et l'emplacement de chaque avertissement ; le même plan est ensuite appliqué, et rien n'est jamais supprimé.
 - Des **agents IA** se connectent par MCP (`/mcp`) pour une personne, après une page de consentement : ils
   cherchent, lisent et rédigent des brouillons avec les droits de cette personne, sous un plafond fixé par un
   administrateur et un quota horaire, et ne publient jamais. Chaque appel figure dans leur activité ; **Mes agents**
@@ -111,6 +115,7 @@ docker compose exec noosphere noosphere users create dana --role member
 docker compose exec noosphere noosphere users reset-password dana
 docker compose exec noosphere noosphere export --format yaml > paysage.yaml
 docker compose exec -T noosphere noosphere import - --dry-run < paysage.yaml
+docker compose exec noosphere noosphere imports plan /data/catalog-info.yaml
 docker compose exec noosphere noosphere demo reset --yes
 docker compose exec noosphere noosphere link code --expires 30m
 ```
@@ -129,6 +134,9 @@ docker compose exec noosphere noosphere link code --expires 30m
 - [Liaisons avec d'autres applications (gestion-mep d'abord)](docs/fr/liaisons.md)
 - [Intégrations : clés d'API et webhooks](docs/fr/integrations.md), pour les chaînes CI/CD, les outils ITSM et les scripts
 - [API](docs/fr/api.md) (OpenAPI : [docs/openapi.json](docs/openapi.json), servi sur `/openapi/v1.json`)
+- [Imports depuis d'autres formats](docs/fr/imports.md) : [Backstage](docs/fr/imports-backstage.md),
+  [OpenAPI](docs/fr/imports-openapi.md), [AsyncAPI](docs/fr/imports-asyncapi.md), [ADR](docs/fr/imports-adr.md),
+  [Mermaid](docs/fr/imports-mermaid.md), [Excel](docs/fr/imports-excel.md)
 - [Format d'échange](docs/fr/exchange-format.md) (schéma JSON : [docs/format/noosphere-v1.schema.json](docs/format/noosphere-v1.schema.json))
 - [Ligne de commande](docs/fr/cli.md)
 - [Contribuer](CONTRIBUTING.md) et [politique de sécurité](SECURITY.md) (en anglais)

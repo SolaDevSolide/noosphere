@@ -112,5 +112,8 @@ Les pages sont exportées après leur parente, pour que le fichier se lise de ha
 4. Une valeur qui ressemble à un secret est une erreur, signalée sans la valeur (voir
    [accès](acces.md#les-secrets-sont-refusés)).
 
+5. Les alias YAML (`*nom`) sont refusés, pour qu'un petit fichier ne puisse pas se déployer en un fichier énorme.
+
 `dryRun=true` (API) ou `--dry-run` (ligne de commande) ne fait que les vérifications et les comptes. Seuls les
-administrateurs importent.
+administrateurs importent. Pour reprendre des catalogues Backstage, des fichiers OpenAPI ou AsyncAPI, des ADR, des
+diagrammes Mermaid ou des classeurs Excel, voir les [imports depuis d'autres formats](imports.md).

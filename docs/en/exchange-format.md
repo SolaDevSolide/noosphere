@@ -111,4 +111,8 @@ Pages are exported after their parent, so that a file reads top-down.
 4. A value that looks like a secret is an error, reported without the value (see
    [access](access.md#secrets-are-refused)).
 
-`dryRun=true` (API) or `--dry-run` (CLI) only runs the checks and counts. Only administrators import.
+5. YAML aliases (`*name`) are refused, so that a small file cannot expand into a huge one.
+
+`dryRun=true` (API) or `--dry-run` (CLI) only runs the checks and counts. Only administrators import. To bring in
+Backstage catalogs, OpenAPI or AsyncAPI files, ADRs, Mermaid diagrams or Excel workbooks, see
+[imports from other formats](imports.md).

@@ -220,6 +220,13 @@ Avec `NOOSPHERE_DEMO=true` seulement (404 sinon) : `GET /api/demo/state`, `POST 
 - `POST /api/import?dryRun=true|false`, pour les admins, prend le fichier comme corps de la requête (JSON ou YAML,
   selon `Content-Type` ou `?format=`) et renvoie `{created, updated, unchanged, errors[], dryRun, applied}`.
 
+## Imports
+
+Imports depuis Backstage, OpenAPI, AsyncAPI, ADR, Mermaid et Excel, pour les administrateurs et les membres :
+`POST /api/imports` (multipart, une simulation qui enregistre et renvoie un plan), `GET /api/imports/{id}`,
+`POST /api/imports/{id}/apply`, `GET /api/imports` et `GET /api/imports/template.xlsx`. Voir les
+[imports](imports.md).
+
 ## Sondes
 
 `GET /health/live` et `GET /health/ready` ne demandent pas de session. Voir l'[installation](installation.md#sondes).
