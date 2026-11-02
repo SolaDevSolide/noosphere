@@ -2902,6 +2902,267 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent imports: one's own, everyone's for administrators */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportSummaryDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Dry run of an import: reads the files and stores a plan to apply */
+        post: {
+            parameters: {
+                query?: {
+                    Format?: string;
+                    DomainId?: string;
+                    TeamId?: string;
+                    ApplicationId?: string;
+                    ParentPageId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description One or more files (Backstage YAML, OpenAPI, AsyncAPI, ADR Markdown, Mermaid, .xlsx) or zip archives of them. */
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        files: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportPlanDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Payload Too Large */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportPlanDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Applies the plan of a dry run (same person, before it expires, catalogue unchanged) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportPlanDto"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Gone */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Excel template of the import (one sheet per kind of record) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/oauth/requests/{id}": {
         parameters: {
             query?: never;
@@ -5539,6 +5800,39 @@ export interface components {
             /** Format: uuid */
             proposalId: null | string;
         };
+        ImportCountsDto: {
+            /** Format: int32 */
+            create: number;
+            /** Format: int32 */
+            update: number;
+            /** Format: int32 */
+            unchanged: number;
+            /** Format: int32 */
+            warnings: number;
+            /** Format: int32 */
+            errors: number;
+        };
+        /** @description One record of the plan. */
+        ImportEntryDto: {
+            /** Format: int32 */
+            index: number;
+            /** @description `create`, `update` or `unchanged`. */
+            action: string;
+            /** @description Kind of record. */
+            kind: components["schemas"]["RecordKind"];
+            /** @description Id of the record: the existing one for an update, the new one for a creation. */
+            id: string;
+            name: string;
+            /** @description How an existing record was found: `identifier`, `name`, or `tag` (the top-level page tagged `adr`, for decision records); null for a creation. */
+            matchedBy: null | string;
+            /** @description Field-level diff: every field set on a creation, the changed fields on an update. */
+            changes: components["schemas"]["DiffEntryDto"][];
+            /** @description Existing records whose name is close: check them before applying (never merged). */
+            possibleMatches: components["schemas"]["ImportPossibleMatchDto"][];
+            source: components["schemas"]["ImportSourceDto"];
+            /** @description The entry has errors (see the plan's errors): the plan cannot be applied. */
+            hasErrors: boolean;
+        };
         ImportErrorDto: {
             /**
              * Format: int32
@@ -5550,6 +5844,59 @@ export interface components {
             /** @description JSON path of the faulty value, e.g. `items[3].spec.fromId`. */
             path: string;
             message: string;
+        };
+        /** @description A file read by an import. */
+        ImportFileDto: {
+            name: string;
+            /** @description `backstage`, `openapi`, `asyncapi`, `adr`, `mermaid` or `excel`; null when the file was not read. */
+            format: null | string;
+            /** Format: int64 */
+            size: number;
+            /** @description SHA-256 of the file content, in hexadecimal. */
+            sha256: string;
+            /** Format: int32 */
+            entries: number;
+        };
+        /** @description A warning (something left out or guessed) or an error (the plan cannot be applied). */
+        ImportMessageDto: {
+            message: string;
+            source: components["schemas"]["ImportSourceDto"];
+            /**
+             * Format: int32
+             * @description Index of the entry concerned, when there is one.
+             */
+            entry: null | number;
+            /** @description Field concerned, when there is one. */
+            field: null | string;
+        };
+        /** @description An import plan: the preview of a dry run, applied later by id. */
+        ImportPlanDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description `planned`, `applied`, `rejected` or `expired`. */
+            status: components["schemas"]["ImportStatus"];
+            username: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
+            /** @description Why applying was refused, for a rejected plan. */
+            outcome: null | string;
+            formats: string[];
+            files: components["schemas"]["ImportFileDto"][];
+            counts: components["schemas"]["ImportCountsDto"];
+            entries: components["schemas"]["ImportEntryDto"][];
+            warnings: components["schemas"]["ImportMessageDto"][];
+            errors: components["schemas"]["ImportMessageDto"][];
+            /** @description The plan is planned, not expired and without errors. */
+            canApply: boolean;
+        };
+        /** @description An existing record with a close name, never merged automatically. */
+        ImportPossibleMatchDto: {
+            id: string;
+            name: string;
         };
         /** @description Outcome of an import (or of its dry run): counts of items, or the errors that stopped it (nothing written). */
         ImportResultDto: {
@@ -5563,6 +5910,40 @@ export interface components {
             dryRun: boolean;
             /** @description True when the changes were written (not a dry run, no error). */
             applied: boolean;
+        };
+        /** @description Where an entry, a warning or an error comes from. */
+        ImportSourceDto: {
+            /** @description File name, with its path inside a zip archive: `adr.zip/0001-use-postgres.md`. */
+            file: string;
+            /**
+             * Format: int32
+             * @description Line in the file (1-based), when known.
+             */
+            line: null | number;
+            /** @description Place in the document: `documents[1]`, `paths./invoices.get`, `Applications!A4`. */
+            place: null | string;
+        };
+        /**
+         * @description `planned` after the dry run; `applied` once written; `rejected` when applying failed (the catalogue
+         *             changed since the dry run, or the plan had errors); `expired` when it was not applied in time.
+         * @enum {unknown}
+         */
+        ImportStatus: "planned" | "applied" | "rejected" | "expired";
+        /** @description An import in the list of imports (without its entries). */
+        ImportSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["ImportStatus"];
+            username: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            closedAt: null | string;
+            outcome: null | string;
+            formats: string[];
+            counts: components["schemas"]["ImportCountsDto"];
         };
         /** @description Counts for the header badge. */
         InboxDto: {

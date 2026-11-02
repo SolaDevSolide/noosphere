@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: Claims
+  version: 2.4.0
+  description: Claim declarations and follow-up for the members of Mutuelle Alizé.
+x-noosphere-application: claims
+x-noosphere-consumers: [portal, Mobile app]
+servers:
+  - url: https://api.alize.example/claims/v2
+    description: Production
+paths:
+  /claims:
+    get:
+      summary: List the claims of a member
+      operationId: listClaims
+    post:
+      summary: Declare a claim
+      operationId: declareClaim
+  /claims/{id}/photos:
+    post:
+      description: Add a photo to a claim.
+components:
+  schemas:
+    Claim:
+      type: object
+    Photo:
+      type: object

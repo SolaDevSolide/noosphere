@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using YamlDotNet.Core;
-using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
 namespace Noosphere.Api.Exchange;
@@ -40,32 +39,19 @@ public static partial class Yaml
 
     /// <summary>
     /// Reads the first YAML document as a JSON tree. Unquoted scalars follow the YAML core schema (null, booleans, numbers);
-    /// quoted scalars are always strings.
+    /// quoted scalars are always strings. Aliases are refused (see <see cref="SafeYaml"/>).
     /// </summary>
     public static JsonNode? ToJson(string text)
     {
-        var stream = new YamlStream();
-        using (var reader = new StringReader(text)) stream.Load(reader);
-        return stream.Documents.Count == 0 ? null : ToNode(stream.Documents[0].RootNode);
+        var documents = new SafeYaml().Load(text);
+        return documents.Count == 0 ? null : documents[0].Root;
     }
 
-    private static JsonNode? ToNode(YamlNode node) => node switch
+    /// <summary>A scalar in the YAML core schema: plain scalars may be null, booleans or numbers; quoted ones are strings.</summary>
+    internal static JsonValue? Scalar(string? text, ScalarStyle style)
     {
-        YamlMappingNode map => map.Children.Aggregate(new JsonObject(), (o, p) =>
-        {
-            var key = p.Key is YamlScalarNode k ? k.Value ?? "" : throw new YamlException(p.Key.Start, p.Key.End, "Keys must be plain text.");
-            o[key] = ToNode(p.Value);
-            return o;
-        }),
-        YamlSequenceNode seq => new JsonArray([.. seq.Children.Select(ToNode)]),
-        YamlScalarNode scalar => Scalar(scalar),
-        _ => null,
-    };
-
-    private static JsonValue? Scalar(YamlScalarNode scalar)
-    {
-        var value = scalar.Value ?? "";
-        if (scalar.Style is not ScalarStyle.Plain) return JsonValue.Create(value);
+        var value = text ?? "";
+        if (style is not ScalarStyle.Plain) return JsonValue.Create(value);
         if (value is "" or "~" or "null" or "Null" or "NULL") return null;
         if (value is "true" or "True" or "TRUE") return JsonValue.Create(true);
         if (value is "false" or "False" or "FALSE") return JsonValue.Create(false);

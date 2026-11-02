@@ -34,10 +34,10 @@ public static partial class CommandLine
         public const int NotFound = 5;
     }
 
-    private static readonly string[] Commands = ["migrate", "users", "export", "import", "demo", "link", "health", "help", "version"];
+    private static readonly string[] Commands = ["migrate", "users", "export", "import", "imports", "demo", "link", "health", "help", "version"];
     private static readonly HashSet<string> Flags = ["--json", "--yes", "--dry-run", "--help", "-h"];
     private static readonly HashSet<string> Valued = ["--format", "--output", "--role", "--display-name", "--language", "--password", "--url",
-        "--expires", "--capabilities", "--fingerprint"];
+        "--expires", "--capabilities", "--fingerprint", "--domain", "--team", "--application", "--parent-page"];
 
     public const string Usage = """
         Usage: noosphere <command> [options]
@@ -53,6 +53,11 @@ public static partial class CommandLine
                                                    Write the landscape in the exchange format (standard output by default)
           import <file|-> [--dry-run] [--format json|yaml]
                                                    Validate a file, then create or update its items (--dry-run: validate only)
+          imports plan <file>... [--format backstage|openapi|asyncapi|adr|mermaid|excel] [--domain <id>] [--team <id>]
+                       [--application <id>] [--parent-page <id>]
+                                                   Dry run of an import from other formats (files or zip archives): print the plan
+          imports apply <plan-id>                  Apply that plan (within 30 minutes, if the catalogue has not changed)
+          imports template [--output <file>]       Write the Excel template of the import
           demo reset --yes                         Replace the landscape with the Alizé demo and reset the demo accounts (demo mode only)
           link code [--expires 15m] [--capabilities catalog:read,notices:send,deployments:receive,directory:read]
                                                    Create a single-use pairing code for gestion-mep (shown once)
@@ -254,6 +259,8 @@ public static partial class CommandLine
                 return await Export(o, db, sp, output);
             case "import":
                 return await Import(o, db, sp, output);
+            case "imports":
+                return await Imports(o, sp, output);
             case "demo" when p.Count >= 2 && p[1] == "reset":
                 Expect(p, 2);
                 if (!sp.GetRequiredService<Settings>().Demo)

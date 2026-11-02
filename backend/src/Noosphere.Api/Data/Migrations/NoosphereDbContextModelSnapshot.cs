@@ -671,6 +671,77 @@ namespace Noosphere.Api.Data.Migrations
                     b.ToTable("IdempotentRequests");
                 });
 
+            modelBuilder.Entity("Noosphere.Domain.ImportPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("CatalogueStamp")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Creates")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Errors")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Formats")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Operations")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Preview")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("Unchanged")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Updates")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Warnings")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ImportPlans");
+                });
+
             modelBuilder.Entity("Noosphere.Domain.InstanceSettings", b =>
                 {
                     b.Property<int>("Id")

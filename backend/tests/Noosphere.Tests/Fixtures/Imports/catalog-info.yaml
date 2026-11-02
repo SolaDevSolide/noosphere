@@ -1,0 +1,109 @@
+# Mutuelle Alizé (fictional): the prevention programme, as described in Backstage.
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: prevention
+  title: Prevention
+  description: Health prevention programmes for the members of Mutuelle Alizé.
+spec:
+  owner: group:team-prevention
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-prevention
+  title: Team Prevention
+spec:
+  type: team
+  profile:
+    email: prevention@alize.example
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: prevention-platform
+  title: Prevention platform
+spec:
+  owner: team-prevention
+  domain: prevention
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: coaching
+  title: Coaching
+  description: Health coaching sessions booked by the members.
+  links:
+    - url: https://wiki.alize.example/coaching
+      title: Runbook
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:default/team-prevention
+  system: prevention-platform
+  providesApis: [coaching-api]
+  consumesApis: [api:crm-api]
+  dependsOn: [resource:coaching-db]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: crm
+  title: CRM
+  description: Customer relationship management of Mutuelle Alizé.
+spec:
+  type: service
+  lifecycle: production
+  owner: team-crm
+  providesApis: [crm-api]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: portal-v2
+  title: Customer portl
+spec:
+  type: website
+  lifecycle: experimental
+  owner: team-digital
+  consumesApis: [coaching-api]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: coaching-db
+  title: Coaching database
+spec:
+  type: database
+  owner: team-prevention
+  system: prevention-platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: coaching-api
+  title: Coaching API
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: team-prevention
+  definition: "openapi: 3.0.0"
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: crm-api
+  title: Member lookup
+spec:
+  type: openapi
+  lifecycle: production
+  owner: team-crm
+  definition: "openapi: 3.0.0"
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: jdupont
+spec:
+  memberOf: [team-prevention]

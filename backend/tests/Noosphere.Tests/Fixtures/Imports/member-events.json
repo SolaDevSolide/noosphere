@@ -1,0 +1,27 @@
+{
+  "asyncapi": "3.0.0",
+  "info": { "title": "Member events", "version": "1.0.0" },
+  "x-noosphere-application": "crm",
+  "servers": {
+    "production": { "host": "kafka.alize.example:9092", "protocol": "kafka", "title": "Event bus" }
+  },
+  "channels": {
+    "memberUpdated": {
+      "address": "crm.member.updated",
+      "messages": { "MemberUpdated": { "$ref": "#/components/messages/MemberUpdated" } }
+    }
+  },
+  "operations": {
+    "publishMemberUpdated": {
+      "action": "send",
+      "summary": "A member changed their contact details.",
+      "channel": { "$ref": "#/channels/memberUpdated" },
+      "messages": [{ "$ref": "#/channels/memberUpdated/messages/MemberUpdated" }]
+    }
+  },
+  "components": {
+    "messages": {
+      "MemberUpdated": { "name": "MemberUpdated", "title": "Member updated", "x-noosphere-sensitivity": "personal" }
+    }
+  }
+}

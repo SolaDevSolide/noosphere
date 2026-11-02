@@ -214,6 +214,12 @@ With `NOOSPHERE_DEMO=true` only (404 otherwise): `GET /api/demo/state`, `POST /a
 - `POST /api/import?dryRun=true|false`, for admins, takes the file as the request body (JSON or YAML, told apart by
   `Content-Type` or `?format=`) and returns `{created, updated, unchanged, errors[], dryRun, applied}`.
 
+## Imports
+
+Imports from Backstage, OpenAPI, AsyncAPI, ADR, Mermaid and Excel, for admins and members: `POST /api/imports`
+(multipart, a dry run that stores and returns a plan), `GET /api/imports/{id}`, `POST /api/imports/{id}/apply`,
+`GET /api/imports` and `GET /api/imports/template.xlsx`. See [imports](imports.md).
+
 ## Health
 
 `GET /health/live` and `GET /health/ready` need no session. See [installation](installation.md#health-checks).
