@@ -1,4 +1,14 @@
 import type {
+  ApiKey,
+  ApiKeyCreated,
+  ApiKeyScope,
+  IntegrationSettings,
+  KeyLifetime,
+  Webhook,
+  WebhookCreated,
+  WebhookDelivery,
+  WebhookDeliveryPage,
+  WebhookEvent,
   AgentActivityKind,
   AgentActivityPage,
   AgentCapabilities,
@@ -365,6 +375,42 @@ export const api = {
       'GET',
       `/links/${enc(id)}/exchanges` + q({ cursor: cursor ?? undefined, limit: limit ? String(limit) : undefined }),
     ),
+  apiKeys: () => request<ApiKey[]>('GET', '/integrations/keys'),
+  createApiKey: (name: string, scopes: ApiKeyScope[], expiresInDays: KeyLifetime) =>
+    request<ApiKeyCreated>('POST', '/integrations/keys', { name, scopes, expiresInDays }),
+  rotateApiKey: (id: string) => request<ApiKeyCreated>('POST', `/integrations/keys/${enc(id)}/rotate`, {}),
+  revokeApiKey: (id: string) => request<ApiKey>('POST', `/integrations/keys/${enc(id)}/revoke`, {}),
+  webhooks: () => request<Webhook[]>('GET', '/integrations/webhooks'),
+  createWebhook: (input: { name: string; url: string; events: WebhookEvent[] }) =>
+    request<WebhookCreated>('POST', '/integrations/webhooks', input),
+  updateWebhook: (
+    id: string,
+    input: { name: string; url: string; events: string[]; enabled?: boolean; version: number },
+  ) => request<Webhook>('PUT', `/integrations/webhooks/${enc(id)}`, input),
+  deleteWebhook: (id: string) => request<void>('DELETE', `/integrations/webhooks/${enc(id)}`),
+  testWebhook: (id: string) => request<WebhookDelivery>('POST', `/integrations/webhooks/${enc(id)}/test`, {}),
+  regenerateWebhookSecret: (id: string) =>
+    request<WebhookCreated>('POST', `/integrations/webhooks/${enc(id)}/secret`, {}),
+  webhookDeliveries: (id: string, cursor?: string | null, limit?: number) =>
+    request<WebhookDeliveryPage>(
+      'GET',
+      `/integrations/webhooks/${enc(id)}/deliveries` +
+        q({ cursor: cursor ?? undefined, limit: limit ? String(limit) : undefined }),
+    ),
+  retryDelivery: (id: string, deliveryId: number) =>
+    request<WebhookDelivery>('POST', `/integrations/webhooks/${enc(id)}/deliveries/${deliveryId}/retry`, {}),
+  /** The exchange log of a tool: its keys and its webhook together. */
+  toolExchanges: (keyIds: string[], webhookIds: string[], cursor?: string | null, limit?: number) => {
+    const p = new URLSearchParams();
+    keyIds.forEach((k) => p.append('apiKeyId', k));
+    webhookIds.forEach((w) => p.append('webhookId', w));
+    if (cursor) p.set('cursor', cursor);
+    if (limit) p.set('limit', String(limit));
+    return request<LinkExchangePage>('GET', `/integrations/exchanges?${p.toString()}`);
+  },
+  integrationSettings: () => request<IntegrationSettings>('GET', '/integrations/settings'),
+  setIntegrationSettings: (allowPrivateAddresses: boolean) =>
+    request<IntegrationSettings>('PUT', '/integrations/settings', { allowPrivateAddresses }),
   deployments: (kind: 'application' | 'flow', id: string) =>
     request<Deployments>('GET', `/${KIND_PATH[kind]}/${enc(id)}/deployments`),
 

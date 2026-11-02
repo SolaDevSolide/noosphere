@@ -30,6 +30,7 @@ import { DemoProvider, useDemo } from './demo/context';
 import { LinkPage } from './links/LinkPage';
 import { LinksPage } from './links/LinksPage';
 import { PairPage } from './links/PairPage';
+import { ToolPage } from './links/ToolPage';
 import { DemoToolbox } from './demo/DemoToolbox';
 
 function Booting() {
@@ -67,6 +68,7 @@ function SignedInPages() {
             <Route path="/admin/agents" element={<ConsolePage />} />
             <Route path="/admin/links" element={<LinksPage />} />
             <Route path="/admin/links/pair" element={<PairPage />} />
+            <Route path="/admin/links/tools/:name" element={<ToolPage />} />
             <Route path="/admin/links/:id" element={<LinkPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -15,6 +15,25 @@ protocole de liaison : les fiches visibles par tous, jamais les fiches restreint
 personnes. Ses appels, refus compris, sont inscrits au journal des échanges partagé avec les liaisons
 (`GET /api/links/exchanges`), conservé 90 jours.
 
+## Sur la page Liaisons
+
+Les administrateurs gèrent les outils sous **Outils connectés** sur la page **Liaisons**, sous les applications liées.
+Un outil est un nom avec une clé d'API, un webhook, ou les deux :
+
+- **Connecter un outil** demande un nom, les portées et l'expiration de la clé (90 jours, 180 jours ou 1 an ;
+  120 requêtes par minute pour toute clé) et, si besoin, un webhook (adresse HTTPS et événements). La clé, puis le
+  secret de signature du webhook, sont affichés **une seule fois**, avec des exemples curl, GitHub Actions et
+  GitLab CI à copier.
+- La liste montre pour chaque outil ses portées, le préfixe de sa clé, l'état du webhook (actif, désactivé, en échec,
+  suspendu) et sa dernière utilisation. Un bandeau rappelle les clés qui expirent dans les 30 jours et les webhooks
+  suspendus.
+- La fiche d'un outil montre son webhook (adresse, événements, secret de signature avec **Régénérer**, **Envoyer un
+  test**, un interrupteur, **Reprendre** une fois suspendu) et ses dernières livraisons, avec l'essai, le prochain
+  essai et **Réessayer** ; sa clé d'API avec **Remplacer** (l'ancienne marche encore 24 heures) et **Révoquer** ; et
+  ses échanges, refus compris. **Retirer l'outil** révoque ses clés et supprime son webhook.
+- **Adresses des webhooks** autorise ou non les adresses privées pour tous les webhooks (voir
+  [plus bas](#adresses-quun-webhook-peut-joindre)).
+
 ## Clés d'API
 
 Créez une clé avec un nom, une ou plusieurs portées et une expiration de 90, 180 ou 365 jours (une clé expire toujours) :

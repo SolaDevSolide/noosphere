@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useGo } from '../ui/useGo';
 import { api, ApiError } from '../api/client';
@@ -24,47 +24,12 @@ import {
   longDate,
   PeerChip,
   productLine,
+  Switch,
   type ExchangeKind,
 } from './bits';
 import { AdminOnly, LinksHeader, usePeopleNames } from './LinksPage';
 
 const PAGE = 50;
-
-function Switch({
-  label,
-  checked,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  const { t } = useI18n();
-  const flip = () => !disabled && onChange(!checked);
-  const key = (e: KeyboardEvent) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      flip();
-    }
-  };
-  return (
-    <span
-      className="switch"
-      role="switch"
-      aria-checked={checked}
-      aria-disabled={disabled || undefined}
-      aria-label={label}
-      tabIndex={disabled ? -1 : 0}
-      onClick={flip}
-      onKeyDown={key}
-    >
-      <span className="tr" />
-      <span className="sl">{checked ? t.agents.console.on : t.agents.console.off}</span>
-    </span>
-  );
-}
 
 /** Pages of the exchange log, newest first, walked with Older and Newer. */
 function useExchanges(id: string, key: string) {

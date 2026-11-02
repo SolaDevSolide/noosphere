@@ -142,6 +142,12 @@ Administrators manage links on the **Links** page of the account menu: pair an a
 compare the four-word fingerprint shown on both screens before confirming, choose what each application may do,
 read the exchange log, renew keys or cut a link. See [Links](links.md).
 
+The same page lists **Connected tools**: CI/CD pipelines, ITSM tools or scripts that cannot sign requests. **Connect a
+tool** gives one a name, an API key (shown once, with ready-to-paste curl, GitHub Actions and GitLab CI examples)
+and, if needed, a webhook. Each tool has its page: webhook address, events, signing secret, test, last deliveries
+with **Retry now**, the API key with **Rotate** and **Revoke**, and its exchanges. See
+[Integrations](integrations.md#on-the-links-page).
+
 ## Demo toolbox
 
 On a demo instance (`NOOSPHERE_DEMO=true`) the header shows a **Demo** marker and a **Demo** button stays in the

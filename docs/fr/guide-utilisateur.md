@@ -158,6 +158,12 @@ code à usage unique, comparer l'empreinte de quatre mots affichée sur les deux
 que chaque application peut faire, lire le journal des échanges, renouveler les clés ou couper une liaison. Voir
 [Liaisons](liaisons.md).
 
+La même page liste les **Outils connectés** : chaînes CI/CD, outils ITSM ou scripts qui ne savent pas signer leurs
+requêtes. **Connecter un outil** lui donne un nom, une clé d'API (affichée une fois, avec des exemples curl, GitHub
+Actions et GitLab CI prêts à coller) et, si besoin, un webhook. Chaque outil a sa fiche : adresse du webhook,
+événements, secret de signature, test, dernières livraisons avec **Réessayer**, la clé d'API avec **Remplacer** et
+**Révoquer**, et ses échanges. Voir [Intégrations](integrations.md#sur-la-page-liaisons).
+
 ## Boîte à outils de démo
 
 Sur une instance de démo (`NOOSPHERE_DEMO=true`), l'en-tête porte un repère **Démo** et un bouton **Démo** reste dans

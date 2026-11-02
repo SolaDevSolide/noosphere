@@ -12,6 +12,23 @@ Only administrators create keys and webhooks (`/api/integrations/...`). What a k
 shares: records visible to everyone, never restricted records, protected notes or people. Its calls, refusals
 included, are in the exchange log shared with links (`GET /api/links/exchanges`), kept 90 days.
 
+## On the Links page
+
+Administrators manage tools under **Connected tools** on the **Links** page, below the linked applications. A tool is
+a name with an API key, a webhook, or both:
+
+- **Connect a tool** asks for a name, the key's scopes and expiry (90 days, 180 days or 1 year; 120 requests per
+  minute for every key) and, optionally, a webhook (HTTPS address and events). The key, then the webhook's signing
+  secret, are shown **once**, with curl, GitHub Actions and GitLab CI examples to copy.
+- The list shows each tool's scopes, key prefix, webhook state (on, off, failing, paused) and last use. A banner
+  reminds of keys that expire within 30 days and of paused webhooks.
+- A tool's page shows its webhook (address, events, signing secret with **Regenerate**, **Send a test**, an on/off
+  switch, **Resume** once paused) and its last deliveries, with the attempt, the next try and **Retry now**; its API
+  key with **Rotate** (the old key works 24 more hours) and **Revoke**; and its exchanges, refusals included.
+  **Remove the tool** revokes its keys and deletes its webhook.
+- **Webhook addresses** switches private addresses on or off for every webhook (see
+  [below](#addresses-a-webhook-may-reach)).
+
 ## API keys
 
 Create a key with a name, one or more scopes and an expiry of 90, 180 or 365 days (a key always expires):

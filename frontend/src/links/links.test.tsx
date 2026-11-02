@@ -94,6 +94,13 @@ describe('LinksPage', () => {
   const open = (links: Link[], codes: LinkCode[] = [], me = ME.alice) => {
     vi.spyOn(api, 'links').mockResolvedValue(links);
     vi.spyOn(api, 'linkCodes').mockResolvedValue(codes);
+    vi.spyOn(api, 'apiKeys').mockResolvedValue([]);
+    vi.spyOn(api, 'webhooks').mockResolvedValue([]);
+    vi.spyOn(api, 'integrationSettings').mockResolvedValue({
+      allowPrivateAddresses: false,
+      updatedAt: null,
+      updatedBy: null,
+    });
     vi.spyOn(api, 'people').mockResolvedValue([
       { username: 'alice', displayName: 'Alice Martin', role: 'admin', teamIds: [] },
     ]);
@@ -137,7 +144,7 @@ describe('LinksPage', () => {
     expect(within(row).getByText('https://ci.example')).toBeInTheDocument();
     expect(within(row).getByText('AC')).toBeInTheDocument();
     expect(within(row).getByText(L.state.peerConfirmed)).toBeInTheDocument();
-    expect(screen.getByText(L.list.summary(1, 1, 0, 1))).toBeInTheDocument();
+    expect(screen.getByText(`${L.list.signed} ${L.list.summary(1, 1, 0, 1)}`)).toBeInTheDocument();
     expect(screen.getByText(L.list.codeOpen)).toBeInTheDocument();
     expect(screen.getByText(/7K4Q… · expires in/)).toBeInTheDocument();
   });

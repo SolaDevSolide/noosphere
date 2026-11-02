@@ -493,3 +493,14 @@ export const IconTerminal = ({ size = 16, ...p }: P) => (
     <path d="M4.5 6.5l2 1.8-2 1.8M8.5 10.5h3" />
   </svg>
 );
+export const IconWebhook = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M6.3 6.2 4.2 9.9a2.3 2.3 0 1 0 2.4 3.4M9.7 4.3a2.3 2.3 0 1 0-3.6 1.9l2.1 3.6M7.4 12.4h4.3a2.3 2.3 0 1 0-.9-4.4" />
+  </svg>
+);
+export const IconRotate = ({ size = 16, ...p }: P) => (
+  <svg {...stroke(size, p)}>
+    <path d="M13 3.2v3.3H9.7M3 12.8V9.5h3.3" />
+    <path d="M12.6 6.4A5.2 5.2 0 0 0 3.5 5.3M3.4 9.6a5.2 5.2 0 0 0 9.1 1.1" />
+  </svg>
+);
