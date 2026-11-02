@@ -110,7 +110,7 @@ public sealed class IntegrationTests : IAsyncLifetime, IDisposable
 
     private async Task<(string Id, string Key)> NewKey(params string[] scopes)
     {
-        var created = await (await Alice()).PostJson("/api/integrations/keys", new { name = "Release pipeline", scopes }, HttpStatusCode.Created);
+        var created = await (await Alice()).PostJson("/api/integrations/keys", new { name = "Release pipeline", scopes, expiresInDays = 90 }, HttpStatusCode.Created);
         return (created.GetProperty("apiKey").Str("id"), created.Str("key"));
     }
 
@@ -148,11 +148,17 @@ public sealed class IntegrationTests : IAsyncLifetime, IDisposable
     [Fact]
     public async Task Api_keys_are_shown_once_stored_hashed_scoped_and_revocable()
     {
-        await (await _api.SignedIn("bob")).PostJson("/api/integrations/keys", new { name = "x", scopes = new[] { "catalog:read" } }, HttpStatusCode.Forbidden);
+        await (await _api.SignedIn("bob")).PostJson("/api/integrations/keys", new { name = "x", scopes = new[] { "catalog:read" }, expiresInDays = 90 }, HttpStatusCode.Forbidden);
         var alice = await Alice();
         var invalid = await alice.PostJson("/api/integrations/keys", new { name = "", scopes = new[] { "everything" }, expiresInDays = 0 }, HttpStatusCode.BadRequest);
         Assert.True(invalid.GetProperty("errors").TryGetProperty("scopes", out _));
         Assert.True(invalid.GetProperty("errors").TryGetProperty("expiresInDays", out _));
+        // A key always expires, after 90, 180 or 365 days.
+        foreach (var days in new int?[] { null, 30, 3650 })
+        {
+            var refused = await alice.PostJson("/api/integrations/keys", new { name = "x", scopes = new[] { "catalog:read" }, expiresInDays = days }, HttpStatusCode.BadRequest);
+            Assert.True(refused.GetProperty("errors").TryGetProperty("expiresInDays", out _));
+        }
 
         var (id, key) = await NewKey("catalog:read");
         Assert.Matches("^nsk_[a-z2-9]{8}_[a-z2-9]{40}$", key);
@@ -347,7 +353,7 @@ public sealed class IntegrationTests : IAsyncLifetime, IDisposable
         AssertSigned(changed, secret);
         Assert.Contains(changed.Json["data"]!["changes"]!.AsArray(), c => c!["kind"]!.GetValue<string>() == "team" && c["id"]!.GetValue<string>() == "team-crm");
 
-        // A deployment received with a key: deployment.updated. The receiver fails: retried after 30 s, then delivered.
+        // A deployment received with a key: deployment.updated. The receiver fails: retried after 1 min, then delivered.
         _receiver.Status = 500;
         var (_, key) = await NewKey("deployments:write");
         Assert.Equal(HttpStatusCode.OK, (await Send(Tool(key), HttpMethod.Post, "/api/integrations/deployments", Events("run-9", "2026-11-02T10:00:00Z"))).Status);
@@ -355,7 +361,7 @@ public sealed class IntegrationTests : IAsyncLifetime, IDisposable
         var delivery = await WaitForDelivery(id, d => d.Str("eventType") == "deployment.updated" && d.GetProperty("attempts").GetInt32() == 1);
         Assert.Equal(("pending", 500), (delivery.Str("state"), delivery.GetProperty("responseStatus").GetInt32()));
         var next = delivery.GetProperty("nextAttemptAt").GetDateTimeOffset() - delivery.GetProperty("lastAttemptAt").GetDateTimeOffset();
-        Assert.InRange(next.TotalSeconds, 29, 31);
+        Assert.InRange(next.TotalSeconds, 59, 61);
         var data = first.Json["data"]!["deployments"]!.AsArray().Single()!;
         Assert.Equal(("run-9", "apiKey", "Release pipeline"), (data["deploymentId"]!.GetValue<string>(), data["source"]!["kind"]!.GetValue<string>(), data["source"]!["name"]!.GetValue<string>()));
 
@@ -383,6 +389,99 @@ public sealed class IntegrationTests : IAsyncLifetime, IDisposable
             Assert.Equal(0, await Webhooks.Enqueue(scope.ServiceProvider.GetRequiredService<NoosphereDbContext>(), Webhooks.CatalogChanged, new JsonObject(), DateTimeOffset.UtcNow));
         Assert.Equal(HttpStatusCode.NoContent, (await alice.DeleteAsync($"/api/integrations/webhooks/{id}")).StatusCode);
         await alice.GetJson($"/api/integrations/webhooks/{id}", HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Rotating_a_key_shows_a_new_one_once_and_keeps_the_old_one_for_24_hours()
+    {
+        var alice = await Alice();
+        var (id, key) = await NewKey("deployments:write");
+        Assert.Equal(HttpStatusCode.OK, (await Send(Tool(key), HttpMethod.Post, "/api/integrations/deployments", Events("run-r", "2026-11-02T10:00:00Z"))).Status);
+
+        var rotated = await alice.PostJson($"/api/integrations/keys/{id}/rotate", new { }, HttpStatusCode.Created);
+        var newKey = rotated.Str("key");
+        var newId = rotated.GetProperty("apiKey").Str("id");
+        Assert.NotEqual(key, newKey);
+        Assert.Equal(("Release pipeline", "deployments:write"), (rotated.GetProperty("apiKey").Str("name"), rotated.GetProperty("apiKey").GetProperty("scopes")[0].GetString()));
+        Assert.InRange((rotated.GetProperty("apiKey").GetProperty("expiresAt").GetDateTimeOffset() - DateTimeOffset.UtcNow).TotalDays, 89, 90.1);
+
+        var old = (await alice.GetJson("/api/integrations/keys")).EnumerateArray().Single(k => k.Str("id") == id);
+        Assert.Equal(("active", newId), (old.Str("state"), old.Str("replacedById")));
+        Assert.InRange((old.GetProperty("expiresAt").GetDateTimeOffset() - DateTimeOffset.UtcNow).TotalHours, 23.9, 24.1);
+
+        // Both keys work during the grace period, and the tool's deployments stay one list under the new key.
+        Assert.Equal(HttpStatusCode.OK, (await Send(Tool(key), HttpMethod.Post, "/api/integrations/deployments", Events("run-r", "2026-11-02T11:00:00Z", "execution"))).Status);
+        Assert.Equal(HttpStatusCode.OK, (await Send(Tool(newKey), HttpMethod.Post, "/api/integrations/deployments", Events("run-r", "2026-11-02T12:00:00Z", "closed"))).Status);
+        Assert.Equal((0, 1, DeploymentPhase.Closed), Db(db => (db.Deployments.Count(d => d.ApiKeyId == Guid.Parse(id)), db.Deployments.Count(d => d.ApiKeyId == Guid.Parse(newId)),
+            db.Deployments.Single(d => d.ApiKeyId == Guid.Parse(newId)).Phase)));
+
+        // Rotated once: the old key cannot be rotated again; a revoked key neither.
+        await alice.PostJson($"/api/integrations/keys/{id}/rotate", new { }, HttpStatusCode.Conflict);
+        await alice.PostJson($"/api/integrations/keys/{newId}/revoke", new { });
+        await alice.PostJson($"/api/integrations/keys/{newId}/rotate", new { }, HttpStatusCode.Conflict);
+        await alice.PostJson($"/api/integrations/keys/{Guid.NewGuid()}/rotate", new { }, HttpStatusCode.NotFound);
+
+        // The exchanges of a tool: its keys and webhooks together.
+        var log = (await alice.GetJson($"/api/integrations/exchanges?apiKeyId={id}&apiKeyId={newId}")).GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(3, log.Count(e => e.Str("operation") == "deployments"));
+        Assert.Contains(log, e => e.Str("apiKeyId") == newId);
+        await alice.GetJson("/api/integrations/exchanges", HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Webhooks_regenerate_their_secret_retry_on_demand_and_pause_after_a_day_of_failures()
+    {
+        var alice = await Alice();
+        var created = await alice.PostJson("/api/integrations/webhooks", new { name = "ITSM", url = "https://hooks.test/n", events = new[] { "catalog.changed" } }, HttpStatusCode.Created);
+        var id = created.GetProperty("webhook").Str("id");
+        var regenerated = await alice.PostJson($"/api/integrations/webhooks/{id}/secret", new { });
+        var secret = regenerated.Str("secret");
+        Assert.NotEqual(created.Str("secret"), secret);
+        await alice.PostJson($"/api/integrations/webhooks/{id}/test", new { });
+        AssertSigned(Assert.Single(_receiver.Of("ping")), secret);
+
+        // A failing receiver: the delivery waits; "retry now" makes one more attempt at once.
+        _receiver.Status = 503;
+        long deliveryId;
+        using (var scope = _api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NoosphereDbContext>();
+            var delivery = new WebhookDelivery
+            {
+                WebhookId = Guid.Parse(id), EventType = Webhooks.CatalogChanged, Payload = "{}", CreatedAt = DateTimeOffset.UtcNow, State = WebhookDeliveryState.Pending,
+                Attempts = 2, NextAttemptAt = DateTimeOffset.UtcNow.AddHours(1),
+            };
+            db.WebhookDeliveries.Add(delivery);
+            await db.SaveChangesAsync();
+            deliveryId = delivery.Id;
+        }
+        var retried = await alice.PostJson($"/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry", new { });
+        Assert.Equal(("pending", 3, 503), (retried.Str("state"), retried.GetProperty("attempts").GetInt32(), retried.GetProperty("responseStatus").GetInt32()));
+        var hook = await alice.GetJson($"/api/integrations/webhooks/{id}");
+        Assert.NotEqual(JsonValueKind.Null, hook.GetProperty("failingSince").ValueKind);
+        Assert.Equal(JsonValueKind.Null, hook.GetProperty("pausedAt").ValueKind);
+
+        // Failing for more than 24 hours: the next failure pauses it, and its waiting deliveries stop.
+        using (var scope = _api.Services.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<NoosphereDbContext>().Webhooks.Where(w => w.Id == Guid.Parse(id))
+                .ExecuteUpdateAsync(u => u.SetProperty(w => w.FailingSince, DateTimeOffset.UtcNow.AddHours(-25)));
+        retried = await alice.PostJson($"/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry", new { });
+        Assert.Equal("failed", retried.Str("state"));
+        hook = await alice.GetJson($"/api/integrations/webhooks/{id}");
+        Assert.NotEqual(JsonValueKind.Null, hook.GetProperty("pausedAt").ValueKind);
+        Assert.Equal(0, hook.GetProperty("pending").GetInt32());
+        using (var scope = _api.Services.CreateScope())
+            Assert.Equal(0, await Webhooks.Enqueue(scope.ServiceProvider.GetRequiredService<NoosphereDbContext>(), Webhooks.CatalogChanged, new JsonObject(), DateTimeOffset.UtcNow));
+        await alice.PostJson($"/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry", new { }, HttpStatusCode.Conflict);
+        var log = (await alice.GetJson($"/api/integrations/exchanges?webhookId={id}")).GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(log, e => e.Str("reason") == "webhook-paused");
+
+        // Resumed by switching it on again: a fresh start.
+        hook = await alice.PutJson($"/api/integrations/webhooks/{id}", new { name = "ITSM", url = "https://hooks.test/n", events = new[] { "catalog.changed" }, enabled = true, version = hook.GetProperty("version").GetInt32() });
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (hook.GetProperty("pausedAt").ValueKind, hook.GetProperty("failingSince").ValueKind));
+        _receiver.Status = 200;
+        Assert.Equal("delivered", (await alice.PostJson($"/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry", new { })).Str("state"));
+        await alice.PostJson($"/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry", new { }, HttpStatusCode.Conflict);
     }
 
     [Fact]

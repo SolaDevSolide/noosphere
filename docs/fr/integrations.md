@@ -17,7 +17,7 @@ personnes. Ses appels, refus compris, sont inscrits au journal des échanges par
 
 ## Clés d'API
 
-Créez une clé avec un nom, une ou plusieurs portées et une expiration facultative :
+Créez une clé avec un nom, une ou plusieurs portées et une expiration de 90, 180 ou 365 jours (une clé expire toujours) :
 
 ```sh
 curl -sS -X POST https://noosphere.example.com/api/integrations/keys \
@@ -34,6 +34,11 @@ La réponse contient `key` (`nsk_` + 8 caractères + `_` + 40 caractères) **cet
 les secrets de l'outil. Noosphere n'en garde que le SHA-256 ; les listes montrent le préfixe (`nsk_` + 8 caractères),
 les portées, l'expiration et la dernière utilisation. `POST /api/integrations/keys/{id}/revoke` la révoque aussitôt ;
 les déploiements envoyés avec elle restent, indiqués comme venant d'une clé révoquée.
+
+Pour remplacer une clé sans coupure, renouvelez-la : `POST /api/integrations/keys/{id}/rotate` répond une nouvelle clé
+(même nom, mêmes portées, même durée) **une seule fois**, et l'ancienne fonctionne encore 24 heures, le temps de mettre
+à jour le secret de l'outil. L'ancienne clé indique alors `replacedById` ; les déploiements qu'elle a envoyés suivent
+la nouvelle clé. La page Liaisons rappelle aux administrateurs les clés qui expirent dans les 30 jours.
 
 Une clé ne sert qu'aux deux points d'accès ci-dessous : elle n'ouvre jamais de session, et le reste de l'API répond
 401. Ces points d'accès n'exigent pas l'en-tête `X-Requested-With` et sont limités à 120 requêtes par minute et par
@@ -149,11 +154,21 @@ Chaque livraison est un `POST` avec un corps JSON `{id, type, createdAt, data}` 
 | `X-Noosphere-Delivery` | L'identifiant de l'événement, le même à chaque nouvel essai : ignorez une livraison déjà traitée. |
 | `X-Noosphere-Signature` | `t=<secondes unix>,v1=<hex de HMAC-SHA256(secret, "<t>.<corps brut>")>` |
 
-Une réponse 2xx en moins de 10 secondes vaut livraison. Sinon, la livraison est réessayée après 30 s, 2 min, 10 min,
-1 h et 6 h, puis marquée en échec. Les redirections ne sont pas suivies.
+Une réponse 2xx en moins de 10 secondes vaut livraison. Sinon, la livraison est réessayée après 1 min, 5 min, 30 min,
+2 h et 6 h (6 essais sur environ 9 heures), puis marquée en échec. Les redirections ne sont pas suivies.
 `GET /api/integrations/webhooks/{id}/deliveries` liste chaque livraison avec son état, ses essais, le dernier statut
-et l'erreur ; chaque essai est aussi inscrit au journal des échanges. Le bouton de test envoie un `ping` aussitôt et
-répond par sa livraison ; un webhook désactivé (`enabled: false`) ne reçoit plus rien de nouveau.
+et l'erreur ; chaque essai est aussi inscrit au journal des échanges. `POST .../deliveries/{deliveryId}/retry` fait
+un essai de plus tout de suite. Le bouton de test envoie un `ping` aussitôt et répond par sa livraison ; un webhook
+désactivé (`enabled: false`) ne reçoit plus rien de nouveau.
+
+Quand aucune livraison n'a réussi depuis 24 heures (`failingSince` du webhook), le webhook est **suspendu**
+(`pausedAt`) : ses livraisons en attente échouent, plus rien n'est mis en file, la suspension est inscrite au journal
+des échanges (motif `webhook-paused`) et au journal du serveur, et la page Liaisons la signale aux administrateurs.
+Une fois le destinataire réparé, réactivez le webhook (`PUT` avec `enabled: true`, ou **Reprendre** sur la fiche de
+l'outil).
+
+`POST /api/integrations/webhooks/{id}/secret` régénère le secret de signature et le répond **une seule fois** ;
+l'ancien secret cesse aussitôt de signer.
 
 ### Vérifier la signature
 
@@ -226,14 +241,18 @@ curl -sS -X PUT https://noosphere.example.com/api/integrations/settings \
 | ----------------- | --- | -------------- |
 | `GET /api/integrations/catalog?cursor=&limit=` | clé avec `catalog:read` | Une page du catalogue |
 | `POST /api/integrations/deployments` | clé avec `deployments:write` | `{events}`, puis `{accepted, ignoredApplicationIds}` |
-| `GET /api/integrations/keys` | admin | `{id, name, prefix, scopes, state, createdAt, createdBy, expiresAt, lastUsedAt, revokedAt, revokedBy}` ; `state` vaut `active`, `expired` ou `revoked` |
-| `POST /api/integrations/keys` | admin | `{name, scopes, expiresInDays?}`, puis 201 `{apiKey, key}` : `key` n'est montrée que cette fois |
+| `GET /api/integrations/keys` | admin | `{id, name, prefix, scopes, state, createdAt, createdBy, expiresAt, lastUsedAt, revokedAt, revokedBy, replacedById}` ; `state` vaut `active`, `expired` ou `revoked` |
+| `POST /api/integrations/keys` | admin | `{name, scopes, expiresInDays}` (90, 180 ou 365), puis 201 `{apiKey, key}` : `key` n'est montrée que cette fois |
+| `POST /api/integrations/keys/{id}/rotate` | admin | 201 `{apiKey, key}` : une nouvelle clé montrée une fois ; l'ancienne marche encore 24 heures (409 si elle n'est pas active ou déjà renouvelée) |
 | `POST /api/integrations/keys/{id}/revoke` | admin | La clé, révoquée |
 | `GET /api/integrations/keys/{id}/exchanges?cursor=&limit=` | admin | Les lignes d'échange de la clé |
-| `GET /api/integrations/webhooks`, `GET .../{id}` | admin | `{id, name, url, events, enabled, createdAt, createdBy, lastDeliveryAt, pending, version}` |
+| `GET /api/integrations/exchanges?apiKeyId=&webhookId=&cursor=&limit=` | admin | Les lignes d'échange de plusieurs clés et webhooks (1 à 20 identifiants), les plus récentes d'abord |
+| `GET /api/integrations/webhooks`, `GET .../{id}` | admin | `{id, name, url, events, enabled, createdAt, createdBy, lastDeliveryAt, pending, failingSince, pausedAt, version}` |
 | `POST /api/integrations/webhooks` | admin | `{name, url, events, enabled?}`, puis 201 `{webhook, secret}` : `secret` n'est montré que cette fois |
-| `PUT /api/integrations/webhooks/{id}` | admin | `{name, url, events, enabled?, version?}` (409 si `version` est dépassée) |
+| `PUT /api/integrations/webhooks/{id}` | admin | `{name, url, events, enabled?, version?}` (409 si `version` est dépassée) ; `enabled: true` reprend un webhook suspendu |
 | `DELETE /api/integrations/webhooks/{id}` | admin | 204 ; ses livraisons partent avec lui |
+| `POST /api/integrations/webhooks/{id}/secret` | admin | `{webhook, secret}` : un nouveau secret, montré cette fois seulement |
 | `POST /api/integrations/webhooks/{id}/test` | admin | Envoie un `ping` tout de suite ; répond par la livraison |
+| `POST /api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry` | admin | Un essai de plus, tout de suite ; répond par la livraison (409 si elle est livrée, ou si le webhook est désactivé ou suspendu) |
 | `GET /api/integrations/webhooks/{id}/deliveries?cursor=&limit=` | admin | `{items, nextCursor}` : `{id, eventId, eventType, state, attempts, createdAt, lastAttemptAt, nextAttemptAt, responseStatus, error, test}` |
 | `GET /api/integrations/settings`, `PUT` | admin | `{allowPrivateAddresses}` |

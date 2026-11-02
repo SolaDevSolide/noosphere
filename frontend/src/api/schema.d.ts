@@ -4467,6 +4467,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/integrations/keys/{id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate an API key: a new key, shown once; the old one keeps working for 24 hours */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiKeyCreatedDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/integrations/keys/{id}/revoke": {
         parameters: {
             query?: never;
@@ -4545,6 +4601,56 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/exchanges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The exchange log of some API keys and webhooks (a third-party tool), newest first */
+        get: {
+            parameters: {
+                query?: {
+                    apiKeyId?: string[];
+                    webhookId?: string[];
+                    cursor?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LinkExchangePageDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -4732,6 +4838,110 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks/{id}/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Regenerate a webhook's signing secret, shown once; the old one stops signing at once */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookCreatedDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/integrations/webhooks/{id}/deliveries/{deliveryId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Try a waiting or failed delivery again, now */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    deliveryId: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WebhookDeliveryDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5135,13 +5345,21 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             createdBy: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Null only for keys created before expiry became required.
+             */
             expiresAt: null | string;
             /** Format: date-time */
             lastUsedAt: null | string;
             /** Format: date-time */
             revokedAt: null | string;
             revokedBy: null | string;
+            /**
+             * Format: uuid
+             * @description Set once the key was rotated: the new key's id. The old key keeps working until `expiresAt` (24 hours at most).
+             */
+            replacedById: null | string;
         };
         /** @description A new API key. */
         ApiKeyInput: {
@@ -5150,7 +5368,7 @@ export interface components {
             scopes: null | string[];
             /**
              * Format: int32
-             * @description 1 to 3650; null: the key never expires.
+             * @description Required: 90, 180 or 365 days.
              */
             expiresInDays?: null | number;
         };
@@ -6903,6 +7121,16 @@ export interface components {
              * @description Deliveries waiting for a (next) attempt.
              */
             pending: number;
+            /**
+             * Format: date-time
+             * @description First failed attempt since the last delivered one; null while deliveries succeed.
+             */
+            failingSince: null | string;
+            /**
+             * Format: date-time
+             * @description Set after 24 hours of failures: nothing is queued or sent until an administrator resumes it (`enabled: true`).
+             */
+            pausedAt: null | string;
             /** Format: int32 */
             version: number;
         };
@@ -6913,7 +7141,7 @@ export interface components {
             url: null | string;
             /** @description `catalog.changed` and/or `deployment.updated`; at least one. */
             events: null | string[];
-            /** @description true by default. */
+            /** @description true by default. Sending true to a paused webhook resumes it. */
             enabled?: null | boolean;
             /**
              * Format: int32

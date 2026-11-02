@@ -22,6 +22,8 @@ public sealed class ApiKey
     public DateTimeOffset? LastUsedAt { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevokedBy { get; set; }
+    /// <summary>The key that replaced this one (rotation): this one then expires 24 hours after the rotation at the latest.</summary>
+    public Guid? ReplacedById { get; set; }
 }
 
 /// <summary>
@@ -55,6 +57,10 @@ public sealed class Webhook
     public DateTimeOffset CreatedAt { get; set; }
     public string CreatedBy { get; set; } = "";
     public DateTimeOffset? LastDeliveryAt { get; set; }
+    /// <summary>First failed attempt since the last delivered one; null while deliveries succeed.</summary>
+    public DateTimeOffset? FailingSince { get; set; }
+    /// <summary>Paused after 24 hours of failures: nothing is queued or sent until an administrator resumes it.</summary>
+    public DateTimeOffset? PausedAt { get; set; }
     public int Version { get; set; }
 }
 
