@@ -35,6 +35,7 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
     public DbSet<Webhook> Webhooks => Set<Webhook>();
     public DbSet<WebhookDelivery> WebhookDeliveries => Set<WebhookDelivery>();
     public DbSet<IntegrationSettings> IntegrationSettings => Set<IntegrationSettings>();
+    public DbSet<ImportPlan> ImportPlans => Set<ImportPlan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -182,6 +183,17 @@ public sealed class NoosphereDbContext(DbContextOptions<NoosphereDbContext> opti
             e.HasIndex(x => new { x.Kind, x.EntityId });
         });
         ConfigureAgents(modelBuilder);
+        modelBuilder.Entity<ImportPlan>(e =>
+        {
+            e.Property(x => x.Username).HasMaxLength(100);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Outcome).HasMaxLength(Rules.MaxShortTextLength);
+            e.Property(x => x.Formats).HasMaxLength(200);
+            e.Property(x => x.Preview).HasColumnType("jsonb");
+            e.Property(x => x.Operations).HasColumnType("jsonb");
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => x.CreatedAt);
+        });
         ConfigureLinks(modelBuilder);
         ConfigureIntegrations(modelBuilder);
     }

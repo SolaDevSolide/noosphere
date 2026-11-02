@@ -80,6 +80,7 @@ api.MapProposals();
 api.MapHistory();
 api.MapAccess();
 api.MapExplorer(settings);
+api.MapImports();
 api.MapConsent();
 api.MapAgents();
 if (settings.Demo) api.MapDemo();
