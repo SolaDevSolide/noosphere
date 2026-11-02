@@ -4073,6 +4073,281 @@
         }
       }
     },
+    "/api/imports": {
+      "post": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Dry run of an import: reads the files and stores a plan to apply",
+        "parameters": [
+          {
+            "name": "Format",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "DomainId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "TeamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ApplicationId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ParentPageId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "One or more files (Backstage YAML, OpenAPI, AsyncAPI, ADR Markdown, Mermaid, .xlsx) or zip archives of them.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "files"
+                ],
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPlanDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Recent imports: one's own, everyone's for administrators",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImportSummaryDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{id}": {
+      "get": {
+        "tags": [
+          "Imports"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPlanDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{id}/apply": {
+      "post": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Applies the plan of a dry run (same person, before it expires, catalogue unchanged)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPlanDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/template.xlsx": {
+      "get": {
+        "tags": [
+          "Imports"
+        ],
+        "summary": "Excel template of the import (one sheet per kind of record)",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/oauth/requests/{id}": {
       "get": {
         "tags": [
@@ -8859,6 +9134,103 @@
         },
         "description": "One revision of a record, newest first."
       },
+      "ImportCountsDto": {
+        "required": [
+          "create",
+          "update",
+          "unchanged",
+          "warnings",
+          "errors"
+        ],
+        "type": "object",
+        "properties": {
+          "create": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "update": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unchanged": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warnings": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errors": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ImportEntryDto": {
+        "required": [
+          "index",
+          "action",
+          "kind",
+          "id",
+          "name",
+          "matchedBy",
+          "changes",
+          "possibleMatches",
+          "source",
+          "hasErrors"
+        ],
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "action": {
+            "type": "string",
+            "description": "`create`, `update` or `unchanged`."
+          },
+          "kind": {
+            "description": "Kind of record.",
+            "$ref": "#/components/schemas/RecordKind"
+          },
+          "id": {
+            "type": "string",
+            "description": "Id of the record: the existing one for an update, the new one for a creation."
+          },
+          "name": {
+            "type": "string"
+          },
+          "matchedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "How an existing record was found: `identifier`, `name`, or `tag` (the top-level page tagged `adr`, for decision records); null for a creation."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiffEntryDto"
+            },
+            "description": "Field-level diff: every field set on a creation, the changed fields on an update."
+          },
+          "possibleMatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportPossibleMatchDto"
+            },
+            "description": "Existing records whose name is close: check them before applying (never merged)."
+          },
+          "source": {
+            "$ref": "#/components/schemas/ImportSourceDto"
+          },
+          "hasErrors": {
+            "type": "boolean",
+            "description": "The entry has errors (see the plan's errors): the plan cannot be applied."
+          }
+        },
+        "description": "One record of the plan."
+      },
       "ImportErrorDto": {
         "required": [
           "index",
@@ -8898,6 +9270,182 @@
           }
         }
       },
+      "ImportFileDto": {
+        "required": [
+          "name",
+          "format",
+          "size",
+          "sha256",
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "format": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`backstage`, `openapi`, `asyncapi`, `adr`, `mermaid` or `excel`; null when the file was not read."
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "SHA-256 of the file content, in hexadecimal."
+          },
+          "entries": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A file read by an import."
+      },
+      "ImportMessageDto": {
+        "required": [
+          "message",
+          "source",
+          "entry",
+          "field"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ImportSourceDto"
+          },
+          "entry": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Index of the entry concerned, when there is one.",
+            "format": "int32"
+          },
+          "field": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Field concerned, when there is one."
+          }
+        },
+        "description": "A warning (something left out or guessed) or an error (the plan cannot be applied)."
+      },
+      "ImportPlanDto": {
+        "required": [
+          "id",
+          "status",
+          "username",
+          "createdAt",
+          "expiresAt",
+          "closedAt",
+          "outcome",
+          "formats",
+          "files",
+          "counts",
+          "entries",
+          "warnings",
+          "errors",
+          "canApply"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "description": "`planned`, `applied`, `rejected` or `expired`.",
+            "$ref": "#/components/schemas/ImportStatus"
+          },
+          "username": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why applying was refused, for a rejected plan."
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportFileDto"
+            }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ImportCountsDto"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportEntryDto"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportMessageDto"
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportMessageDto"
+            }
+          },
+          "canApply": {
+            "type": "boolean",
+            "description": "The plan is planned, not expired and without errors."
+          }
+        },
+        "description": "An import plan: the preview of a dry run, applied later by id."
+      },
+      "ImportPossibleMatchDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "An existing record with a close name, never merged automatically."
+      },
       "ImportResultDto": {
         "required": [
           "created",
@@ -8936,6 +9484,102 @@
           }
         },
         "description": "Outcome of an import (or of its dry run): counts of items, or the errors that stopped it (nothing written)."
+      },
+      "ImportSourceDto": {
+        "required": [
+          "file",
+          "line",
+          "place"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "File name, with its path inside a zip archive: `adr.zip/0001-use-postgres.md`."
+          },
+          "line": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Line in the file (1-based), when known.",
+            "format": "int32"
+          },
+          "place": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Place in the document: `documents[1]`, `paths./invoices.get`, `Applications!A4`."
+          }
+        },
+        "description": "Where an entry, a warning or an error comes from."
+      },
+      "ImportStatus": {
+        "enum": [
+          "planned",
+          "applied",
+          "rejected",
+          "expired"
+        ],
+        "description": "`planned` after the dry run; `applied` once written; `rejected` when applying failed (the catalogue\n        changed since the dry run, or the plan had errors); `expired` when it was not applied in time."
+      },
+      "ImportSummaryDto": {
+        "required": [
+          "id",
+          "status",
+          "username",
+          "createdAt",
+          "expiresAt",
+          "closedAt",
+          "outcome",
+          "formats",
+          "counts"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ImportStatus"
+          },
+          "username": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "closedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "outcome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ImportCountsDto"
+          }
+        },
+        "description": "An import in the list of imports (without its entries)."
       },
       "InboxDto": {
         "required": [
@@ -12325,6 +12969,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "Imports"
     },
     {
       "name": "Demo"
