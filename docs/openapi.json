@@ -4259,7 +4259,7 @@
         "tags": [
           "Imports"
         ],
-        "summary": "Applies the plan of a dry run (same person, before it expires, catalogue unchanged)",
+        "summary": "Applies the plan of a dry run (same person, before it expires, catalogue unchanged), leaving out the entries in skip",
         "parameters": [
           {
             "name": "id",
@@ -4271,6 +4271,30 @@
             }
           }
         ],
+        "requestBody": {
+          "description": "Entries to leave out; no body applies the whole plan.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "skip": {
+                    "type": [
+                      "null",
+                      "array"
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "description": "Indexes of the entries to leave out (creations and updates). The entries that require one of them must be left out too."
+                  }
+                },
+                "description": "What to apply of a plan."
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -9134,6 +9158,23 @@
         },
         "description": "One revision of a record, newest first."
       },
+      "ImportApplyInput": {
+        "type": "object",
+        "properties": {
+          "skip": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Indexes of the entries to leave out (creations and updates). The entries that require one of them must be left out too."
+          }
+        },
+        "description": "What to apply of a plan."
+      },
       "ImportCountsDto": {
         "required": [
           "create",
@@ -9177,7 +9218,8 @@
           "changes",
           "possibleMatches",
           "source",
-          "hasErrors"
+          "hasErrors",
+          "requires"
         ],
         "type": "object",
         "properties": {
@@ -9227,6 +9269,14 @@
           "hasErrors": {
             "type": "boolean",
             "description": "The entry has errors (see the plan's errors): the plan cannot be applied."
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Indexes of the entries creating records this one refers to (its domain, team, the ends of a flow...): leaving one of them out leaves this one out too."
           }
         },
         "description": "One record of the plan."
@@ -9353,7 +9403,8 @@
           "entries",
           "warnings",
           "errors",
-          "canApply"
+          "canApply",
+          "skipped"
         ],
         "type": "object",
         "properties": {
@@ -9426,6 +9477,14 @@
           "canApply": {
             "type": "boolean",
             "description": "The plan is planned, not expired and without errors."
+          },
+          "skipped": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "Indexes of the entries left out when the plan was applied (empty before)."
           }
         },
         "description": "An import plan: the preview of a dry run, applied later by id."

@@ -55,6 +55,8 @@ import type {
   TeamMember,
   TrashItem,
   ImportResult,
+  ImportOptions,
+  ImportPlan,
   Landscape,
   Language,
   Me,
@@ -377,6 +379,18 @@ export const api = {
   demoGuestRead: (kind: string, id: string) =>
     request<DemoGuestReadResult>('POST', '/demo/simulate/guest-read', { kind, id }),
   demoReset: () => request<DemoResetResult>('POST', '/demo/reset', { confirm: true }),
+
+  /** Dry run of an import from other formats: sends the files, answers the stored plan. */
+  planImport: (files: File[], options: ImportOptions = {}) => {
+    const form = new FormData();
+    for (const f of files) form.append('files', f, f.name);
+    return request<ImportPlan>('POST', '/imports' + q({ ...options }), undefined, { body: form });
+  },
+  importPlan: (id: string) => request<ImportPlan>('GET', `/imports/${enc(id)}`),
+  /** Applies a plan, leaving out the entries in `skip`. */
+  applyImport: (id: string, skip: number[] = []) =>
+    request<ImportPlan>('POST', `/imports/${enc(id)}/apply`, skip.length ? { skip } : {}),
+  importTemplateUrl: '/api/imports/template.xlsx',
 
   importEnvelope: (envelope: ExchangeEnvelope | string, dryRun: boolean, contentType = 'application/json') =>
     request<ImportResult>('POST', '/import' + q({ dryRun: String(dryRun) }), undefined, {

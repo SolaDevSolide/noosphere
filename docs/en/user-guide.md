@@ -158,6 +158,29 @@ bottom corner (a bottom sheet on phones). It opens the toolbox:
 
 Each action shows a notice with a **Show me** link to what changed. See [Demo toolbox](demo.md).
 
+## Imports
+
+**Import and export** (account menu) brings in what your teams already document. Only administrators import; members
+and guests see why, and members send a [proposal](proposals.md) instead. Everyone may export.
+
+1. **Source.** Choose the format: Backstage, OpenAPI, AsyncAPI, ADR (Markdown), Mermaid / C4, Excel (download the
+   template first) or Noosphere JSON (the exchange format, administrators only). Add one or several files, or a
+   `.zip`. For OpenAPI, AsyncAPI and ADR, you may name the application the files are about. **Options for new
+   records** sets the domain of new applications and the owning team of new records.
+2. **Dry run.** Nothing is written yet. The preview counts what would be created, updated, left unchanged, and the
+   warnings (what was left out or guessed, with the reason); nothing is ever deleted. Filter the lines by action.
+   Each line shows where it comes from in the file (file, line, place), the record in Noosphere and how it was found
+   (by identifier or by name), the field-by-field changes, and **close names** of existing records, which are never
+   merged. Errors are shown at their place in the file: fix the files and run the dry run again.
+3. **Leave lines out.** Untick a line to leave it out. The lines that need it go with it (a new application in a new
+   domain goes when the domain goes), and ticking a line back brings back what it needs.
+4. **Confirm.** **Import N changes** sums up what will be created and updated, then applies the plan. Each record
+   written gets a revision naming the import, and the result lists the records written. **Report (.csv)** downloads
+   the preview at any step.
+
+A dry run is applied within **30 minutes**, and only if nobody changed the catalogue meanwhile; otherwise the page
+says so and **Run the dry run again** reads the same files again. See [imports](imports.md) for each format.
+
 ## Teams
 
 Administrators manage team memberships on the **Users** page (the **Teams** of each account) and on a team record

@@ -71,10 +71,12 @@ public static class ImportService
     }
 
     /// <summary>
-    /// Applies a stored plan: 404 when it is not the person's, 409 when it was applied or rejected already, or when the
-    /// catalogue changed since the dry run (the plan is then rejected), 410 once expired, 422 when it has errors.
+    /// Applies a stored plan, but the entries in <paramref name="skip"/>: 404 when it is not the person's, 409 when it was
+    /// applied or rejected already, or when the catalogue changed since the dry run (the plan is then rejected), 410 once
+    /// expired, 422 when it has errors or when an entry kept requires one left out (the plan stays as it is).
     /// </summary>
-    public static async Task<ImportPlanDto> Apply(NoosphereDbContext db, Access access, Guid id, DateTimeOffset now, ILogger logger, CancellationToken cancel = default)
+    public static async Task<ImportPlanDto> Apply(NoosphereDbContext db, Access access, Guid id, DateTimeOffset now, ILogger logger,
+        IReadOnlyList<int>? skip = null, CancellationToken cancel = default)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancel);
         await db.Database.ExecuteSqlAsync($"select pg_advisory_xact_lock({LockKey})", cancel);
@@ -95,10 +97,17 @@ public static class ImportService
         }
         if (now > plan.ExpiresAt) throw await Close(ImportStatus.Expired, new ApiProblem(410, "This import plan expired. Run the dry run again."));
         if (plan.Errors > 0) throw ApiProblem.Unprocessable($"This import has {plan.Errors} error(s): fix the files and run the dry run again.");
+        var preview = JsonSerializer.Deserialize<StoredPreview>(plan.Preview, Json) ?? new StoredPreview([], [], [], []);
+        var skipped = CheckSkip(preview.Entries, skip);
         if (await Stamp(db, cancel) != plan.CatalogueStamp)
             throw await Close(ImportStatus.Rejected, ApiProblem.Conflict("The catalogue changed since the dry run, so this plan may be wrong. Run the dry run again."));
 
         var operations = JsonSerializer.Deserialize<List<PlannedOperation>>(plan.Operations ?? "[]", Json) ?? [];
+        if (skipped.Count > 0)
+        {
+            if (operations.Any(op => op.Entry is null)) throw ApiProblem.Unprocessable("This plan cannot leave entries out. Run the dry run again.");
+            operations = [.. operations.Where(op => !skipped.Contains(op.Entry!.Value))];
+        }
         var author = Author.Of(access.Viewer);
         var summary = $"Imported ({plan.Formats.Replace(",", ", ", StringComparison.Ordinal)}, import {plan.Id.ToString()[..8]})";
         try
@@ -122,6 +131,7 @@ public static class ImportService
                 access.RequirePublish(op.Kind, e);
             }
             (plan.Status, plan.ClosedAt, plan.Operations) = (ImportStatus.Applied, now, null);
+            if (skipped.Count > 0) plan.Preview = JsonSerializer.Serialize(preview with { Skipped = [.. skipped.Order()] }, Json);
             await db.SaveChangesAsync(cancel);
             await transaction.CommitAsync(cancel);
         }
@@ -135,8 +145,29 @@ public static class ImportService
             logger.LogInformation("Import {Id} rejected: {Outcome}", id, problem.Message);
             throw problem.Status == 400 ? ApiProblem.Conflict($"The plan no longer applies: {problem.Message} Run the dry run again.") : problem;
         }
-        logger.LogInformation("Import {Id} applied by {User}: {Create} created, {Update} updated", plan.Id, access.Viewer.Username, plan.Creates, plan.Updates);
+        logger.LogInformation("Import {Id} applied by {User}: {Create} created, {Update} updated, {Skipped} left out", plan.Id, access.Viewer.Username,
+            operations.Count(op => op.Create), operations.Count(op => !op.Create), skipped.Count);
         return Dto(plan, now);
+    }
+
+    /// <summary>
+    /// The entries to leave out: creations or updates of the plan, and every entry that requires one of them left out
+    /// too (422 otherwise, naming the first).
+    /// </summary>
+    private static HashSet<int> CheckSkip(IReadOnlyList<ImportEntryDto> entries, IReadOnlyList<int>? skip)
+    {
+        var skipped = new HashSet<int>(skip ?? []);
+        foreach (var index in skipped)
+        {
+            if (index < 0 || index >= entries.Count) throw ApiProblem.Unprocessable($"No entry {index} in this plan.");
+            if (entries[index].Action == "unchanged") throw ApiProblem.Unprocessable($"Entry {index} ({entries[index].Name}) is unchanged: there is nothing to leave out.");
+        }
+        foreach (var e in entries.Where(e => !skipped.Contains(e.Index) && e.Action != "unchanged"))
+            if ((e.Requires ?? []).FirstOrDefault(r => skipped.Contains(r), -1) is var needed and >= 0)
+                throw ApiProblem.Unprocessable($"Entry {e.Index} ({e.Name}) requires entry {needed} ({entries[needed].Name}), which is left out: leave both out or keep both.");
+        if (skipped.Count > 0 && entries.All(e => e.Action == "unchanged" || skipped.Contains(e.Index)))
+            throw ApiProblem.Unprocessable("Every change is left out: there is nothing to import.");
+        return skipped;
     }
 
     private static string Short(string text) => text.Length <= Rules.MaxShortTextLength ? text : text[..Rules.MaxShortTextLength];
@@ -166,7 +197,7 @@ public static class ImportService
         entries.Count(e => e.Action == "create"), entries.Count(e => e.Action == "update"), entries.Count(e => e.Action == "unchanged"), warnings, errors);
 
     private sealed record StoredPreview(IReadOnlyList<ImportFileDto> Files, IReadOnlyList<ImportEntryDto> Entries,
-        IReadOnlyList<ImportMessageDto> Warnings, IReadOnlyList<ImportMessageDto> Errors);
+        IReadOnlyList<ImportMessageDto> Warnings, IReadOnlyList<ImportMessageDto> Errors, IReadOnlyList<int>? Skipped = null);
 
     private static ImportPlanDto Dto(ImportPlan plan, DateTimeOffset now)
     {
@@ -174,6 +205,7 @@ public static class ImportService
         var status = Status(plan.Status, plan.ExpiresAt, now);
         return new ImportPlanDto(plan.Id, status, plan.Username, plan.CreatedAt, plan.ExpiresAt, plan.ClosedAt, plan.Outcome, Formats(plan.Formats),
             preview.Files, new ImportCountsDto(plan.Creates, plan.Updates, plan.Unchanged, plan.Warnings, plan.Errors),
-            preview.Entries, preview.Warnings, preview.Errors, status == ImportStatus.Planned && plan.Errors == 0);
+            [.. preview.Entries.Select(e => e.Requires is null ? e with { Requires = [] } : e)], preview.Warnings, preview.Errors,
+            status == ImportStatus.Planned && plan.Errors == 0, preview.Skipped ?? []);
     }
 }

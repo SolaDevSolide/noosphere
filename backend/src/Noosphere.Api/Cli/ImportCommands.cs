@@ -43,8 +43,13 @@ public static partial class CommandLine
                 {
                     Expect(p, 3);
                     if (!Guid.TryParse(p[2], out var id)) throw new UsageException("Expected the id of an import plan.");
-                    var plan = await ImportService.Apply(db, await Access.System(db), id, now, logger);
-                    await Done(output, $"Import applied: {plan.Counts.Create} created, {plan.Counts.Update} updated, {plan.Counts.Unchanged} unchanged.", plan);
+                    var skip = new List<int>();
+                    foreach (var part in (o["--skip"] ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                        skip.Add(int.TryParse(part, out var index) ? index : throw new UsageException("--skip expects entry indexes separated by commas: --skip 3,7."));
+                    var plan = await ImportService.Apply(db, await Access.System(db), id, now, logger, skip);
+                    int Written(string action) => plan.Entries.Count(e => e.Action == action && !plan.Skipped.Contains(e.Index));
+                    var left = plan.Skipped.Count > 0 ? $", {plan.Skipped.Count} left out" : "";
+                    await Done(output, $"Import applied: {Written("create")} created, {Written("update")} updated, {plan.Counts.Unchanged} unchanged{left}.", plan);
                     return ExitCodes.Success;
                 }
                 case "template":
@@ -56,7 +61,7 @@ public static partial class CommandLine
                     return ExitCodes.Success;
                 }
                 default:
-                    throw new UsageException("Expected 'imports plan <file>...', 'imports apply <plan-id>' or 'imports template'.");
+                    throw new UsageException("Expected 'imports plan <file>...', 'imports apply <plan-id> [--skip 3,7]' or 'imports template'.");
             }
         }
         catch (ApiProblem e)
@@ -79,8 +84,9 @@ public static partial class CommandLine
         foreach (var e in plan.Entries.Where(e => e.Action != "unchanged"))
         {
             var fields = e.Action == "update" ? ": " + string.Join(", ", e.Changes.Select(d => d.Field)) : "";
-            await output.Out.WriteLineAsync($"  {e.Action,-7} {Noosphere.Domain.Rules.KindName(e.Kind),-11} {e.Id} \"{e.Name}\"{fields}  [{Where(e.Source)}]");
-            foreach (var m in e.PossibleMatches) await output.Out.WriteLineAsync($"          possible match: {m.Id} \"{m.Name}\" (not merged)");
+            var requires = e.Requires.Count > 0 ? $"  (requires {string.Join(", ", e.Requires.Select(r => "#" + r))})" : "";
+            await output.Out.WriteLineAsync($"  #{e.Index,-3} {e.Action,-7} {Noosphere.Domain.Rules.KindName(e.Kind),-11} {e.Id} \"{e.Name}\"{fields}  [{Where(e.Source)}]{requires}");
+            foreach (var m in e.PossibleMatches) await output.Out.WriteLineAsync($"               possible match: {m.Id} \"{m.Name}\" (not merged)");
         }
         foreach (var w in plan.Warnings) await output.Out.WriteLineAsync($"Warning: {Where(w.Source)}: {w.Message}");
         foreach (var e in plan.Errors) await output.Error.WriteLineAsync($"Error: {Where(e.Source)}: {e.Message}");

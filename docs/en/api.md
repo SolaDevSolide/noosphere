@@ -216,7 +216,7 @@ With `NOOSPHERE_DEMO=true` only (404 otherwise): `GET /api/demo/state`, `POST /a
 
 ## Imports
 
-Imports from Backstage, OpenAPI, AsyncAPI, ADR, Mermaid and Excel, for admins and members: `POST /api/imports`
+Imports from Backstage, OpenAPI, AsyncAPI, ADR, Mermaid and Excel, for administrators: `POST /api/imports`
 (multipart, a dry run that stores and returns a plan), `GET /api/imports/{id}`, `POST /api/imports/{id}/apply`,
 `GET /api/imports` and `GET /api/imports/template.xlsx`. See [imports](imports.md).
 

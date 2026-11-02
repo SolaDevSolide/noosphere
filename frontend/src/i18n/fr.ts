@@ -1,3 +1,4 @@
+import { importsFr } from './imports.fr';
 import { deploymentsFr, linksFr } from './links.fr';
 import { agentsFr } from './agents.fr';
 import { accessFr } from './access.fr';
@@ -947,4 +948,5 @@ export const fr: Dict = {
   agents: agentsFr,
   links: linksFr,
   deployments: deploymentsFr,
+  imports: importsFr,
 };

@@ -21,6 +21,9 @@ Noosphere s'importe avec l'[import du format d'échange](exchange-format.md).
 
 ## Simulation, aperçu, application
 
+Dans l'interface, la page **Import et export** suit les mêmes étapes : source, essai à blanc avec l'aperçu, lignes à
+écarter, confirmation et résultat. Voir le [guide utilisateur](guide-utilisateur.md#imports).
+
 1. **Simulation.** `POST /api/imports` avec les fichiers (`multipart/form-data`, champ `files`). Noosphere les lit,
    retrouve les enregistrements existants, vérifie chaque changement avec les mêmes règles que les formulaires et
    enregistre le résultat comme **plan**. Il répond `201` avec le plan.
@@ -30,7 +33,11 @@ Noosphere s'importe avec l'[import du format d'échange](exchange-format.md).
    au nom proche) et l'origine de l'entrée : fichier (avec son chemin dans l'archive), ligne et emplacement
    (`documents[3]`, `channels.billing.invoice.issued.subscribe`, `Applications!A4`). Les avertissements disent ce qui
    a été laissé de côté ou déduit ; les erreurs, ce qui empêche l'import.
-3. **Application.** `POST /api/imports/{id}/apply` écrit exactement le plan qui a été montré.
+3. **Application.** `POST /api/imports/{id}/apply` écrit exactement le plan qui a été montré, ou une partie : le corps
+   `{ "skip": [3, 7] }` écarte les entrées de ces index (créations et mises à jour). Une entrée liste dans `requires`
+   les entrées qui créent les enregistrements auxquels elle renvoie (son domaine, son équipe, les extrémités d'un
+   flux...) : une entrée gardée ne peut pas dépendre d'une entrée écartée. Le plan appliqué liste les entrées écartées
+   dans `skipped`.
 
 Un plan s'applique une seule fois, par la personne qui l'a fait, dans les **30 minutes**, et seulement si le catalogue
 n'a pas changé depuis la simulation :
@@ -43,6 +50,7 @@ n'a pas changé depuis la simulation :
 | Un enregistrement a été créé, modifié, supprimé ou restauré depuis la simulation (par qui que ce soit) | `409`, et le plan passe à `rejected` : relancez la simulation |
 | Plus de 30 minutes après la simulation | `410`, le plan passe à `expired` |
 | Le plan a des erreurs | `422` |
+| Une entrée gardée dépend d'une entrée écartée, ou tous les changements sont écartés | `422`, le plan reste `planned` |
 
 ## Correspondance
 
@@ -80,11 +88,10 @@ inconnue est ignoré.
 
 ## Droits
 
-Les administrateurs et les membres importent ; les invités ne peuvent pas (`403`). Chaque changement du plan est
-vérifié comme s'il était fait à la main : les membres publient les changements des enregistrements de leurs équipes
-(mettez `teamId` à l'une de vos équipes pour les nouveaux enregistrements), et seuls les administrateurs créent ou
-modifient domaines et équipes. Un changement que la personne ne peut pas publier est une erreur du plan ; envoyez
-plutôt une [proposition](proposals.md).
+Seuls les administrateurs importent, comme pour l'[import d'échange](exchange-format.md) : membres et invités
+reçoivent `403` sur la simulation, les plans et leur application. Les membres envoient plutôt une
+[proposition](proposals.md). Le [modèle Excel](imports-excel.md#modèle) est ouvert à toute personne connectée. Les
+plans de la ligne de commande appartiennent à `system`, lancée par qui exploite le serveur.
 
 ## Options
 
@@ -115,8 +122,7 @@ qu'un petit fichier ne puisse pas se déployer en un fichier énorme (l'import d
 
 ## Trace des imports
 
-Chaque simulation est gardée, appliquée ou non : `GET /api/imports` liste ses propres imports, et tous les imports
-pour les administrateurs, avec leur auteur, leur date, leurs formats, leurs comptes, leur état et la raison d'un
+Chaque simulation est gardée, appliquée ou non : `GET /api/imports` liste tous les imports, avec leur auteur, leur date, leurs formats, leurs comptes, leur état et la raison d'un
 refus ; `GET /api/imports/{id}` donne l'aperçu complet, avec le nom, la taille et le SHA-256 de chaque fichier.
 Chaque enregistrement écrit reçoit une révision de la personne qui a appliqué le plan, avec le résumé
 `Imported (backstage, import 1a2b3c4d)`, dans son [historique](history.md). Le journal du serveur a une ligne pour
@@ -128,7 +134,7 @@ chaque plan, chaque application et chaque refus.
 | ------- | ---- |
 | `POST /api/imports?format=&domainId=&teamId=&applicationId=&parentPageId=` | Simulation : lit les fichiers, enregistre et renvoie le plan (`201`). |
 | `GET /api/imports/{id}` | Le plan (pour son auteur seulement). |
-| `POST /api/imports/{id}/apply` | Applique le plan. |
+| `POST /api/imports/{id}/apply` | Applique le plan ; `{ "skip": [3, 7] }` écarte des entrées. |
 | `GET /api/imports?limit=50` | Les imports récents. |
 | `GET /api/imports/template.xlsx` | Le [modèle Excel](imports-excel.md#modèle). |
 
@@ -155,7 +161,8 @@ Une entrée du plan :
   ],
   "possibleMatches": [],
   "source": { "file": "catalog-info.yaml", "line": 49, "place": "documents[4]" },
-  "hasErrors": false
+  "hasErrors": false,
+  "requires": []
 }
 ```
 
@@ -163,7 +170,7 @@ Une entrée du plan :
 
 ```sh
 docker compose exec noosphere noosphere imports plan /data/catalog-info.yaml /data/adr.zip --team team-crm
-docker compose exec noosphere noosphere imports apply <id-du-plan>
+docker compose exec noosphere noosphere imports apply <id-du-plan> --skip 3,7
 docker compose exec noosphere noosphere imports template --output /data/modele.xlsx
 ```
 

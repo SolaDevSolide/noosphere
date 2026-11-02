@@ -21,6 +21,9 @@ with the [exchange import](exchange-format.md) instead.
 
 ## Dry run, preview, apply
 
+In the interface, the **Import and export** page walks through the same steps: source, dry run with the preview,
+lines to leave out, confirmation and result. See the [user guide](user-guide.md#imports).
+
 1. **Dry run.** `POST /api/imports` with the files (`multipart/form-data`, field `files`). Noosphere reads them, finds
    the existing records, checks every change with the same rules as the record forms, and stores the result as a
    **plan**. It answers `201` with the plan.
@@ -29,7 +32,10 @@ with the [exchange import](exchange-format.md) instead.
    (`matchedBy`), the **possible matches** (existing records with a close name) and where the entry comes from: file
    (with its path in the archive), line and place (`documents[3]`, `channels.billing.invoice.issued.subscribe`,
    `Applications!A4`). Warnings say what was left out or guessed; errors say what prevents the import.
-3. **Apply.** `POST /api/imports/{id}/apply` writes exactly the plan that was shown.
+3. **Apply.** `POST /api/imports/{id}/apply` writes exactly the plan that was shown, or part of it: the body
+   `{ "skip": [3, 7] }` leaves out the entries with those indexes (creations and updates). An entry lists in
+   `requires` the entries creating the records it refers to (its domain, its team, the ends of a flow...): an entry
+   kept may not require one left out. The applied plan lists the entries left out in `skipped`.
 
 A plan is applied once, by the person who made it, within **30 minutes**, and only if the catalogue has not changed
 since the dry run:
@@ -42,6 +48,7 @@ since the dry run:
 | A record was created, changed, deleted or restored since the dry run (by anyone) | `409`, and the plan becomes `rejected`: run the dry run again |
 | More than 30 minutes after the dry run | `410`, the plan becomes `expired` |
 | The plan has errors | `422` |
+| An entry kept requires an entry left out, or every change is left out | `422`, the plan stays `planned` |
 
 ## Matching
 
@@ -75,10 +82,10 @@ warning; a flow whose end is unknown is skipped.
 
 ## Rights
 
-Administrators and members import; guests cannot (`403`). Every change of the plan is checked as if it were made by
-hand: members publish changes to the records their teams own (set `teamId` to one of your teams for new records),
-and only administrators create or change domains and teams. A change the person may not publish is an error of the
-plan; send a [proposal](proposals.md) for it instead.
+Only administrators import, as with the [exchange import](exchange-format.md): members and guests get `403` on the
+dry run, the plans and their application. Members send a [proposal](proposals.md) instead. The
+[Excel template](imports-excel.md#template) is open to everyone signed in. Plans of the command line belong to
+`system`, run by whoever runs the server.
 
 ## Options
 
@@ -109,8 +116,7 @@ cannot expand into a huge one (the exchange import refuses them too).
 
 ## Record of imports
 
-Every dry run is kept, applied or not: `GET /api/imports` lists one's own imports, and every import for
-administrators, with its author, time, formats, counts, status and the reason of a refusal; `GET /api/imports/{id}`
+Every dry run is kept, applied or not: `GET /api/imports` lists every import, with its author, time, formats, counts, status and the reason of a refusal; `GET /api/imports/{id}`
 gives the whole preview, with the name, size and SHA-256 of every file. Each record written gets a revision by the
 person who applied the plan, with the summary `Imported (backstage, import 1a2b3c4d)`, in its
 [history](history.md). The server log has a line for every plan, application and refusal.
@@ -121,7 +127,7 @@ person who applied the plan, with the summary `Imported (backstage, import 1a2b3
 | ------- | ---- |
 | `POST /api/imports?format=&domainId=&teamId=&applicationId=&parentPageId=` | Dry run: reads the files, stores and returns the plan (`201`). |
 | `GET /api/imports/{id}` | The plan (its author only). |
-| `POST /api/imports/{id}/apply` | Applies the plan. |
+| `POST /api/imports/{id}/apply` | Applies the plan; `{ "skip": [3, 7] }` leaves entries out. |
 | `GET /api/imports?limit=50` | Recent imports. |
 | `GET /api/imports/template.xlsx` | The [Excel template](imports-excel.md#template). |
 
@@ -148,7 +154,8 @@ An entry of the plan:
   ],
   "possibleMatches": [],
   "source": { "file": "catalog-info.yaml", "line": 49, "place": "documents[4]" },
-  "hasErrors": false
+  "hasErrors": false,
+  "requires": []
 }
 ```
 
@@ -156,7 +163,7 @@ An entry of the plan:
 
 ```sh
 docker compose exec noosphere noosphere imports plan /data/catalog-info.yaml /data/adr.zip --team team-crm
-docker compose exec noosphere noosphere imports apply <plan-id>
+docker compose exec noosphere noosphere imports apply <plan-id> --skip 3,7
 docker compose exec noosphere noosphere imports template --output /data/template.xlsx
 ```
 

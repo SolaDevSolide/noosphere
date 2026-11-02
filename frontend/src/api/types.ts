@@ -97,6 +97,28 @@ export type ProposalChange = Omit<S['ProposalChangeDto'], 'diff' | 'before' | 'a
 };
 export type OwnerApproval = S['ProposalOwnerDto'];
 export type Proposal = Omit<S['ProposalDto'], 'changes'> & { changes: ProposalChange[] };
+
+/** Formats of the import from other formats, as named by the API. */
+export type ImportFormat = 'backstage' | 'openapi' | 'asyncapi' | 'adr' | 'mermaid' | 'excel';
+export type ImportStatus = S['ImportStatus'];
+export type ImportSource = S['ImportSourceDto'];
+export type ImportMessage = S['ImportMessageDto'];
+export type ImportFile = S['ImportFileDto'];
+export type ImportAction = 'create' | 'update' | 'unchanged';
+/** One entry of an import plan; the field diff is typed as elsewhere in the app. */
+export type ImportEntry = Omit<S['ImportEntryDto'], 'changes' | 'action'> & {
+  action: ImportAction;
+  changes: FieldDiff[];
+};
+export type ImportPlan = Omit<S['ImportPlanDto'], 'entries'> & { entries: ImportEntry[] };
+/** Options of a dry run (query string of POST /api/imports). */
+export interface ImportOptions {
+  format?: ImportFormat;
+  domainId?: string;
+  teamId?: string;
+  applicationId?: string;
+  parentPageId?: string;
+}
 export type ProposalChangeInput = Omit<S['ProposalChangeInput'], 'after'> & {
   after: Record<string, unknown> | null;
 };

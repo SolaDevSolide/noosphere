@@ -3055,7 +3055,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Applies the plan of a dry run (same person, before it expires, catalogue unchanged) */
+        /** Applies the plan of a dry run (same person, before it expires, catalogue unchanged), leaving out the entries in skip */
         post: {
             parameters: {
                 query?: never;
@@ -3065,7 +3065,15 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            /** @description Entries to leave out; no body applies the whole plan. */
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Indexes of the entries to leave out (creations and updates). The entries that require one of them must be left out too. */
+                        skip?: null | number[];
+                    };
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -5800,6 +5808,11 @@ export interface components {
             /** Format: uuid */
             proposalId: null | string;
         };
+        /** @description What to apply of a plan. */
+        ImportApplyInput: {
+            /** @description Indexes of the entries to leave out (creations and updates). The entries that require one of them must be left out too. */
+            skip?: null | number[];
+        };
         ImportCountsDto: {
             /** Format: int32 */
             create: number;
@@ -5832,6 +5845,8 @@ export interface components {
             source: components["schemas"]["ImportSourceDto"];
             /** @description The entry has errors (see the plan's errors): the plan cannot be applied. */
             hasErrors: boolean;
+            /** @description Indexes of the entries creating records this one refers to (its domain, team, the ends of a flow...): leaving one of them out leaves this one out too. */
+            requires: number[];
         };
         ImportErrorDto: {
             /**
@@ -5892,6 +5907,8 @@ export interface components {
             errors: components["schemas"]["ImportMessageDto"][];
             /** @description The plan is planned, not expired and without errors. */
             canApply: boolean;
+            /** @description Indexes of the entries left out when the plan was applied (empty before). */
+            skipped: number[];
         };
         /** @description An existing record with a close name, never merged automatically. */
         ImportPossibleMatchDto: {

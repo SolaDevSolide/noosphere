@@ -182,16 +182,17 @@ public class ImportTests : IDisposable
     public async Task Adr_zip_becomes_decision_record_pages_linked_to_the_applications_they_mention()
     {
         var bob = await _api.SignedIn("bob");
+        var importer = await _api.SignedIn("alice");
         var zip = Zip("adr.zip", File("0001-record-architecture-decisions.md"), File("0002-invoice-run-on-postgresql.md"),
             File("0003-claims-photos-storage.md"), ("__MACOSX/._0001.md", [0, 1]));
-        // A member publishes pages owned by one of their teams.
-        var plan = await Plan(bob, "?teamId=team-finance", HttpStatusCode.Created, zip);
+        // Pages owned by one of the teams, read by its members.
+        var plan = await Plan(importer, "?teamId=team-finance", HttpStatusCode.Created, zip);
         Assert.True(plan.GetProperty("canApply").GetBoolean(), Errors(plan));
         Assert.Equal((3, 0, 0), (Counts(plan).Create, Counts(plan).Update, Counts(plan).Errors));
         // The landscape keeps its decision records under "Architecture decisions" (the top-level page tagged adr): they go there.
         Assert.Equal(("unchanged", "tag"), (Entry(plan, "page", "architecture").Str("action"), Entry(plan, "page", "architecture").Str("matchedBy")));
         Assert.Equal("adr.zip/0002-invoice-run-on-postgresql.md", Entry(plan, "page", "adr-0002-invoice-run-on-postgresql").GetProperty("source").Str("file"));
-        await Apply(bob, plan);
+        await Apply(importer, plan);
 
         var first = await bob.GetJson("/api/pages/adr-0001-record-architecture-decisions");
         Assert.Equal(("ADR 0001: Record architecture decisions", "architecture", 1), (first.Str("title"), first.Str("parentId"), first.GetProperty("order").GetInt32()));
@@ -211,7 +212,7 @@ public class ImportTests : IDisposable
         Assert.Equal(JsonValueKind.Null, third.GetProperty("attachedTo").ValueKind);
         Assert.Equal(HttpStatusCode.NotFound, (await bob.GetAsync("/api/pages/decision-records")).StatusCode);
 
-        Assert.Equal((0, 0, 4, 0), Counts(await Plan(bob, "?teamId=team-finance", HttpStatusCode.Created, zip)));
+        Assert.Equal((0, 0, 4, 0), Counts(await Plan(importer, "?teamId=team-finance", HttpStatusCode.Created, zip)));
 
         // Without such a page, a "Decision records" page is created.
         var alice = await _api.SignedIn("alice");
@@ -281,13 +282,14 @@ public class ImportTests : IDisposable
         var header = sheets.Single(s => s.Name == "Applications").Rows[0].Cells;
         Assert.Equal(["id", "name", "domainId", "teamId", "kind", "tech", "lifecycle", "description"], header.OrderBy(c => c.Key).Select(c => c.Value));
 
+        var alice = await _api.SignedIn("alice");
         var filled = Xlsx.Write([new Xlsx.SheetToWrite("Applications", [[.. header.OrderBy(c => c.Key).Select(c => c.Value)],
             ["", "Invoice archive", "finance", "team-finance", "mainframe", "", "", ""]], [])]);
-        var plan = await Plan(bob, ("finance.xlsx", filled));
+        var plan = await Plan(alice, ("finance.xlsx", filled));
         Assert.False(plan.GetProperty("canApply").GetBoolean());
         var error = plan.GetProperty("errors").EnumerateArray().Single();
         Assert.Contains("'mainframe' is not one of app, bus, saas, data, file, external", error.Str("message"), StringComparison.Ordinal);
         Assert.Equal(("finance.xlsx", "Applications!E2"), (error.GetProperty("source").Str("file"), error.GetProperty("source").Str("place")));
-        await Apply(bob, plan, HttpStatusCode.UnprocessableEntity);
+        await Apply(alice, plan, HttpStatusCode.UnprocessableEntity);
     }
 }

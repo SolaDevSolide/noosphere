@@ -1,3 +1,4 @@
+import { importsEn } from './imports.en';
 import { deploymentsEn, linksEn } from './links.en';
 import { agentsEn } from './agents.en';
 import { accessEn } from './access.en';
@@ -924,6 +925,7 @@ export const en = {
   agents: agentsEn,
   links: linksEn,
   deployments: deploymentsEn,
+  imports: importsEn,
 };
 
 export type Dict = typeof en;
