@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # 2. Backend (.NET)
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS back
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS back
 ARG VERSION=0.0.0-dev
 WORKDIR /src/backend
 COPY backend/ ./
