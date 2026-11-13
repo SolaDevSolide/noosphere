@@ -14,7 +14,7 @@ COPY backend/ ./
 RUN dotnet publish src/Noosphere.Api/Noosphere.Api.csproj -c Release -o /app -p:Version=$VERSION
 
 # 3. Runtime image, non-root
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 COPY --from=back /app ./
 COPY --from=front /src/frontend/dist ./wwwroot
